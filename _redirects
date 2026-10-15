@@ -1,0 +1,68 @@
+# Netlify Clean URL & 404 Redirect Rules for Fileora
+/about            /about.html            200
+/faq              /faq.html              200
+/contact          /contact.html          200
+/privacy-policy   /privacy-policy.html   200
+/privacy          /privacy-policy        301!
+/terms            /terms.html            200
+/cookie-policy    /cookie-policy.html    200
+/disclaimer       /disclaimer.html       200
+/file-retention   /file-retention.html   200
+/security         /file-retention        301!
+/troubleshooting  /troubleshooting.html  200
+/download         /download.html         200
+/sitemap.xml      /sitemap.xml           200
+/robots.txt       /robots.txt            200
+
+# Canonical Tool Routes (rewrite to index.html for client routing)
+/tools            /index.html            200
+/tools/*          /index.html            200
+
+# Legacy /tool/:slug redirects to canonical /tools/:slug
+/tool/:slug       /tools/:slug           301!
+
+# Aliases in /tools/
+/tools/pdf-to-ppt     /tools/pdf-to-powerpoint  301!
+/tools/ppt-to-pdf     /tools/powerpoint-to-pdf  301!
+/tools/ppt-to-word    /tools/powerpoint-to-word 301!
+/tools/word-to-ppt    /tools/word-to-powerpoint 301!
+/tools/rotate-pdf     /tools/organize-pdf       301!
+
+# Legacy 27 bare tool routes redirect to canonical /tools/<slug>
+/merge-pdf            /tools/merge-pdf            301!
+/split-pdf            /tools/split-pdf            301!
+/remove-pages         /tools/remove-pages         301!
+/extract-pages        /tools/extract-pages        301!
+/organize-pdf         /tools/organize-pdf         301!
+/compress-pdf         /tools/compress-pdf         301!
+/repair-pdf           /tools/repair-pdf           301!
+/compress-image       /tools/compress-image       301!
+/word-to-pdf          /tools/word-to-pdf          301!
+/powerpoint-to-pdf    /tools/powerpoint-to-pdf    301!
+/excel-to-pdf         /tools/excel-to-pdf         301!
+/jpg-to-pdf           /tools/jpg-to-pdf           301!
+/pdf-to-word          /tools/pdf-to-word          301!
+/powerpoint-to-word   /tools/powerpoint-to-word   301!
+/word-to-powerpoint   /tools/word-to-powerpoint   301!
+/pdf-to-powerpoint    /tools/pdf-to-powerpoint    301!
+/pdf-to-excel         /tools/pdf-to-excel         301!
+/pdf-to-jpg           /tools/pdf-to-jpg           301!
+/unlock-pdf           /tools/unlock-pdf           301!
+/protect-pdf          /tools/protect-pdf          301!
+/add-watermark        /tools/add-watermark        301!
+/zip-files            /tools/zip-files            301!
+/unzip-files          /tools/unzip-files          301!
+/ai-summarizer        /tools/ai-summarizer        301!
+/translate-pdf        /tools/translate-pdf        301!
+/scan-pdf             /tools/scan-pdf             301!
+/enhance-image        /tools/enhance-image        301!
+
+# Legacy bare aliases
+/pdf-to-ppt           /tools/pdf-to-powerpoint    301!
+/ppt-to-pdf           /tools/powerpoint-to-pdf    301!
+/ppt-to-word          /tools/powerpoint-to-word   301!
+/word-to-ppt          /tools/word-to-powerpoint   301!
+/rotate-pdf           /tools/organize-pdf         301!
+
+# Unknown routes return custom 404 page with HTTP 404 status
+/*                     /404.html              404

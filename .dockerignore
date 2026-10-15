@@ -1,0 +1,33 @@
+# Keep secrets, tests, fixtures, backups and local data out of the image (the Dockerfile does `COPY . .`)
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+node_modules
+npm-debug.log*
+*.log
+contact_submissions.log
+storage
+*.sqlite
+Testing Files
+tests
+scratch
+brand
+fidelity_test_out
+__pycache__
+*.pyc
+*.zip
+*.md
+# generated / personal files that ended up in the project folder
+*.pptx
+*.docx
+*.png
+!assets/**
+batch_validation_summary.json
+fidelity_validation_results.json
+pptx_analysis.json
+source_analysis.json
+pdf_source_text.txt
+docx_converted_text.txt
+extracted_logo_p1.png

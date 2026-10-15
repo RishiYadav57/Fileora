@@ -1,0 +1,125 @@
+/**
+ * Premium Scroll-Reveal Animations
+ * High-performance, GPU-accelerated (opacity & transform only)
+ * Zero layout shifts, zero main-thread scroll polling
+ * Fully accessible with prefers-reduced-motion & print media guards
+ */
+
+/* 1. Base Unrevealed State (Active ONLY when JS confirms motion is allowed) */
+html.scroll-reveal-ready .reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition-property: opacity, transform;
+  transition-duration: 550ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* 2. Revealed State */
+html.scroll-reveal-ready .reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* 3. Subtle Scale Variant (Ideal for converter cards, feature boxes, trust badges) */
+html.scroll-reveal-ready .reveal-on-scroll.reveal-scale {
+  transform: scale(0.975) translateY(14px);
+}
+html.scroll-reveal-ready .reveal-on-scroll.reveal-scale.is-revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  will-change: auto;
+}
+
+/* 4. Gentle Slide Down Variant (For hero tags and top badges) */
+html.scroll-reveal-ready .reveal-on-scroll.reveal-down {
+  transform: translateY(-14px);
+}
+html.scroll-reveal-ready .reveal-on-scroll.reveal-down.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* 5. Pure Fade Variant (Zero movement, opacity only) */
+html.scroll-reveal-ready .reveal-on-scroll.reveal-fade {
+  transform: none;
+}
+html.scroll-reveal-ready .reveal-on-scroll.reveal-fade.is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* 6. Staggered Grid Container (Cascading reveals for card grids, steps, FAQs) */
+html.scroll-reveal-ready .reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition-property: opacity, transform;
+  transition-duration: 500ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+html.scroll-reveal-ready .reveal-stagger.is-revealed > *,
+html.scroll-reveal-ready .reveal-stagger > *.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* Stagger Delays: 70ms increments for a natural, restrained cascade */
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(1) { transition-delay: 0ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(2) { transition-delay: 70ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(3) { transition-delay: 140ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(4) { transition-delay: 210ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(5) { transition-delay: 280ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(6) { transition-delay: 350ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(7) { transition-delay: 420ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(8) { transition-delay: 490ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(9) { transition-delay: 560ms; }
+html.scroll-reveal-ready .reveal-stagger > *:nth-child(10) { transition-delay: 630ms; }
+
+/* 7. Manual Delay Utilities */
+html.scroll-reveal-ready .reveal-delay-1 { transition-delay: 80ms !important; }
+html.scroll-reveal-ready .reveal-delay-2 { transition-delay: 160ms !important; }
+html.scroll-reveal-ready .reveal-delay-3 { transition-delay: 240ms !important; }
+html.scroll-reveal-ready .reveal-delay-4 { transition-delay: 320ms !important; }
+
+/* 8. Mobile & Tablet Optimization: Slightly faster durations & compact offsets */
+@media (max-width: 640px) {
+  html.scroll-reveal-ready .reveal-on-scroll {
+    transform: translateY(14px);
+    transition-duration: 440ms;
+  }
+  html.scroll-reveal-ready .reveal-stagger > * {
+    transform: translateY(12px);
+    transition-duration: 420ms;
+  }
+  html.scroll-reveal-ready .reveal-stagger > *:nth-child(n) {
+    transition-delay: calc((n - 1) * 50ms);
+  }
+}
+
+/* 9. Accessibility: prefers-reduced-motion guard */
+@media (prefers-reduced-motion: reduce) {
+  html.scroll-reveal-ready .reveal-on-scroll,
+  html.scroll-reveal-ready .reveal-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+}
+
+/* 10. Print Media Guard: Full visibility for print stylesheets */
+@media print {
+  .reveal-on-scroll,
+  .reveal-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

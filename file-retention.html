@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth overflow-x-hidden">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>File Retention &amp; Automatic Deletion Policy | Fileora</title>
+  <meta name="description" content="How Fileora handles your files: how long converted files are kept, when originals are removed, and how to delete a file immediately.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fileora">
+  <meta property="og:url" content="https://pdfconverterfree.in/file-retention">
+  <meta property="og:title" content="File Retention &amp; Automatic Deletion Policy | Fileora">
+  <meta property="og:description" content="How Fileora handles your files: how long converted files are kept, when originals are removed, and how to delete a file immediately.">
+  <meta property="og:image" content="https://pdfconverterfree.in/assets/fileora-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="File Retention &amp; Automatic Deletion Policy | Fileora">
+  <meta name="twitter:description" content="How Fileora handles your files: how long converted files are kept, when originals are removed, and how to delete a file immediately.">
+  <meta name="twitter:image" content="https://pdfconverterfree.in/assets/fileora-og.png">
+  <link rel="canonical" href="https://pdfconverterfree.in/file-retention">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/fileora-icon-32.png">
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/fileora-icon-180.png">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <meta name="theme-color" content="#2463EB">
+
+  <!-- Tailwind CSS & Plus Jakarta Sans -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/scroll-reveal.css">
+  <script src="/assets/scroll-reveal.js"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+  </style>
+
+  <script>
+    // Dark mode temporarily disabled - all dark mode styling is preserved in code
+    const DARK_MODE_ENABLED = false;
+    if (DARK_MODE_ENABLED && (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches))) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    function toggleTheme() {
+      if (!DARK_MODE_ENABLED) return;
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+  </script>
+  <script src="/assets/warmup.js" defer></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-hidden w-full max-w-full">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 w-full overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-2 sm:gap-4">
+        <a href="/" class="flex items-center gap-2 group flex-shrink-0 min-w-0">
+          <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+        </a>
+
+        <!-- Mobile Navigation: Clean Home button only -->
+        <a href="/" class="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold text-xs hover:bg-blue-100 dark:hover:bg-slate-700 transition shadow-xs flex-shrink-0" title="Go to Homepage">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span>Home</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-4">
+          <a href="/" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">All Tools</a>
+          <a href="/faq" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">FAQ</a>
+          <a href="/file-retention" class="text-blue-600 dark:text-blue-400 font-bold text-xs transition">Retention</a>
+          <a href="/contact" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">Contact</a>
+          <!-- Dark mode toggle hidden while dark mode is temporarily disabled -->
+          <button onclick="toggleTheme()" class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition shadow-xs" title="Toggle Theme" aria-label="Toggle Theme" style="display: none !important;" aria-hidden="true">
+            <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+            <svg class="w-4 h-4 block dark:hidden text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Header -->
+  <section class="py-10 sm:py-14 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 reveal-on-scroll">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-100 dark:border-emerald-900/50">
+        <span>Verified Technical Architecture</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+        File Retention &amp; Automatic Deletion Policy
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+        Technical disclosures on file lifecycles, 60-minute output download windows, automated cleanup sweeps, and immediate user deletion.<br>
+        Website: <a href="https://pdfconverterfree.in" class="text-blue-600 dark:text-blue-400 hover:underline">https://pdfconverterfree.in</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Content Body -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-12 flex-1 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed reveal-stagger">
+
+    <!-- Executive Summary Banner -->
+    <div class="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-850 border border-blue-100 dark:border-slate-800 space-y-2">
+      <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Our Automatic File-Retention Guarantee
+      </h2>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Fileora is engineered around automated ephemeral storage. Uploaded and converted files exist only long enough for you to download them. 
+        <strong>Original uploads</strong> are unlinked immediately once conversion completes. 
+        <strong>Successfully converted output files</strong> are retained for <strong>60 minutes</strong> so you can download or retry. 
+        An automated daemon sweeps and deletes expired files every <strong>10 minutes</strong>, and you can click the red <strong>"Delete"</strong> button on your download card to purge your file immediately on demand.
+      </p>
+    </div>
+
+    <!-- Section 1: The 5 Stages of File Lifecycle -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">The 5 Stages of the File Lifecycle</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Step-by-step technical breakdown of what happens to your document from upload to permanent destruction.</p>
+      </div>
+
+      <div class="space-y-4">
+
+        <!-- Stage 1 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center">1</span>
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Upload &amp; Streaming Security</h3>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10">
+            Files are transmitted exclusively over encrypted HTTPS (TLS). As bytes arrive at the Node.js backend, our gateway verifies file magic bytes, MIME signatures, and size constraints (10 MB individual file limit, 20 MB batch limit). If an upload exceeds limits or presents malformed structures, the connection is terminated immediately and memory is freed.
+          </p>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center">2</span>
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Conversion &amp; Immediate Original File Unlinking</h3>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10">
+            Conversions execute in an isolated environment using open-source conversion engines (LibreOffice headless, Sharp, PDF.js, pdf-lib). Source files are stored temporarily on ephemeral disk space with non-enumerable, cryptographically random UUID identifiers. As soon as conversion succeeds or fails, original uploaded input files are immediately unlinked (<code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">fs.unlinkSync</code>) from the server.
+          </p>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center">3</span>
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Temporary Storage in Cloudflare R2</h3>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10">
+            The converted output file is pushed directly to our private Cloudflare R2 object storage bucket (<code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">fileconverter-temp</code>) using authenticated S3-compatible APIs. The bucket is completely private: public read access is disabled, directory indexing is blocked, and files are encrypted at rest using industry-standard AES-256 (Server-Side Encryption).
+          </p>
+        </div>
+
+        <!-- Stage 4 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center">4</span>
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">60-Minute Dedicated Download Window</h3>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10">
+            Your browser receives a dedicated download URL formatted with your unique job UUID and cryptographically random 256-bit token. You can navigate, refresh the page, or download the converted file across multiple devices during the <strong>60-minute retention window</strong>. Constant-time token verification prevents timing attacks and brute-force guessing.
+          </p>
+        </div>
+
+        <!-- Stage 5 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center">5</span>
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Permanent Deletion (Immediate or Scheduled Sweep)</h3>
+          </div>
+          <div class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10 space-y-2">
+            <p>Your file is permanently destroyed via one of two mechanisms:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>Immediate Manual Deletion:</strong> Choosing the red delete (trash) button next to a file on your download page and confirming triggers an immediate <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">DELETE /api/jobs/:jobId</code> request, purging the object from Cloudflare R2 and deleting the database record within seconds.</li>
+              <li><strong>Automated Background Sweeps:</strong> A background daemon on our server runs every <strong>10 minutes</strong>. It identifies all completed jobs older than 60 minutes and failed jobs older than 15 minutes, issues S3-compatible DeleteObject commands to Cloudflare R2, and clears the metadata.</li>
+              <li><strong>Worst-Case Cleanup Delay:</strong> With a 60-minute retention period and a 10-minute sweep interval, the maximum delay before an expired file is deleted is <strong>70 minutes</strong>.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 2: Technical Summary Matrix -->
+    <section class="space-y-3 w-full max-w-full overflow-hidden">
+      <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Retention Targets &amp; Technical Matrix</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Verified architectural specifications of our storage infrastructure:</p>
+
+      <!-- Mobile View (Compact cards fitting screen) -->
+      <div class="block md:hidden space-y-3">
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Original Uploaded Files</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Immediate (0 min)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Unlinked from disk immediately upon conversion completion (&lt; 1s delay)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Converted Output Files (R2)</span>
+            <span class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-[11px]">60 min retention</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">S3 DeleteObject from Cloudflare R2 via 10-minute automated sweeps (max 70m delay)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Failed or Abandoned Jobs</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px]">15 min retention</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Purged from database and storage during 10-minute sweep (max 25m delay)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Download Auth Tokens</span>
+            <span class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-[11px]">60 min window</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Server-side expiry validation returns HTTP 410 Gone (instant expiration)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Local Intermediate Temp</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px]">15 min</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Periodic filesystem scan deletes files older than 15 min (max 25m delay)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Orphaned R2 Objects</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px]">24 hr threshold</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">S3 prefix scanner compares against DB and purges unlinked keys (25 hours)</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-900 dark:text-white text-xs">Manual User Deletion</span>
+            <span class="px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-[11px]">On Demand</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">User clicks "Delete" on download page; triggers instant S3 delete (&lt; 2s)</p>
+        </div>
+      </div>
+
+      <!-- Desktop View (Full Matrix Table) -->
+      <div class="hidden md:block w-full overflow-x-auto max-w-full rounded-xl border border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
+            <tr>
+              <th class="py-2.5 px-4">Data Category</th>
+              <th class="py-2.5 px-4">Configured Retention Target</th>
+              <th class="py-2.5 px-4">Destruction Mechanism</th>
+              <th class="py-2.5 px-4">Max Delay</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-850">
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Original Uploaded Files</td>
+              <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-bold">Immediate (0 min)</td>
+              <td class="py-2.5 px-4">Unlinked from disk immediately upon conversion completion</td>
+              <td class="py-2.5 px-4">&lt; 1 second</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Converted Output Files (R2)</td>
+              <td class="py-2.5 px-4 font-bold">60 minutes</td>
+              <td class="py-2.5 px-4">S3 DeleteObject from Cloudflare R2 via 10-minute automated sweeps</td>
+              <td class="py-2.5 px-4">70 minutes</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Failed or Abandoned Jobs</td>
+              <td class="py-2.5 px-4 font-bold">15 minutes</td>
+              <td class="py-2.5 px-4">Purged from database and storage during 10-minute sweep</td>
+              <td class="py-2.5 px-4">25 minutes</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Download Authorization Tokens</td>
+              <td class="py-2.5 px-4 font-bold">60 minutes</td>
+              <td class="py-2.5 px-4">Server-side expiry validation returns HTTP 410 Gone</td>
+              <td class="py-2.5 px-4">Exact (instant)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Local Intermediate Temp Files</td>
+              <td class="py-2.5 px-4 font-bold">15 minutes</td>
+              <td class="py-2.5 px-4">Periodic filesystem scan deletes files older than 15 min</td>
+              <td class="py-2.5 px-4">25 minutes</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Orphaned R2 Objects</td>
+              <td class="py-2.5 px-4 font-bold">24 hours threshold</td>
+              <td class="py-2.5 px-4">S3 prefix scanner compares against DB and purges unlinked keys</td>
+              <td class="py-2.5 px-4">25 hours</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-semibold">Manual User Deletion</td>
+              <td class="py-2.5 px-4 text-rose-600 dark:text-rose-400 font-bold">On demand (instant)</td>
+              <td class="py-2.5 px-4">User clicks "Delete" on download page; triggers instant S3 delete</td>
+              <td class="py-2.5 px-4">&lt; 2 seconds</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3: Cloudflare R2 Lifecycle Safeguard -->
+    <section class="space-y-3 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+      <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Cloudflare R2 Lifecycle Rules (Secondary Safeguard)</h2>
+      <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+        Cloudflare R2 provides bucket lifecycle rules that delete objects based on whole-day intervals (minimum 1 day = 24 hours). 
+        While R2 lifecycle rules run asynchronously once daily and cannot enforce our precise 60-minute user download window, a scoped rule on prefix <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">converted/</code> serves as an ideal <strong>secondary fail-safe</strong>. If the server were ever to experience prolonged downtime, a configured lifecycle rule can ensure no object survives longer than its configured period (minimum one day).
+      </p>
+    </section>
+
+    <!-- Section 4: How to Verify Deletion -->
+    <section class="space-y-3 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+      <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">How You Can Verify File Deletion</h2>
+      <p class="text-xs text-slate-600 dark:text-slate-400">
+        You can independently verify that our deletion mechanisms function as promised:
+      </p>
+      <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+        <li><strong>Immediate Deletion Test:</strong> Convert a sample test file. On the download card, click "Delete". Now copy the download URL and paste it into a private/incognito browser window. The server will return <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">HTTP 404 / 410 File Not Found or Expired</code>.</li>
+        <li><strong>60-Minute Expiration Test:</strong> Bookmark any download link and return after 60 minutes. The server will return <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">HTTP 410 Expired</code>, and the background daemon will purge the underlying R2 object.</li>
+      </ol>
+    </section>
+
+    <!-- Section 5: Contact -->
+    <section class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+      <h2 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Questions Regarding File Retention</h2>
+      <p class="text-xs text-slate-600 dark:text-slate-300">
+        If you have questions about our retention architecture or wish to request data erasure, please email:
+      </p>
+      <div class="pt-1 text-xs">
+        <a href="mailto:pdfconverterfreebusiness@gmail.com" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900 transition border border-blue-200 dark:border-blue-900/50">
+          <span>pdfconverterfreebusiness@gmail.com</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Comprehensive Footer -->
+  <footer class="mt-auto bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 py-10 px-4 sm:px-6 lg:px-8 text-xs reveal-on-scroll">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      <div>
+        <p class="font-bold text-slate-900 dark:text-white">Fileora</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">&copy; 2026 Fileora &bull; https://pdfconverterfree.in &bull; All rights reserved.</p>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-slate-500 dark:text-slate-400 font-medium">
+        <a href="/about" class="hover:text-blue-600 dark:hover:text-blue-400 transition">About</a>
+        <a href="/faq" class="hover:text-blue-600 dark:hover:text-blue-400 transition">FAQ</a>
+        <a href="/file-retention" class="text-blue-600 dark:text-blue-400 font-bold underline">File Retention</a>
+        <a href="/contact" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Contact</a>
+        <a href="/privacy-policy" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Privacy Policy</a>
+        <a href="/terms" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Terms</a>
+        <a href="/cookie-policy" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Cookie Policy</a>
+        <a href="/disclaimer" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Disclaimer</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

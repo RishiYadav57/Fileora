@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /download
+
+Sitemap: https://pdfconverterfree.in/sitemap.xml

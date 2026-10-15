@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Upload & Conversion Troubleshooting Guide | Fileora</title>
+  <meta name="description" content="Resolve document conversion issues: fix corrupted outputs, restore missing tables, correct line spacing, and troubleshoot large file limits.">
+  <link rel="canonical" href="https://pdfconverterfree.in/troubleshooting">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fileora">
+  <meta property="og:url" content="https://pdfconverterfree.in/troubleshooting">
+  <meta property="og:title" content="Upload &amp; Conversion Troubleshooting Guide | Fileora">
+  <meta property="og:description" content="Resolve document conversion issues: fix corrupted outputs, restore missing tables, correct line spacing, and troubleshoot large file limits.">
+  <meta property="og:image" content="https://pdfconverterfree.in/assets/fileora-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Upload &amp; Conversion Troubleshooting Guide | Fileora">
+  <meta name="twitter:description" content="Resolve document conversion issues: fix corrupted outputs, restore missing tables, correct line spacing, and troubleshoot large file limits.">
+  <meta name="twitter:image" content="https://pdfconverterfree.in/assets/fileora-og.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/fileora-icon-32.png">
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/fileora-icon-180.png">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <meta name="theme-color" content="#2463EB">
+
+  <!-- Tailwind CSS & Plus Jakarta Sans -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/scroll-reveal.css">
+  <script src="/assets/scroll-reveal.js"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+  </style>
+  <script src="/assets/warmup.js" defer></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        <a href="/" class="flex items-center gap-2.5 group">
+          <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+        </a>
+
+        <div class="flex items-center gap-3">
+          <a href="/" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">All Tools</a>
+          <a href="/faq" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">FAQ</a>
+          <a href="/security" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition hidden sm:inline-block">Security</a>
+          <a href="/contact" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition">Support</a>
+          <!-- Dark mode toggle hidden while dark mode is temporarily disabled -->
+          <button onclick="toggleTheme()" class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition shadow-xs" title="Toggle Theme" style="display: none !important;" aria-hidden="true">
+            <svg id="theme-icon-sun" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg id="theme-icon-moon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="py-12 sm:py-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 reveal-on-scroll">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+      <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold">
+        <span>Diagnostic Procedures & Error Fixes</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+        Conversion & Upload Troubleshooting Guide
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        Step-by-step diagnostic sequences for resolving formatting distortion, broken tables, unexpected line spacing, and file size bottlenecks.
+      </p>
+    </div>
+  </section>
+
+  <!-- Content Grid -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10 flex-1 reveal-stagger">
+    
+    <!-- Issue 1: Conversion Stuck or Hanging -->
+    <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xs font-mono font-bold">1</span>
+          Conversion Button Shows "Working..." or Appears Stuck
+        </h2>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Execution Flow</span>
+      </div>
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+        <p><strong>Likely Cause:</strong> If a document has several hundred pages, client-side memory parsing takes more CPU cycles, or the backend server fallback is waking up from idle sleep.</p>
+        <p><strong>Troubleshooting Sequence:</strong></p>
+        <ol class="list-decimal list-inside space-y-1 pl-2">
+          <li>Click the <strong>Clear All</strong> button or the <strong>✕</strong> icon to immediately abort the ongoing task without freezing your browser.</li>
+          <li>If your PDF exceeds 200 pages, use the <strong>Split PDF</strong> tool to break it into targeted chapters before converting to Word.</li>
+          <li>Check that you have not opened dozens of memory-heavy browser tabs concurrently.</li>
+        </ol>
+      </div>
+    </article>
+
+    <!-- Issue 2: Tables Flattened or Columns Misaligned -->
+    <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-mono font-bold">2</span>
+          Tables Damaged, Columns Shifted, or Borders Missing
+        </h2>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Layout Engine</span>
+      </div>
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+        <p><strong>Likely Cause:</strong> The source PDF has borderless tables, irregular nested cell spans, or was generated from an image scan without digital vector cell lines.</p>
+        <p><strong>Troubleshooting Sequence:</strong></p>
+        <ol class="list-decimal list-inside space-y-1 pl-2">
+          <li>Verify whether text in the source PDF is selectable with your mouse cursor. If you cannot select text, the document is an image scan.</li>
+          <li>For tabular spreadsheets, run <strong>PDF to Excel</strong> rather than PDF to Word; the Excel engine uses dedicated 2D grid line clustering.</li>
+          <li>If cells merge unexpectedly, open the exported DOCX in Microsoft Word and use <em>Table Layout &rsaquo; Distribute Columns Evenly</em>.</li>
+        </ol>
+      </div>
+    </article>
+
+    <!-- Issue 3: Line Spacing and Broken Text Lines -->
+    <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-mono font-bold">3</span>
+          Text Overlaps, Abrupt Font Changes, or Double Line Gaps
+        </h2>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Typography</span>
+      </div>
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+        <p><strong>Likely Cause:</strong> PDFs define each physical text segment at specific XY coordinates. If lines are not grouped as paragraph continuations, each line receives default Word paragraph spacing.</p>
+        <p><strong>Troubleshooting Sequence:</strong></p>
+        <ol class="list-decimal list-inside space-y-1 pl-2">
+          <li>Ensure you are using the latest version of Fileora; our engine automatically clusters continuous lines using paragraph margin continuation logic.</li>
+          <li>If custom fonts render differently, install the font family (e.g., Aptos, Calibri, Montserrat) locally on your operating system so Word can match glyphs.</li>
+        </ol>
+      </div>
+    </article>
+
+    <!-- Issue 4: Password-Protected PDF Rejected -->
+    <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-mono font-bold">4</span>
+          Error: "File is Password-Protected"
+        </h2>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Security Flags</span>
+      </div>
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+        <p><strong>Likely Cause:</strong> The document has encrypted permissions or an owner password preventing extraction of text and graphics.</p>
+        <p><strong>Troubleshooting Sequence:</strong></p>
+        <ol class="list-decimal list-inside space-y-1 pl-2">
+          <li>Switch to the <strong>Unlock PDF</strong> tool in our top navigation bar under <em>PDF Tools</em>.</li>
+          <li>Enter the document password to decrypt the permissions envelope.</li>
+          <li>Once downloaded as an unlocked PDF, upload the unlocked file to PDF to Word, PDF to Excel, or Merge PDF.</li>
+        </ol>
+      </div>
+    </article>
+
+    <!-- Issue 5: Download Didn't Start or Blocked by Browser -->
+    <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-mono font-bold">5</span>
+          Download Notification Shows But File Does Not Save
+        </h2>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Browser Download</span>
+      </div>
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+        <p><strong>Likely Cause:</strong> Your browser blocked automatic multi-file downloads or prompt popups.</p>
+        <p><strong>Troubleshooting Sequence:</strong></p>
+        <ol class="list-decimal list-inside space-y-1 pl-2">
+          <li>Check the top-right corner of your screen for the floating <strong>File Downloaded</strong> notification toast.</li>
+          <li>Click the blue link: <em>"Tap here if download didn't start"</em> to manually trigger the download buffer.</li>
+          <li>Check your browser URL bar for a blocked popup icon and select <em>"Always allow downloads from this site"</em>.</li>
+        </ol>
+      </div>
+    </article>
+
+    <!-- Need Further Help -->
+    <div class="p-6 sm:p-8 rounded-3xl bg-blue-50/70 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="space-y-1 text-center sm:text-left">
+        <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white">Still unable to resolve your conversion issue?</h3>
+        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Our engineering team can investigate specific document compiler anomalies.</p>
+      </div>
+      <a href="/contact" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition whitespace-nowrap">
+        Submit Bug Report
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200/80 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 reveal-on-scroll">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span>&copy; 2026 Fileora. High-Fidelity Document Processing Engine.</span>
+      <div class="flex items-center gap-4 text-xs">
+        <a href="/" class="hover:text-blue-600 dark:hover:text-blue-400">Home</a>
+        <a href="/about" class="hover:text-blue-600 dark:hover:text-blue-400">About</a>
+        <a href="/faq" class="hover:text-blue-600 dark:hover:text-blue-400">FAQ</a>
+        <a href="/security" class="hover:text-blue-600 dark:hover:text-blue-400">Security</a>
+        <a href="/contact" class="hover:text-blue-600 dark:hover:text-blue-400">Contact</a>
+        <a href="/privacy" class="hover:text-blue-600 dark:hover:text-blue-400">Privacy</a>
+        <a href="/terms" class="hover:text-blue-600 dark:hover:text-blue-400">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Dark mode temporarily disabled - all dark mode styling is preserved in code
+    const DARK_MODE_ENABLED = false;
+
+    function initTheme() {
+      if (DARK_MODE_ENABLED && (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-icon-sun')?.classList.remove('hidden');
+        document.getElementById('theme-icon-moon')?.classList.add('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+    function toggleTheme() {
+      if (!DARK_MODE_ENABLED) return;
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.theme = isDark ? 'dark' : 'light';
+      document.getElementById('theme-icon-sun')?.classList.toggle('hidden', !isDark);
+      document.getElementById('theme-icon-moon')?.classList.toggle('hidden', isDark);
+    }
+    initTheme();
+  </script>
+</body>
+</html>

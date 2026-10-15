@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your File is Ready | Fileora</title>
+  <meta name="description" content="Your file has been successfully converted and is ready to download. Fast, secure, and private document conversions.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/fileora-icon-32.png">
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/fileora-icon-180.png">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <meta name="theme-color" content="#2463EB">
+  <link rel="canonical" href="https://pdfconverterfree.in/download">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Tailwind CSS & Google Fonts (Plus Jakarta Sans) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/scroll-reveal.css">
+  <script src="/assets/scroll-reveal.js"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Background image strictly and only for this download format/hero */
+    .download-hero-wrapper {
+      background-color: #ffffff;
+      background-image: url('/assets/download-bg.png');
+      background-position: top center;
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+    }
+    .dark .download-hero-wrapper {
+      background-color: #030712;
+      background-image: url('/assets/download-bg.png');
+      background-position: top center;
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+    }
+    @media (max-width: 1024px) {
+      .download-hero-wrapper, .dark .download-hero-wrapper {
+        background-size: cover;
+      }
+    }
+
+    /* Results table: aligned columns on desktop, compact stacked rows on mobile */
+    .res-cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.75fr) 128px 192px; column-gap: 16px; align-items: center; }
+    .res-row { min-height: 72px; }
+    .res-row .c-details { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 767px) {
+      .res-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "file file" "details status" "actions actions"; row-gap: 8px; column-gap: 10px; }
+      .res-row .c-file { grid-area: file; }
+      .res-row .c-details { grid-area: details; white-space: normal; }
+      .res-row .c-status { grid-area: status; }
+      .res-row .c-actions { grid-area: actions; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } .animate-spin { animation: none !important; } }
+  </style>
+
+  <script>
+    // Dark mode temporarily disabled - all dark mode styling is preserved in code
+    const DARK_MODE_ENABLED = false;
+    if (DARK_MODE_ENABLED && (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches))) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <script src="/assets/warmup.js" defer></script>
+</head>
+<body class="bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Sticky Navbar (Matches Homepage Font & Styling) -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2.5 flex-shrink-0 group">
+        <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto">
+      </a>
+
+      <!-- Quick Nav Links -->
+      <nav class="hidden lg:flex items-center gap-1.5 xl:gap-2.5">
+        <a href="/tools/organize-pdf" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">Organize PDF</a>
+        <a href="/tools/compress-pdf" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">Optimize PDF</a>
+        <a href="/tools/word-to-pdf" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">Convert to PDF</a>
+        <a href="/tools/pdf-to-word" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">Convert Documents</a>
+        <a href="/tools/add-watermark" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">PDF Tools</a>
+        <a href="/tools/scan-pdf" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition whitespace-nowrap">PDF Intelligence</a>
+      </nav>
+
+      <!-- Right Controls: Home + Theme Toggle -->
+      <div class="flex items-center gap-2">
+        <a href="/" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700/60 rounded-xl transition">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Home
+        </a>
+        <!-- Theme toggle hidden while dark mode is temporarily disabled -->
+        <button id="theme-toggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Toggle dark mode" style="display: none !important;" aria-hidden="true">
+          <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+          <svg class="w-4 h-4 block dark:hidden text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================== -->
+  <!-- HERO DOWNLOAD SECTION (USES download-bg.png ONLY HERE)   -->
+  <!-- ======================================================== -->
+  <section class="download-hero-wrapper flex-shrink-0 pt-10 sm:pt-14 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 border-b border-slate-100 dark:border-slate-800">
+    <div class="max-w-4xl mx-auto">
+
+      <!-- Loading State -->
+      <div id="state-loading" class="max-w-2xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-12 text-center animate-pulse">
+        <div class="w-16 h-16 bg-blue-100 dark:bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Preparing Your File...</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Connecting to Cloudflare R2 cloud storage</p>
+      </div>
+
+      <!-- Error / Expired State -->
+      <div id="state-error" class="max-w-2xl mx-auto hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-8 sm:p-12 text-center">
+        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h2 id="error-title" class="text-2xl font-black text-slate-900 dark:text-slate-100">Download Link Expired or Invalid</h2>
+        <p id="error-desc" class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto">
+          For your privacy and security, temporary converted files are automatically purged after 60 minutes according to our <a href="/file-retention" class="text-blue-600 dark:text-blue-400 underline font-semibold">file-retention policy</a>. Please upload and convert your document again.
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="/" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md shadow-blue-500/20">
+            Convert a New File
+          </a>
+          <button onclick="window.location.reload()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm transition border border-slate-200 dark:border-slate-700">
+            Retry Connection
+          </button>
+        </div>
+      </div>
+
+      <!-- File Permanently Deleted State -->
+      <div id="state-deleted" class="max-w-2xl mx-auto hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-8 sm:p-12 text-center">
+        <div class="w-16 h-16 bg-rose-100 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <svg class="w-8 h-8 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 dark:text-slate-100">File Permanently Deleted</h2>
+        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto">
+          The converted file has been completely and irreversibly removed from Cloudflare R2 cloud storage.
+        </p>
+        <div class="mt-8 flex justify-center">
+          <a href="/" class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md shadow-blue-500/20">
+            Convert Another File
+          </a>
+        </div>
+      </div>
+
+      <!-- Success State: compact summary + table-style file list -->
+      <div id="state-success" class="hidden">
+
+        <div class="text-center mb-4 sm:mb-5">
+          <h1 id="download-title" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+            Your Files are <span class="text-blue-600 dark:text-blue-500">Ready!</span>
+          </h1>
+          <p id="download-subtitle" class="text-slate-600 dark:text-slate-400 text-sm mt-1.5 max-w-xl mx-auto leading-relaxed"></p>
+        </div>
+
+        <!-- Summary -->
+        <section id="results-summary" aria-label="Download summary" class="rounded-2xl border border-blue-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-sm px-4 py-3 sm:px-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M9 14.5l2 2 4-4"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div id="res-count" class="text-lg sm:text-xl font-extrabold text-[#0B1736] dark:text-white leading-tight">&nbsp;</div>
+              <p class="text-[13px] text-slate-500 dark:text-slate-400 leading-snug"><span id="res-retention">Retained temporarily</span> &bull; <a href="/file-retention" class="text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Retention Policy</a></p>
+            </div>
+          </div>
+
+          <div class="hidden md:block w-px h-10 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></div>
+
+          <div id="res-status" role="status" aria-live="polite" class="flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 min-w-0">
+            <span id="res-status-icon" class="flex-shrink-0"></span>
+            <span id="res-status-text"></span>
+          </div>
+
+          <button id="btn-download-all" type="button" data-action="download-all" class="ml-auto w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-shrink-0">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span id="btn-download-all-label">Download All</span>
+          </button>
+        </section>
+
+        <!-- Failures / not converted (batches with partial success) -->
+        <div id="batch-failed-banner" class="hidden mt-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-left" role="status">
+          <p id="batch-failed-title" class="text-sm font-bold text-amber-900 dark:text-amber-200"></p>
+          <p class="mt-1 text-xs text-amber-800 dark:text-amber-300">The files marked Completed below can be downloaded. Go back to the converter to retry the others.</p>
+        </div>
+
+        <!-- File list -->
+        <section class="mt-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 p-2 sm:p-3" aria-label="Converted files">
+          <div class="res-cols res-head hidden md:grid px-3 pb-2 text-[13px] font-semibold text-slate-500 dark:text-slate-400" aria-hidden="true">
+            <div class="c-file">File</div><div class="c-details">Details</div><div class="c-status">Status</div><div class="c-actions text-right">Actions</div>
+          </div>
+          <ul id="res-list" class="space-y-2"></ul>
+        </section>
+
+        <p id="res-notice" role="status" aria-live="polite" class="hidden mt-2 text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+
+        <!-- Secondary actions -->
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2">
+            <button type="button" data-action="share" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+              <span id="btn-share-text">Share link</span>
+            </button>
+            <button id="btn-delete-all" type="button" data-action="delete-all" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
+              <span>Delete all</span>
+            </button>
+          </div>
+          <a href="/" class="inline-flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><span>Convert another file</span> &rarr;</a>
+        </div>
+      </div>
+
+      <!-- In-page confirmation dialog (replaces browser confirm()) -->
+      <div id="confirm-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div id="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc" tabindex="-1" class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 focus:outline-none">
+          <h2 id="confirm-title" class="text-base font-extrabold text-[#0B1736] dark:text-white"></h2>
+          <p id="confirm-desc" class="mt-1.5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+          <p id="confirm-error" role="alert" class="hidden mt-2 text-xs font-semibold text-rose-600 dark:text-rose-400"></p>
+          <div class="mt-4 flex justify-end gap-2">
+            <button id="confirm-cancel" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Cancel</button>
+            <button id="confirm-ok" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-500">Delete</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- "DOWNLOAD IN OTHER FORMATS" SECTION                                      -->
+  <!-- Background: Same as Homepage popular tools / how it works (slate-50)     -->
+  <!-- Tools: Genuine available converters on our website                        -->
+  <!-- ========================================================================= -->
+  <section class="bg-slate-50 dark:bg-slate-950 py-16 px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 dark:border-slate-800 flex-1">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- Section Header -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
+            Available Conversion Options
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Download in <span class="text-blue-600 dark:text-blue-500">other formats</span>
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
+            Need this document in a different format? Use our verified, high-fidelity conversion tools below.
+          </p>
+        </div>
+        <a href="/" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition flex-shrink-0 shadow-2xs">
+          <span>Explore All 20+ Tools</span> &rarr;
+        </a>
+      </div>
+
+      <!-- 3 Categorized Grid Groups -->
+      <div class="space-y-10">
+
+        <!-- 1. Convert to PDF -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Convert to PDF</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Word to PDF -->
+            <a href="/tools/word-to-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-word-to-pdf.png" alt="Word to PDF" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">Word to PDF</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert .docx to .pdf</div>
+                </div>
+              </div>
+            </a>
+            <!-- Excel to PDF -->
+            <a href="/tools/excel-to-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-excel-to-pdf.png" alt="Excel to PDF" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">Excel to PDF</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert .xlsx to .pdf</div>
+                </div>
+              </div>
+            </a>
+            <!-- PowerPoint to PDF -->
+            <a href="/tools/powerpoint-to-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-pptx-to-pdf.png" alt="PowerPoint to PDF" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">PowerPoint to PDF</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert .pptx to .pdf</div>
+                </div>
+              </div>
+            </a>
+            <!-- JPG to PDF -->
+            <a href="/tools/jpg-to-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-jpg-to-pdf.png" alt="JPG to PDF" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">JPG to PDF</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert images to .pdf</div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. Convert Documents -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Convert Documents</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- PDF to Word -->
+            <a href="/tools/pdf-to-word" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-pdf-to-word.png" alt="PDF to Word" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">PDF to Word</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert .pdf to editable .docx</div>
+                </div>
+              </div>
+            </a>
+            <!-- PDF to PowerPoint -->
+            <a href="/tools/pdf-to-powerpoint" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-pdf-to-pptx.png" alt="PDF to PowerPoint" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">PDF to PowerPoint</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Convert .pdf to .pptx slides</div>
+                </div>
+              </div>
+            </a>
+            <!-- PDF to Excel -->
+            <a href="/tools/pdf-to-excel" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <img src="/assets/tool-pdf-to-excel.png" alt="PDF to Excel" class="w-11 h-11 object-contain flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">PDF to Excel</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Extract tables to .xlsx</div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 3. PDF Intelligence -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">PDF Intelligence</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- AI Summarizer -->
+            <a href="/tools/ai-summarizer" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-xs">
+                  AI
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">AI Summarizer</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Extract executive briefings</div>
+                </div>
+              </div>
+            </a>
+            <!-- Scan PDF -->
+            <a href="/tools/scan-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-xs">
+                  OCR
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">Scan PDF (OCR)</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Make scans searchable</div>
+                </div>
+              </div>
+            </a>
+            <!-- Translate PDF -->
+            <a href="/tools/translate-pdf" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-0.5 transition-all group block">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-xs">
+                  文A
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white truncate">Translate PDF</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Translate into 20+ languages</div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 py-8 px-4 text-center text-xs text-slate-500 dark:text-slate-400 reveal-on-scroll">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>&copy; 2026 Fileora &bull; https://pdfconverterfree.in &bull; All rights reserved.</p>
+      <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-medium">
+        <a href="/about" class="hover:text-blue-600 dark:hover:text-blue-400 transition">About</a>
+        <a href="/faq" class="hover:text-blue-600 dark:hover:text-blue-400 transition">FAQ</a>
+        <a href="/file-retention" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Retention</a>
+        <a href="/contact" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Contact</a>
+        <a href="/privacy-policy" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Privacy Policy</a>
+        <a href="/terms" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Terms</a>
+        <a href="/cookie-policy" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Cookie Policy</a>
+        <a href="/disclaimer" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Disclaimer</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Client Download Logic -->
+  <script src="/assets/filename-utils.js"></script>
+  <script>
+    (function() {
+      'use strict';
+      // Theme toggling (disabled while dark mode is temporarily disabled)
+      const themeBtn = document.getElementById('theme-toggle');
+      if (themeBtn && typeof DARK_MODE_ENABLED !== 'undefined' && DARK_MODE_ENABLED) {
+        themeBtn.addEventListener('click', () => {
+          const isDark = document.documentElement.classList.toggle('dark');
+          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+      }
+
+      // ?id=...&token=... (one file) or ?jobs=id1:token1,id2:token2,... (several)
+      const params = new URLSearchParams(window.location.search);
+      const singleJobId = params.get('id') || '';
+      const singleToken = params.get('token') || '';
+      const jobsParam = params.get('jobs') || '';
+
+      const $ = (id) => document.getElementById(id);
+      const stateLoading = $('state-loading'), stateError = $('state-error'), stateDeleted = $('state-deleted'), stateSuccess = $('state-success');
+      const listEl = $('res-list');
+      const FU = window.FilenameUtils;
+
+      let jobsList = [];
+      if (jobsParam) {
+        jobsParam.split(',').forEach(pair => {
+          const trimmed = pair.trim();
+          if (!trimmed) return;
+          let decoded = trimmed;
+          try { decoded = decodeURIComponent(trimmed); } catch (e) {}
+          const colonIdx = decoded.indexOf(':');
+          if (colonIdx > 0) jobsList.push({ jobId: decoded.slice(0, colonIdx), token: decoded.slice(colonIdx + 1) });
+        });
+      } else if (singleJobId && singleToken) {
+        jobsList.push({ jobId: singleJobId, token: singleToken });
+      }
+
+      function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function formatSize(bytes) {
+        if (!bytes || bytes <= 0) return '0 KB';
+        if (bytes < 1000) return bytes + ' B';
+        if (bytes < 1000 * 1000) return (bytes / 1000).toFixed(1) + ' KB';
+        return (bytes / (1000 * 1000)).toFixed(1) + ' MB';
+      }
+
+      function getFileDetails(filename) {
+        const ext = (String(filename).split('.').pop() || '').toLowerCase();
+        switch (ext) {
+          case 'docx': case 'doc': return { letter: 'W', name: 'Word Document', bg: 'bg-blue-600' };
+          case 'pdf': return { letter: 'PDF', name: 'PDF Document', bg: 'bg-red-600' };
+          case 'xlsx': case 'xls': case 'csv': case 'xlsm': return { letter: 'X', name: 'Excel Spreadsheet', bg: 'bg-emerald-600' };
+          case 'pptx': case 'ppt': return { letter: 'P', name: 'PowerPoint Presentation', bg: 'bg-orange-600' };
+          case 'zip': return { letter: 'ZIP', name: 'Compressed Archive', bg: 'bg-slate-700' };
+          case 'jpg': case 'jpeg': case 'png': case 'webp': case 'gif': return { letter: 'IMG', name: 'Image File', bg: 'bg-purple-600' };
+          default: return { letter: ext.toUpperCase().slice(0, 3) || 'DOC', name: ext ? `${ext.toUpperCase()} File` : 'File', bg: 'bg-blue-600' };
+        }
+      }
+
+      function showError(title, message) {
+        stateLoading && stateLoading.classList.add('hidden');
+        stateSuccess && stateSuccess.classList.add('hidden');
+        stateDeleted && stateDeleted.classList.add('hidden');
+        if (stateError) {
+          stateError.classList.remove('hidden');
+          $('error-title').textContent = title;
+          $('error-desc').textContent = message;
+        }
+      }
+
+      if (jobsList.length === 0) {
+        showError('Invalid Download Link', 'The download link is missing required authorization parameters.');
+        return;
+      }
+
+      function triggerFileDownload(url, filename) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        try { a.click(); } catch (e) { window.location.href = url; }
+        setTimeout(() => { if (a.parentNode) a.parentNode.removeChild(a); }, 2000);
+      }
+
+      // ---------------------------------------------------------------- state
+      // status: 'ready' | 'processing' | 'failed' | 'expired'
+      let items = [];
+      let downloadAllBusy = false;
+      let uid = 0;
+      const makeItem = (o) => Object.assign({ key: 'r' + (++uid), status: 'ready', customName: '', editing: false, editError: '', saving: false, downloading: false, deleting: false }, o);
+      const nameOf = (it) => it.customName || it.convertedFilename || it.name || 'converted_file';
+      const jobUrl = (it) => `/api/jobs/${encodeURIComponent(it.jobId)}/download?token=${encodeURIComponent(it.token)}` + (it.customName ? `&name=${encodeURIComponent(it.customName)}` : '');
+      const byKey = (k) => items.find(i => i.key === k);
+
+      // Written by the converter page: batch size and which files failed
+      let batchMeta = null;
+      try {
+        const raw = sessionStorage.getItem('converter_batch_jobs');
+        if (raw) {
+          const m = JSON.parse(raw);
+          if (m && Array.isArray(m.items) && m.items.length === jobsList.length && Number(m.total) >= m.items.length) batchMeta = m;
+        }
+      } catch (e) {}
+      const failedInBatch = (batchMeta && Array.isArray(batchMeta.failed)) ? batchMeta.failed : [];
+      const notConverted = batchMeta ? Math.max(0, Number(batchMeta.total) - batchMeta.items.length) : 0;
+
+      // Rows start as "processing" (we are verifying each job with the server) and become ready/expired
+      items = jobsList.map(j => makeItem({ jobId: j.jobId, token: j.token, status: 'processing', convertedFilename: '', fileSize: 0 }));
+      if (batchMeta) {
+        batchMeta.items.forEach((c, i) => {
+          const it = items[i];
+          if (it && (c.jobId === it.jobId || !c.jobId)) { it.convertedFilename = c.filename || c.convertedFilename || ''; }
+        });
+      }
+      failedInBatch.forEach(f => items.push(makeItem({ jobId: '', token: '', status: 'failed', convertedFilename: f.name || 'file', error: f.error || 'Could not be converted' })));
+
+      // ---------------------------------------------------------------- rendering
+      const ICON_CHECK = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const ICON_X = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8.5 8.5l7 7m0-7l-7 7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+      const ICON_WARN = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 7v6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1.2" fill="#fff"/></svg>';
+      const ICON_SPIN = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/><path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+      const ICON_DL = '<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>';
+      const ICON_TRASH = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+      const ICON_PEN = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>';
+
+      const FOCUS = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1';
+
+      function statusHtml(it) {
+        if (it.status === 'ready') return `<span class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">${ICON_CHECK}<span>Completed</span></span>`;
+        if (it.status === 'processing') return `<span class="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-sm">${ICON_SPIN}<span>Preparing…</span></span>`;
+        if (it.status === 'expired') return `<span class="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold text-sm">${ICON_WARN}<span>Unavailable</span></span>`;
+        return `<span class="inline-flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-semibold text-sm">${ICON_X}<span>Failed</span></span>`;
+      }
+
+      function nameSlotHtml(it) {
+        const name = nameOf(it);
+        if (!it.editing) {
+          const canRename = it.status === 'ready';
+          return `<div class="flex items-center gap-1 min-w-0">
+              <span class="res-name font-bold text-[15px] text-[#0B1736] dark:text-white truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+              ${canRename ? `<button type="button" data-action="rename" aria-label="Rename ${escapeHtml(name)}" title="Rename" class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 flex-shrink-0 ${FOCUS}">${ICON_PEN}</button>` : ''}
+            </div>`;
+        }
+        const parts = FU.splitName(name);
+        const err = it.editError;
+        return `<form class="res-edit flex flex-wrap items-center gap-2" data-key="${it.key}" novalidate>
+            <label for="rn-${it.key}" class="sr-only">New file name</label>
+            <div class="flex items-stretch min-w-0 flex-1 basis-40">
+              <input id="rn-${it.key}" name="newname" type="text" value="${escapeHtml(parts.base)}" maxlength="${FU.MAX_BASE_LENGTH + 40}" autocomplete="off" spellcheck="false" ${it.saving ? 'disabled' : ''}
+                aria-invalid="${err ? 'true' : 'false'}" ${err ? `aria-describedby="rn-err-${it.key}"` : ''}
+                class="min-w-0 flex-1 px-2.5 py-1.5 text-sm font-semibold text-[#0B1736] dark:text-white bg-white dark:bg-slate-800 border ${err ? 'border-rose-400' : 'border-slate-300 dark:border-slate-600'} ${parts.ext ? 'rounded-l-lg border-r-0' : 'rounded-lg'} focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500">
+              ${parts.ext ? `<span class="px-2 flex items-center text-sm font-semibold text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 border ${err ? 'border-rose-400' : 'border-slate-300 dark:border-slate-600'} rounded-r-lg" aria-hidden="true">${escapeHtml(parts.ext)}</span>` : ''}
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button type="submit" ${it.saving ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold ${FOCUS}">Save</button>
+              <button type="button" data-action="rename-cancel" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 ${FOCUS}">Cancel</button>
+            </div>
+            ${err ? `<p id="rn-err-${it.key}" role="alert" class="w-full text-[12px] font-semibold text-rose-600 dark:text-rose-400">${escapeHtml(err)}</p>` : ''}
+          </form>`;
+      }
+
+      function actionsHtml(it) {
+        if (it.status === 'ready') {
+          return `<button type="button" data-action="download" ${it.downloading ? 'disabled' : ''} class="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm inline-flex items-center justify-center gap-2 transition flex-1 md:flex-initial ${FOCUS}" aria-label="Download ${escapeHtml(nameOf(it))}">${ICON_DL}<span>Download</span></button>
+            <button type="button" data-action="delete" ${it.deleting ? 'disabled' : ''} class="p-2 rounded-lg border border-rose-200 dark:border-rose-900/60 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-60 disabled:cursor-not-allowed transition ${FOCUS}" aria-label="Delete ${escapeHtml(nameOf(it))}" title="Delete">${ICON_TRASH}</button>`;
+        }
+        if (it.status === 'failed' || it.status === 'expired') {
+          return `<a href="/" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 inline-flex items-center justify-center flex-1 md:flex-initial ${FOCUS}">Convert again</a>`;
+        }
+        return '';
+      }
+
+      function detailsHtml(it) {
+        if (it.status === 'failed') return `<span class="text-rose-600/90 dark:text-rose-300 truncate block" title="${escapeHtml(it.error)}">${escapeHtml(it.error)}</span>`;
+        if (it.status === 'expired') return `<span class="truncate block" title="${escapeHtml(it.error || '')}">${escapeHtml(it.error || 'No longer available')}</span>`;
+        if (it.status === 'processing') return '<span class="text-slate-400">Checking file…</span>';
+        const d = getFileDetails(nameOf(it));
+        return `${escapeHtml(d.name)} <span aria-hidden="true">•</span> ${escapeHtml(formatSize(it.fileSize))}`;
+      }
+
+      function rowHtml(it) {
+        const d = getFileDetails(nameOf(it));
+        const bg = it.status === 'failed' ? 'bg-slate-400' : d.bg;
+        return `<li class="res-row res-cols rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 hover:border-blue-200 dark:hover:border-slate-700 transition-colors" data-key="${it.key}">
+          <div class="c-file flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl ${bg} text-white font-black ${d.letter.length > 2 ? 'text-[11px]' : 'text-lg'} flex items-center justify-center flex-shrink-0" aria-hidden="true">${escapeHtml(d.letter)}</div>
+            <div class="min-w-0 flex-1 name-slot">${nameSlotHtml(it)}</div>
+          </div>
+          <div class="c-details text-[13px] text-slate-500 dark:text-slate-400 min-w-0">${detailsHtml(it)}</div>
+          <div class="c-status">${statusHtml(it)}</div>
+          <div class="c-actions flex items-center justify-end gap-2">${actionsHtml(it)}</div>
+        </li>`;
+      }
+
+      function retentionText() {
+        const ready = items.filter(i => i.status === 'ready' && i.createdAt && i.expiresAt);
+        if (!ready.length) return 'Retained temporarily';
+        const mins = Math.max(1, Math.round(Math.min(...ready.map(i => (i.expiresAt - i.createdAt) / 60000))));
+        if (mins % 60 === 0) { const h = mins / 60; return `Retained for ${h} ${h === 1 ? 'hour' : 'hours'}`; }
+        return `Retained for ${mins} minutes`;
+      }
+
+      function renderSummary() {
+        const total = items.length;
+        const ready = items.filter(i => i.status === 'ready').length;
+        const processing = items.filter(i => i.status === 'processing').length;
+        const failed = items.filter(i => i.status === 'failed').length;
+        const expired = items.filter(i => i.status === 'expired').length;
+        const attempted = batchMeta ? Number(batchMeta.total) : total;
+
+        $('res-count').textContent = processing && !ready ? 'Preparing files…' : `${ready} ${ready === 1 ? 'File' : 'Files'} Ready`;
+        $('res-retention').textContent = retentionText();
+
+        const st = $('res-status'), icon = $('res-status-icon'), text = $('res-status-text');
+        let cls = 'text-emerald-600 dark:text-emerald-400', ic = ICON_CHECK, msg;
+        if (processing) { cls = 'text-blue-600 dark:text-blue-400'; ic = ICON_SPIN; msg = 'Preparing your files…'; }
+        else if (!ready) { cls = 'text-rose-600 dark:text-rose-400'; ic = ICON_X; msg = failed ? 'No files could be converted' : 'No files available'; }
+        else if (failed || expired || notConverted) { cls = 'text-amber-600 dark:text-amber-400'; ic = ICON_WARN; msg = `${ready} of ${attempted} ${attempted === 1 ? 'file' : 'files'} available`; }
+        else msg = total === 1 ? 'Conversion Completed' : 'All Conversions Completed';
+        st.className = `flex items-center gap-2 text-sm font-bold min-w-0 ${cls}`;
+        icon.innerHTML = ic; text.textContent = msg;
+
+        const btn = $('btn-download-all'), lbl = $('btn-download-all-label');
+        lbl.textContent = ready === 1 ? 'Download File' : `Download All (${ready} Files)`;
+        btn.disabled = ready === 0 || downloadAllBusy;
+        $('btn-delete-all').classList.toggle('hidden', ready < 2);
+
+        const title = $('download-title');
+        title.innerHTML = ready === 1 && total === 1 ? 'Your File is <span class="text-blue-600 dark:text-blue-500">Ready!</span>' : 'Your Files are <span class="text-blue-600 dark:text-blue-500">Ready!</span>';
+        $('download-subtitle').textContent = processing ? 'Checking your converted files…'
+          : (failed || expired || notConverted) && ready ? `${ready} of ${attempted} files were converted and are ready to download.`
+          : ready === 1 ? 'Your file has been successfully converted and is ready to download.'
+          : ready ? `All ${ready} files have been successfully converted and are ready to download.` : '';
+
+        const banner = $('batch-failed-banner');
+        const bad = failed + (notConverted > failed ? notConverted - failed : 0);
+        if (bad > 0 || expired > 0) {
+          banner.classList.remove('hidden');
+          $('batch-failed-title').textContent = bad > 0
+            ? `${attempted - bad} of ${attempted} files converted · ${bad} ${bad === 1 ? 'file was' : 'files were'} not converted`
+            : `${expired} ${expired === 1 ? 'file is' : 'files are'} no longer available`;
+        } else banner.classList.add('hidden');
+      }
+
+      function renderAll() {
+        listEl.innerHTML = items.map(rowHtml).join('');
+        renderSummary();
+      }
+
+      function replaceRow(it) {
+        const old = listEl.querySelector(`[data-key="${it.key}"]`);
+        if (!old) return renderAll();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = rowHtml(it).trim();
+        old.replaceWith(tmp.firstElementChild);
+        renderSummary();
+      }
+
+      function focusRowControl(key, action) {
+        const el = listEl.querySelector(`[data-key="${key}"] [data-action="${action}"]`) || listEl.querySelector(`[data-key="${key}"] button, [data-key="${key}"] a`);
+        if (el) el.focus();
+      }
+
+      function say(msg) {
+        const n = $('res-notice');
+        if (!msg) { n.classList.add('hidden'); n.textContent = ''; return; }
+        n.textContent = msg; n.classList.remove('hidden');
+      }
+
+      function showSuccess() {
+        stateLoading && stateLoading.classList.add('hidden');
+        if (stateSuccess) {
+          stateSuccess.classList.remove('hidden');
+          if (typeof window.refreshScrollReveal === 'function') window.refreshScrollReveal(stateSuccess);
+        }
+      }
+
+      function showDeleted() {
+        stateSuccess && stateSuccess.classList.add('hidden');
+        stateDeleted && stateDeleted.classList.remove('hidden');
+      }
+
+      // ---------------------------------------------------------------- loading real job data
+      renderAll();
+      showSuccess();
+
+      let autoDownloaded = false;
+      const metaFetches = jobsList.map((j, idx) =>
+        fetch(`/api/jobs/${encodeURIComponent(j.jobId)}?token=${encodeURIComponent(j.token)}`)
+          .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            const it = items[idx];
+            if (!res.ok) {
+              it.status = 'expired';
+              it.error = res.status === 410 ? 'Expired and automatically deleted'
+                : res.status === 403 ? 'Access denied (invalid download token)'
+                : res.status === 404 ? 'Not found or already deleted'
+                : (data.message || 'Could not retrieve file information');
+              it.convertedFilename = it.convertedFilename || 'converted_file';
+            } else {
+              it.status = 'ready';
+              it.convertedFilename = data.convertedFilename || it.convertedFilename || 'converted_document';
+              it.fileSize = data.fileSize || 0;
+              it.createdAt = data.createdAt; it.expiresAt = data.expiresAt;
+            }
+            replaceRow(it);
+          })
+          .catch(() => {
+            const it = items[idx];
+            it.status = 'expired'; it.error = 'Network error while loading this file'; it.convertedFilename = it.convertedFilename || 'converted_file';
+            replaceRow(it);
+          })
+      );
+      Promise.all(metaFetches).then(() => {
+        if (!items.some(i => i.status === 'ready') && !items.some(i => i.status === 'failed')) {
+          showError(items.length === 1 ? 'Unable to Download File' : 'Unable to Retrieve Files', items[0] && items[0].error ? items[0].error : 'The converted files could not be found or have expired.');
+          return;
+        }
+        // A single converted file starts downloading by itself (existing behaviour)
+        if (jobsList.length === 1 && items[0].status === 'ready' && !autoDownloaded) {
+          autoDownloaded = true;
+          setTimeout(() => { const it = items[0]; if (it && it.status === 'ready') triggerFileDownload(jobUrl(it), nameOf(it)); }, 800);
+        }
+      });
+
+      // ---------------------------------------------------------------- rename
+      function startRename(it) {
+        items.forEach(o => { if (o.editing && o !== it) { o.editing = false; o.editError = ''; replaceRow(o); } });
+        it.editing = true; it.editError = '';
+        replaceRow(it);
+        const input = $('rn-' + it.key);
+        if (input) { input.focus(); input.select(); }
+      }
+
+      function cancelRename(it) {
+        if (it.saving) return;
+        it.editing = false; it.editError = '';
+        replaceRow(it);
+        focusRowControl(it.key, 'rename');
+      }
+
+      function saveRename(it, form) {
+        if (it.saving) return;
+        const input = form.elements.newname;
+        const current = nameOf(it);
+        const parts = FU.splitName(current);
+        const res = FU.validateBase(input.value, parts.ext);
+        if (!res.ok) {
+          it.editError = res.error;
+          // keep what the user typed
+          const typed = input.value;
+          replaceRow(it);
+          const ni = $('rn-' + it.key);
+          if (ni) { ni.value = typed; ni.focus(); }
+          return;
+        }
+        it.saving = true;
+        // Renaming only changes the name offered for download; the stored file is not touched
+        if (res.name !== (it.convertedFilename || '')) it.customName = res.name; else it.customName = '';
+        it.editing = false; it.editError = ''; it.saving = false;
+        replaceRow(it);
+        focusRowControl(it.key, 'rename');
+        say(`Renamed to ${res.name}. The new name is used when you download.`);
+      }
+
+      // ---------------------------------------------------------------- confirmation dialog
+      const overlay = $('confirm-overlay'), dialog = $('confirm-dialog'), okBtn = $('confirm-ok'), cancelBtn = $('confirm-cancel'), errP = $('confirm-error');
+      let confirmState = null;
+      function openConfirm(opts) {
+        confirmState = { opener: document.activeElement, busy: false, run: opts.run };
+        $('confirm-title').textContent = opts.title;
+        $('confirm-desc').textContent = opts.desc;
+        okBtn.textContent = opts.okLabel || 'Delete';
+        errP.classList.add('hidden'); errP.textContent = '';
+        okBtn.disabled = false; cancelBtn.disabled = false;
+        overlay.classList.remove('hidden');
+        cancelBtn.focus();
+      }
+      function closeConfirm(restoreFocus) {
+        if (!confirmState) return;
+        const opener = confirmState.opener;
+        confirmState = null;
+        overlay.classList.add('hidden');
+        if (restoreFocus !== false && opener && document.contains(opener)) opener.focus();
+      }
+      okBtn.addEventListener('click', async () => {
+        if (!confirmState || confirmState.busy) return;
+        confirmState.busy = true; okBtn.disabled = true; cancelBtn.disabled = true;
+        okBtn.textContent = 'Deleting…';
+        let result;
+        try { result = await confirmState.run(); } catch (e) { result = { ok: false, error: 'Network error. Please try again.' }; }
+        if (!confirmState) return;
+        if (result && result.ok) { closeConfirm(false); if (result.after) result.after(); }
+        else {
+          confirmState.busy = false; okBtn.disabled = false; cancelBtn.disabled = false; okBtn.textContent = 'Try again';
+          errP.textContent = (result && result.error) || 'Could not delete the file.'; errP.classList.remove('hidden');
+        }
+      });
+      cancelBtn.addEventListener('click', () => { if (confirmState && !confirmState.busy) closeConfirm(); });
+      overlay.addEventListener('mousedown', (e) => { if (e.target === overlay && confirmState && !confirmState.busy) closeConfirm(); });
+      document.addEventListener('keydown', (e) => {
+        if (!confirmState) return;
+        if (e.key === 'Escape' && !confirmState.busy) { e.preventDefault(); closeConfirm(); }
+        if (e.key === 'Tab') { // keep focus inside the dialog
+          const f = [cancelBtn, okBtn].filter(b => !b.disabled);
+          if (!f.length) { e.preventDefault(); return; }
+          const i = f.indexOf(document.activeElement);
+          e.preventDefault();
+          f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
+        }
+      });
+
+      async function deleteJob(it) {
+        const res = await fetch(`/api/jobs/${encodeURIComponent(it.jobId)}?token=${encodeURIComponent(it.token)}`, { method: 'DELETE' });
+        if (res.ok) return { ok: true };
+        const j = await res.json().catch(() => ({}));
+        return { ok: false, error: j.message || 'Could not delete the file.' };
+      }
+
+      function removeItems(keys, focusKey) {
+        const idx = items.findIndex(i => keys.includes(i.key));
+        items = items.filter(i => !keys.includes(i.key));
+        if (!items.some(i => i.status === 'ready') && !items.some(i => i.status === 'failed')) return showDeleted();
+        renderAll();
+        const next = items[Math.min(idx < 0 ? 0 : idx, items.length - 1)];
+        if (next) focusRowControl(next.key, 'download');
+      }
+
+      // ---------------------------------------------------------------- downloads
+      function downloadOne(it) {
+        if (it.downloading || it.status !== 'ready') return;
+        it.downloading = true; replaceRow(it); focusRowControl(it.key, 'download');
+        triggerFileDownload(jobUrl(it), nameOf(it));
+        setTimeout(() => { it.downloading = false; if (items.includes(it)) { const hadFocus = listEl.contains(document.activeElement); replaceRow(it); if (hadFocus) focusRowControl(it.key, 'download'); } }, 1500);
+      }
+
+      function downloadAll() {
+        if (downloadAllBusy) return;
+        const eligible = items.filter(i => i.status === 'ready');
+        if (!eligible.length) return;
+        downloadAllBusy = true; renderSummary();
+        eligible.forEach((it, n) => {
+          setTimeout(() => {
+            if (items.includes(it) && it.status === 'ready') triggerFileDownload(jobUrl(it), nameOf(it));
+            if (n === eligible.length - 1) setTimeout(() => { downloadAllBusy = false; renderSummary(); }, 1000);
+          }, n * 400);
+        });
+      }
+
+      async function shareLink() {
+        const url = window.location.href;
+        if (navigator.share) { try { await navigator.share({ title: 'Download converted files', text: 'Here are your converted files from Fileora', url }); return; } catch (e) {} }
+        try {
+          await navigator.clipboard.writeText(url);
+          const s = $('btn-share-text'); s.textContent = 'Link copied';
+          setTimeout(() => { s.textContent = 'Share link'; }, 2000);
+        } catch (e) { say('Could not copy automatically. Copy the page address from your browser to share this link.'); }
+      }
+
+      // ---------------------------------------------------------------- events (delegated, bound once)
+      stateSuccess.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn || btn.disabled) return;
+        const row = btn.closest('[data-key]');
+        const it = row ? byKey(row.getAttribute('data-key')) : null;
+        switch (btn.getAttribute('data-action')) {
+          case 'download': if (it) downloadOne(it); break;
+          case 'download-all': downloadAll(); break;
+          case 'rename': if (it) startRename(it); break;
+          case 'rename-cancel': if (it) cancelRename(it); break;
+          case 'share': shareLink(); break;
+          case 'delete':
+            if (!it || it.deleting) break;
+            openConfirm({
+              title: `Delete ${nameOf(it)}?`,
+              desc: 'This permanently removes the converted file from temporary storage. It cannot be undone.',
+              run: async () => {
+                it.deleting = true;
+                const r = await deleteJob(it);
+                it.deleting = false;
+                return r.ok ? { ok: true, after: () => removeItems([it.key]) } : r;
+              }
+            });
+            break;
+          case 'delete-all': {
+            const targets = items.filter(i => i.status === 'ready');
+            if (!targets.length) break;
+            openConfirm({
+              title: `Delete all ${targets.length} files?`,
+              desc: 'This permanently removes every converted file on this page from temporary storage. It cannot be undone.',
+              run: async () => {
+                const results = await Promise.allSettled(targets.map(deleteJob));
+                const done = targets.filter((t, i) => results[i].status === 'fulfilled' && results[i].value.ok);
+                if (done.length === targets.length) return { ok: true, after: () => removeItems(done.map(d => d.key)) };
+                if (done.length) removeItems(done.map(d => d.key));
+                return { ok: false, error: `${targets.length - done.length} of ${targets.length} files could not be deleted. Try again.` };
+              }
+            });
+            break;
+          }
+        }
+      });
+
+      stateSuccess.addEventListener('submit', (e) => {
+        const form = e.target.closest('form.res-edit');
+        if (!form) return;
+        e.preventDefault();
+        const it = byKey(form.getAttribute('data-key'));
+        if (it) saveRename(it, form);
+      });
+
+      stateSuccess.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const form = e.target.closest && e.target.closest('form.res-edit');
+        if (!form) return;
+        e.preventDefault(); e.stopPropagation();
+        const it = byKey(form.getAttribute('data-key'));
+        if (it) cancelRename(it);
+      });
+    })();
+  </script>
+</body>
+</html>

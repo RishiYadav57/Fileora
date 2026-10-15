@@ -1,0 +1,318 @@
+[build]
+  command = "node scripts/build-public.js"
+  publish = "dist"
+
+[[redirects]]
+  from = "/about"
+  to = "/about.html"
+  status = 200
+
+[[redirects]]
+  from = "/faq"
+  to = "/faq.html"
+  status = 200
+
+[[redirects]]
+  from = "/contact"
+  to = "/contact.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy-policy"
+  to = "/privacy-policy.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy-policy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+
+[[redirects]]
+  from = "/cookie-policy"
+  to = "/cookie-policy.html"
+  status = 200
+
+[[redirects]]
+  from = "/disclaimer"
+  to = "/disclaimer.html"
+  status = 200
+
+[[redirects]]
+  from = "/file-retention"
+  to = "/file-retention.html"
+  status = 200
+
+[[redirects]]
+  from = "/security"
+  to = "/file-retention"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/troubleshooting"
+  to = "/troubleshooting.html"
+  status = 200
+
+[[redirects]]
+  from = "/download"
+  to = "/download.html"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
+  status = 200
+
+[[redirects]]
+  from = "/tools"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/tools/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/tool/:slug"
+  to = "/tools/:slug"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/pdf-to-ppt"
+  to = "/tools/pdf-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/ppt-to-pdf"
+  to = "/tools/powerpoint-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/ppt-to-word"
+  to = "/tools/powerpoint-to-word"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/word-to-ppt"
+  to = "/tools/word-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/rotate-pdf"
+  to = "/tools/organize-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/merge-pdf"
+  to = "/tools/merge-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/split-pdf"
+  to = "/tools/split-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/remove-pages"
+  to = "/tools/remove-pages"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/extract-pages"
+  to = "/tools/extract-pages"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/organize-pdf"
+  to = "/tools/organize-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/compress-pdf"
+  to = "/tools/compress-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/repair-pdf"
+  to = "/tools/repair-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/compress-image"
+  to = "/tools/compress-image"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/word-to-pdf"
+  to = "/tools/word-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/powerpoint-to-pdf"
+  to = "/tools/powerpoint-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/excel-to-pdf"
+  to = "/tools/excel-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/jpg-to-pdf"
+  to = "/tools/jpg-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-word"
+  to = "/tools/pdf-to-word"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/powerpoint-to-word"
+  to = "/tools/powerpoint-to-word"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/word-to-powerpoint"
+  to = "/tools/word-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-powerpoint"
+  to = "/tools/pdf-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-excel"
+  to = "/tools/pdf-to-excel"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-jpg"
+  to = "/tools/pdf-to-jpg"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/unlock-pdf"
+  to = "/tools/unlock-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/protect-pdf"
+  to = "/tools/protect-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/add-watermark"
+  to = "/tools/add-watermark"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/zip-files"
+  to = "/tools/zip-files"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/unzip-files"
+  to = "/tools/unzip-files"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/ai-summarizer"
+  to = "/tools/ai-summarizer"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/translate-pdf"
+  to = "/tools/translate-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/scan-pdf"
+  to = "/tools/scan-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/enhance-image"
+  to = "/tools/enhance-image"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-ppt"
+  to = "/tools/pdf-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/ppt-to-pdf"
+  to = "/tools/powerpoint-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/ppt-to-word"
+  to = "/tools/powerpoint-to-word"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/word-to-ppt"
+  to = "/tools/word-to-powerpoint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/rotate-pdf"
+  to = "/tools/organize-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

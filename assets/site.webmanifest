@@ -1,0 +1,13 @@
+{
+  "name": "Fileora",
+  "short_name": "Fileora",
+  "description": "Free online file conversion",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2463EB",
+  "icons": [
+    { "src": "/assets/fileora-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/fileora-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

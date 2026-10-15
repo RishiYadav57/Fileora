@@ -1,0 +1,34 @@
+# Allow-list: nothing is committed unless it is listed below.
+*
+!.gitignore
+!.dockerignore
+!.env.example
+!/dockerfile.txt
+!/netlify.toml
+!/_redirects
+!/package.json
+!/package-lock.json
+!/requirements.txt
+!/robots.txt
+!/sitemap.xml
+!/*.html
+!/server.js
+!/security.js
+!/storage.js
+!/mailer.js
+!/jobgate.js
+!/converter-engine.js
+!/seo-data.js
+!/tools_converter.py
+!/assets/
+!/assets/**
+!/tessdata/
+!/tessdata/*.traineddata
+!/scripts/
+!/scripts/build-public.js
+# never, even inside allowed folders
+.env
+*.pdf
+*.log
+*.sqlite
+node_modules/
