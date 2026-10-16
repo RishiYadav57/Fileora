@@ -5,7 +5,7 @@
  *  - GET /health only: no conversion, no queue slot, no upload, nothing expensive is initialised on the server.
  *  - Never blocks rendering or interaction: runs after load, ignores every failure.
  *  - At most one request per page view, none if one was sent in the last 4 minutes (any page, any tab), and at most
- *    three follow-up checks (10 s apart) while the server is still starting. No endless polling.
+ *    eight follow-up checks (10 s apart) while the server is still starting. No endless polling.
  *  - Exposes window.FileoraWarm.state ('idle' | 'warming' | 'starting' | 'ready' | 'failed') so the converter can tell the
  *    visitor honestly that the server is starting instead of looking frozen.
  * It cannot keep a free instance awake: a visitor who arrives after the service slept still waits for it to boot.
@@ -16,7 +16,7 @@
   var KEY = 'fileora_warm_at';
   var FRESH_MS = 4 * 60 * 1000;
   var REQUEST_TIMEOUT_MS = 8000;
-  var FOLLOW_UPS = 3;
+  var FOLLOW_UPS = 8;
   var FOLLOW_UP_GAP_MS = 10000;
 
   var W = window.FileoraWarm = { state: 'idle', backend: base, startedAt: 0, readyAt: 0, attempts: 0 };

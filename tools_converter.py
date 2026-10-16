@@ -21,22 +21,27 @@ import subprocess
 import shutil
 import tempfile
 import fitz
-import docx
-from docx.shared import Pt, RGBColor
-from docx.enum.section import WD_SECTION_START
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml import parse_xml, OxmlElement
-from docx.oxml.ns import qn
-from pptx import Presentation
-from pptx.dml.color import RGBColor as PptxRGBColor
-from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
-from pdf2docx import Converter
-from pdf2docx.text.Spans import Spans
-from pdf2docx.text.TextSpan import TextSpan
-from pdf2docx.text.Line import Line
-from pdf2docx.image.ImageSpan import ImageSpan
+# The PDF/image tools below never use the Word, PowerPoint or pdf2docx code. Importing those libraries costs ~0.7 s on every
+# process start (several seconds on a small server), so they are only loaded for the commands that need them.
+_LIGHT = __name__ == '__main__' and len(sys.argv) > 1 and sys.argv[1].lower() in {
+    'protect_pdf', 'unlock_pdf', 'compress_image', 'compress_pdf', 'repair_pdf', 'scan_pdf', 'enhance_image',
+    'docx2pdf', 'xlsx2pdf', 'pdf2xlsx'}
+if not _LIGHT: import docx
+if not _LIGHT: from docx.shared import Pt, RGBColor
+if not _LIGHT: from docx.enum.section import WD_SECTION_START
+if not _LIGHT: from docx.enum.text import WD_ALIGN_PARAGRAPH
+if not _LIGHT: from docx.enum.table import WD_TABLE_ALIGNMENT
+if not _LIGHT: from docx.oxml import parse_xml, OxmlElement
+if not _LIGHT: from docx.oxml.ns import qn
+if not _LIGHT: from pptx import Presentation
+if not _LIGHT: from pptx.dml.color import RGBColor as PptxRGBColor
+if not _LIGHT: from pptx.enum.shapes import MSO_SHAPE_TYPE
+if not _LIGHT: from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
+if not _LIGHT: from pdf2docx import Converter
+if not _LIGHT: from pdf2docx.text.Spans import Spans
+if not _LIGHT: from pdf2docx.text.TextSpan import TextSpan
+if not _LIGHT: from pdf2docx.text.Line import Line
+if not _LIGHT: from pdf2docx.image.ImageSpan import ImageSpan
 
 # Patch 1: Preserve whitespace spans in pdf2docx (fixes fused words across all documents)
 # and strip invisible/zero-width characters that artificially distort block bounding boxes
@@ -66,10 +71,10 @@ def _patch_pdf2docx_spans_restore(self, raws: list):
             self.append(span)
     return self
 
-Spans.restore = _patch_pdf2docx_spans_restore
+if not _LIGHT: Spans.restore = _patch_pdf2docx_spans_restore
 
 # Patch 2: Intelligent space injection that respects punctuation, hyphens, and typography
-_orig_pdf2docx_line_make_docx = Line.make_docx
+if not _LIGHT: _orig_pdf2docx_line_make_docx = Line.make_docx
 NO_SPACE_AFTER = {'-', '/', '@', ':', '(', '[', '{', '.', ',', '$', '#', '&', '_', '+', '=', '*'}
 NO_SPACE_BEFORE = {'-', '/', '@', ':', ')', ']', '}', '.', ',', '%', ';', '!', '?', ''}
 
@@ -99,7 +104,7 @@ def _patch_pdf2docx_line_make_docx(self, p):
     if self.line_break:
         p.add_run('\n')
 
-Line.make_docx = _patch_pdf2docx_line_make_docx
+if not _LIGHT: Line.make_docx = _patch_pdf2docx_line_make_docx
 
 def find_libreoffice():
     if sys.platform == 'win32':

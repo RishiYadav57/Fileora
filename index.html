@@ -3213,12 +3213,42 @@
       }
     }
 
+    // A free Render instance that has been idle boots in up to ~a minute. While it boots, poll the harmless GET /health
+    // (nothing is uploaded yet, the user's files stay in memory) so the real request is sent once, to a running server.
+    async function waitForBackendAwake(targetBase, execId) {
+      const started = Date.now();
+      while (Date.now() - started < 150000) {
+        if (execId !== currentExecutionId || activeAbortController?.signal?.aborted) {
+          throw new DOMException("Execution cancelled", "AbortError");
+        }
+        try {
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 10000);
+          const r = await fetch(`${targetBase}/health`, { cache: "no-store", signal: c.signal });
+          clearTimeout(t);
+          if (r.ok) {
+            if (window.FileoraWarm) window.FileoraWarm.state = "ready";
+            return true;
+          }
+        } catch (e) { /* still starting */ }
+        setProcessButton(true, "Starting the server… this can take up to a minute");
+        await new Promise(r => setTimeout(r, 3000));
+      }
+      return false;
+    }
+
     async function serverFetchOnce(endpoint, init, execId) {
       const urlsToTry = [BACKEND_URL]; // never silently switch to another server (a local page must not reach production, nor the reverse)
+      // A conversion is a POST that uploads the file and cannot be safely repeated many times: wait for the server first, then try at most twice.
+      const isPost = !!init && String(init.method || "GET").toUpperCase() === "POST";
+      const maxAttempts = isPost ? 2 : 5;
 
-      let lastErr = null;
       for (const targetBase of urlsToTry) {
-        for (let attempt = 0; attempt < 5; attempt++) {
+        if (!(window.FileoraWarm && window.FileoraWarm.state === "ready")) {
+          if (!(await waitForBackendAwake(targetBase, execId))) throw new Error(SERVER_DOWN_MSG);
+          setProcessButton(true, "Working...");
+        }
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
           if (execId !== currentExecutionId || activeAbortController?.signal?.aborted) {
             throw new DOMException("Execution cancelled", "AbortError");
           }
@@ -3240,12 +3270,11 @@
             if (execId !== currentExecutionId || activeAbortController?.signal?.aborted || e.name === "AbortError") {
               throw new DOMException("Execution cancelled", "AbortError");
             }
-            lastErr = e;
-            setProcessButton(true, attempt === 0 ? "Connecting to server..." : "Waking server (takes ~20s if asleep)...");
-            await new Promise(r => setTimeout(r, 4000));
-            if (execId !== currentExecutionId || activeAbortController?.signal?.aborted) {
-              throw new DOMException("Execution cancelled", "AbortError");
-            }
+            if (attempt === maxAttempts - 1) break;
+            // the connection failed: make sure the server is up again before sending the request one more time
+            if (window.FileoraWarm) window.FileoraWarm.state = "starting";
+            if (!(await waitForBackendAwake(targetBase, execId))) break;
+            setProcessButton(true, "Working...");
           }
         }
       }

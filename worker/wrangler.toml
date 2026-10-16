@@ -1,0 +1,15 @@
+# Optional: physical deletion of expired R2 files while the Render backend sleeps. Not deployed automatically.
+# Deploy once from this folder with:  npx wrangler deploy      (needs a Cloudflare login with Workers + R2 permissions)
+name = "fileora-r2-cleanup"
+main = "worker.mjs"
+compatibility_date = "2026-01-01"
+
+[triggers]
+crons = ["*/10 * * * *"]   # every 10 minutes (the Workers free plan allows cron triggers)
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "fileconverter-temp"
+
+[vars]
+MAX_AGE_MINUTES = "75"     # must stay above OUTPUT_RETENTION_MINUTES (60) on the backend

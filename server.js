@@ -6,7 +6,7 @@ const { promisify } = require('util');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { PDFDocument, StandardFonts, degrees, rgb } = require('pdf-lib');
+const { PDFDocument, StandardFonts, degrees, rgb, ParseSpeeds } = require('pdf-lib');
 const converterEngine = require('./converter-engine');
 const SEO_DATA = require('./seo-data.js');
 const { renderToolHtml } = require('./seo-render.js');
@@ -777,9 +777,19 @@ function getPythonCmd() {
 
 // A converter can "succeed" and still leave a file nobody can open. Check the result really is a document of its type
 // before it is offered for download; throwing here lets the route fall through to the next engine / a clear error.
+// Outputs that already passed the check (path + size + modification time): the same unchanged file is not parsed twice
+const verifiedOutputs = new Set();
 async function assertValidOutput(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  const size = fs.statSync(filePath).size;
+  const st = fs.statSync(filePath);
+  const size = st.size;
+  const verifiedKey = `${filePath}|${size}|${st.mtimeMs}`;
+  if (verifiedOutputs.has(verifiedKey)) return;
+  await assertValidOutputUncached(filePath, ext, size);
+  verifiedOutputs.add(verifiedKey);
+  if (verifiedOutputs.size > 500) verifiedOutputs.delete(verifiedOutputs.values().next().value);
+}
+async function assertValidOutputUncached(filePath, ext, size) {
   if (size === 0) throw new Error(`Output ${ext || 'file'} is empty`);
   const IMAGE_SIGS = { '.png': [0x89, 0x50, 0x4e, 0x47], '.jpg': [0xff, 0xd8, 0xff], '.jpeg': [0xff, 0xd8, 0xff], '.webp': null };
   if (ext in IMAGE_SIGS) {
@@ -803,7 +813,7 @@ async function assertValidOutput(filePath) {
     fs.closeSync(fd);
     if (!head.toString('latin1').startsWith('%PDF-') || !tail.toString('latin1').includes('%%EOF')) throw new Error('Output PDF is truncated');
     if (size < 40 * 1024 * 1024) {
-      const doc = await PDFDocument.load(fs.readFileSync(filePath), { ignoreEncryption: true, updateMetadata: false });
+      const doc = await PDFDocument.load(fs.readFileSync(filePath), { ignoreEncryption: true, updateMetadata: false, parseSpeed: ParseSpeeds.Fastest });
       if (doc.getPageCount() < 1) throw new Error('Output PDF has no pages');
     }
     return;

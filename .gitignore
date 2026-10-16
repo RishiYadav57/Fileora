@@ -27,6 +27,9 @@
 !/tessdata/*.traineddata
 !/scripts/
 !/scripts/build-public.js
+!/worker/
+!/worker/worker.mjs
+!/worker/wrangler.toml
 !/migrations/
 !/migrations/*.sql
 # never, even inside allowed folders
