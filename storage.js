@@ -53,11 +53,19 @@ function parsePositiveInt(val, fallback, min = 1, max = 10080) {
   return parsed;
 }
 
+// Hosting dashboards make it easy to paste a value with a stray space, newline or surrounding quotes. Remove exactly that
+// (outer whitespace, then one matching pair of quotes); characters inside the value are never altered.
+function cleanEnv(value) {
+  let v = String(value == null ? '' : value).trim();
+  if (v.length >= 2 && (v[0] === '"' || v[0] === "'") && v[v.length - 1] === v[0]) v = v.slice(1, -1);
+  return v;
+}
+
 // 1. Environment & Configurable Retention Targets
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '';
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'fileconverter-temp';
+const R2_ACCOUNT_ID = cleanEnv(process.env.R2_ACCOUNT_ID);
+const R2_ACCESS_KEY_ID = cleanEnv(process.env.R2_ACCESS_KEY_ID);
+const R2_SECRET_ACCESS_KEY = cleanEnv(process.env.R2_SECRET_ACCESS_KEY);
+const R2_BUCKET_NAME = cleanEnv(process.env.R2_BUCKET_NAME) || 'fileconverter-temp';
 const R2_ENDPOINT = process.env.R2_ENDPOINT || (R2_ACCOUNT_ID ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : '');
 const REQUIRE_CLOUD_STORAGE = process.env.REQUIRE_CLOUD_STORAGE === 'true';
 
@@ -86,9 +94,10 @@ const CLEANUP_BATCH_SIZE = parsePositiveInt(process.env.CLEANUP_BATCH_SIZE, 50, 
 const CLEANUP_ADMIN_SECRET = process.env.CLEANUP_ADMIN_SECRET || '';
 
 // Optional D1 configuration (NOT required; SQLite fallback is fully self-contained)
-const D1_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID || '';
-const D1_DATABASE_ID = process.env.D1_DATABASE_ID || '';
-const D1_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
+const CF_ACCOUNT_ID_VAR = cleanEnv(process.env.CLOUDFLARE_ACCOUNT_ID);
+const D1_ACCOUNT_ID = CF_ACCOUNT_ID_VAR || R2_ACCOUNT_ID;
+const D1_DATABASE_ID = cleanEnv(process.env.D1_DATABASE_ID);
+const D1_API_TOKEN = cleanEnv(process.env.CLOUDFLARE_API_TOKEN);
 
 const isPlaceholderSecret = !R2_SECRET_ACCESS_KEY || 
   R2_SECRET_ACCESS_KEY.toLowerCase().includes('placeholder') || 
@@ -102,7 +111,24 @@ const D1_API_BASE = (process.env.CLOUDFLARE_API_BASE || 'https://api.cloudflare.
 const REQUIRE_D1 = process.env.REQUIRE_D1 === 'true';
 // Some but not all D1 settings present: almost certainly a mistake. Refuse to guess (a silent local database would make
 // valid jobs look missing and their R2 objects look orphaned).
-const d1PartiallyConfigured = !isD1Configured && Boolean(process.env.CLOUDFLARE_API_TOKEN || process.env.D1_DATABASE_ID);
+const d1PartiallyConfigured = !isD1Configured && Boolean(D1_API_TOKEN || D1_DATABASE_ID);
+// Shape of the identifiers Cloudflare issues: a 32-character hexadecimal account ID and a UUID database ID. Checking them
+// before building the URL turns a confusing 403 into a clear message. Only sources, lengths and yes/no results are reported.
+const D1_ACCOUNT_ID_OK = /^[0-9a-f]{32}$/i.test(D1_ACCOUNT_ID);
+const D1_DATABASE_ID_OK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(D1_DATABASE_ID);
+const d1ConfigDiagnostics = {
+  accountIdSource: CF_ACCOUNT_ID_VAR ? 'CLOUDFLARE_ACCOUNT_ID' : (R2_ACCOUNT_ID ? 'R2_ACCOUNT_ID' : 'none'),
+  accountIdLength: D1_ACCOUNT_ID.length,
+  accountIdFormatOk: D1_ACCOUNT_ID_OK,
+  databaseIdFormatOk: D1_DATABASE_ID_OK
+};
+const d1ConfigError = isD1Configured && !(D1_ACCOUNT_ID_OK && D1_DATABASE_ID_OK)
+  ? 'Cloudflare D1 configuration is invalid: ' + [
+      D1_ACCOUNT_ID_OK ? null : `the account ID (from ${d1ConfigDiagnostics.accountIdSource}, length ${D1_ACCOUNT_ID.length}) is not 32 hexadecimal characters`,
+      D1_DATABASE_ID_OK ? null : 'D1_DATABASE_ID is not a UUID'
+    ].filter(Boolean).join('; ')
+  : '';
+if (d1ConfigError) console.error('[Storage] ' + d1ConfigError + '. No request will be sent to Cloudflare until this is fixed.');
 if (d1PartiallyConfigured) {
   console.error('[Storage] Cloudflare D1 is only partly configured (needs D1_DATABASE_ID, CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID or R2_ACCOUNT_ID). Job storage will refuse to run until this is fixed.');
 } else if (!isD1Configured && (process.env.R2_ACCOUNT_ID || process.env.R2_ACCESS_KEY_ID)) {
@@ -125,6 +151,14 @@ if (isR2Configured) {
   } catch (err) {
     console.error('[Storage] Error initializing S3Client:', err.message);
   }
+}
+
+// Safe one-line description of a failed R2 call: the operation, HTTP status and error code only. The SDK message, object
+// keys, URLs, credentials and response bodies are never included.
+function describeR2Error(op, err) {
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  const code = String((err && (err.Code || err.name)) || 'Error').replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 60) || 'Error';
+  return `R2 ${op} failed (HTTP ${Number.isFinite(Number(status)) && status ? Number(status) : 'n/a'}, code ${code})`;
 }
 
 // 2. MIME Type Lookup Table
@@ -226,6 +260,7 @@ async function executeD1Query(sql, params = []) {
 
   // Remote database. Failures are never turned into "no rows": the caller gets an error. Reads, deletes and schema
   // statements are idempotent and are retried a couple of times on transient errors; an INSERT is attempted once.
+  if (d1ConfigError) throw new Error(d1ConfigError);
   const url = `${D1_API_BASE}/client/v4/accounts/${D1_ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query`;
   const idempotent = /^\s*(SELECT|DELETE|CREATE)/i.test(sql);
   const attempts = idempotent ? 3 : 1;
@@ -360,8 +395,9 @@ async function saveConvertedJob({ filePathOrBuffer, originalFilename, convertedF
         }
       });
       await s3Client.send(putCmd);
+      console.log(`[Storage] R2 upload ok (${fileSize} bytes)`);
     } catch (r2Err) {
-      console.error('[Storage] R2 Upload Error:', r2Err.message);
+      console.error('[Storage] ' + describeR2Error('PutObject', r2Err));
       throw new Error(`Cloudflare R2 upload failed: ${r2Err.message}`);
     }
   } else if (REQUIRE_CLOUD_STORAGE) {
@@ -509,7 +545,7 @@ async function getJobDownloadStream(jobId, token) {
         job
       };
     } catch (r2Err) {
-      console.error('[Storage] R2 GetObject error:', r2Err.message);
+      console.error('[Storage] ' + describeR2Error('GetObject', r2Err));
       if (r2Err.name === 'NoSuchKey' || r2Err.$metadata?.httpStatusCode === 404) {
         return { error: 'FILE_MISSING', status: 404, message: 'File is no longer present in storage.' };
       }
@@ -545,7 +581,7 @@ async function deleteJob(jobId, token) {
     } catch (e) {
       if (e.name !== 'NoSuchKey' && e.$metadata?.httpStatusCode !== 404) {
         // keep the record: the cleanup sweep (or another attempt) can still find and retry this object
-        console.warn(`[Storage] Could not delete R2 object for ${job.job_id}:`, e.name || e.message);
+        console.warn('[Storage] ' + describeR2Error('DeleteObject', e));
         return { error: 'STORAGE_ERROR', status: 502, message: 'The file could not be deleted from storage right now. Please try again in a moment.' };
       }
     }
@@ -590,7 +626,7 @@ async function cleanExpiredJobs(batchSize = CLEANUP_BATCH_SIZE) {
           if (delErr.name !== 'NoSuchKey' && delErr.$metadata?.httpStatusCode !== 404) {
             storageGone = false;
             failures++;
-            console.warn(`[Storage Cleanup] Could not delete R2 object for ${row.job_id} (will retry):`, delErr.name || delErr.message);
+            console.warn('[Storage Cleanup] ' + describeR2Error('DeleteObject', delErr) + ' (will retry)');
           }
         }
       } else {
@@ -656,7 +692,7 @@ async function cleanOrphanedR2Objects(maxKeys = 1000, maxPages = 10) {
             await s3Client.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: c.key }));
             purgedOrphans++;
           } catch (delErr) {
-            console.warn('[Storage Cleanup] Orphan delete failed (will retry next sweep):', delErr.name || delErr.message);
+            console.warn('[Storage Cleanup] ' + describeR2Error('DeleteObject', delErr) + ' (will retry next sweep)');
           }
         }
       }
@@ -664,7 +700,7 @@ async function cleanOrphanedR2Objects(maxKeys = 1000, maxPages = 10) {
       token = s3Res.NextContinuationToken;
     }
   } catch (err) {
-    console.warn('[Storage Cleanup] Orphaned R2 sweep stopped early:', err.message);
+    console.warn('[Storage Cleanup] Orphaned R2 sweep stopped early:', err && err.$metadata ? describeR2Error('ListObjectsV2', err) : err.message);
   }
 
   return purgedOrphans;
@@ -784,6 +820,7 @@ async function verifyPersistence({ attempts = 3, delayMs = 1500 } = {}) {
   if (!isD1Configured) {
     return { ok: !d1PartiallyConfigured, reason: d1PartiallyConfigured ? 'D1 is only partly configured' : 'using the temporary local database (D1 not configured)', persistent: false };
   }
+  if (d1ConfigError) return { ok: false, reason: d1ConfigError };
   let last = '';
   for (let i = 0; i < attempts; i++) {
     try {
@@ -795,6 +832,20 @@ async function verifyPersistence({ attempts = 3, delayMs = 1500 } = {}) {
     }
   }
   return { ok: false, reason: `Cloudflare D1 is configured but not usable: ${last}` };
+}
+
+/**
+ * Read-only startup probe: lists at most one object in the configured bucket. Returns { ok, reason } and never throws; the
+ * reason holds only the operation, HTTP status and error code.
+ */
+async function verifyR2() {
+  if (!isR2Configured || !s3Client) return { ok: !REQUIRE_CLOUD_STORAGE, reason: 'R2 is not configured' };
+  try {
+    await s3Client.send(new ListObjectsV2Command({ Bucket: R2_BUCKET_NAME, MaxKeys: 1 }));
+    return { ok: true, reason: 'R2 ListObjectsV2 succeeded on the configured bucket' };
+  } catch (e) {
+    return { ok: false, reason: describeR2Error('ListObjectsV2', e) };
+  }
 }
 
 /**
@@ -840,6 +891,7 @@ async function testR2Connection() {
 module.exports = {
   isR2Configured,
   isD1Configured,
+  d1ConfigDiagnostics,
   R2_BUCKET_NAME,
   R2_ENDPOINT,
   OUTPUT_RETENTION_MINUTES,
@@ -860,6 +912,7 @@ module.exports = {
   runFullCleanup,
   testR2Connection,
   verifyPersistence,
+  verifyR2,
   sanitizeFilename,
   getMimeType,
   JOB_ID_REGEX,

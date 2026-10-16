@@ -2616,6 +2616,8 @@ app.listen(PORT, () => {
   console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);
   // Job records must live somewhere reliable. With REQUIRE_D1=true a missing or unusable D1 stops the process (a failed
   // deploy keeps the previous version running) instead of serving jobs that cannot be found later.
+  if (r2Storage.isD1Configured) { const c = r2Storage.d1ConfigDiagnostics; console.log(`[startup] d1 config: accountIdSource=${c.accountIdSource} accountIdLength=${c.accountIdLength} accountIdFormatOk=${c.accountIdFormatOk} databaseIdFormatOk=${c.databaseIdFormatOk}`); }
+  r2Storage.verifyR2().then((r) => console.log(`[startup] r2 check: ${r.ok ? 'ok' : 'PROBLEM'} - ${r.reason}`)).catch(() => {});
   r2Storage.verifyPersistence().then((st) => {
     console.log(`[startup] job database: ${st.ok ? 'ok' : 'PROBLEM'} - ${st.reason}`);
     if (!st.ok && process.env.REQUIRE_D1 === 'true') {
