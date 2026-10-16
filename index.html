@@ -275,7 +275,7 @@
           </button>
 
           <a href="/" onclick="event.preventDefault(); loadTool('pdf-to-powerpoint', true, true);" class="flex items-center gap-2.5 group">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-[118px] sm:w-[135px] object-fill flex-shrink-0 group-hover:opacity-90 transition-opacity">
           </a>
         </div>
 
@@ -312,7 +312,7 @@
       <div>
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-6 w-auto">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-6 w-[101px] object-fill">
           </div>
           <button onclick="toggleMobileDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white text-base font-bold">✕</button>
         </div>
@@ -354,7 +354,7 @@
       <!-- Main Hero Heading -->
       <div class="mb-3 sm:mb-4 reveal-on-scroll">
         <h1 id="hero-main-h1" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-          <span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 mb-0 sm:mb-0.5">All Your File Tools. One Simple Place.</span>
+          <span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span>
           <span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span>
         </h1>
         <p id="hero-main-sub" class="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed">
@@ -368,8 +368,8 @@
         <!-- Active Tool Status Bar & Mode Switch -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
           <div class="flex items-center gap-2 min-w-0 flex-1">
-            <div id="tool-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 p-1 flex items-center justify-center flex-shrink-0 shadow-xs border border-blue-100/60 dark:border-slate-700/60 overflow-hidden">
-              <img src="/assets/tool-pdf-to-pptx.png" alt="PDF to PPTX" class="w-full h-full object-contain drop-shadow-xs">
+            <div id="tool-icon-box" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 p-0.5 flex items-center justify-center flex-shrink-0 shadow-xs border border-blue-100/60 dark:border-slate-700/60 overflow-hidden">
+              <img src="/assets/tool-pdf-to-pptx.png" alt="PDF to PPTX" class="w-full h-full object-contain drop-shadow-xs scale-[1.4]">
             </div>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
@@ -646,7 +646,7 @@
         <!-- Brand & Mission Column (span 2 cols) -->
         <div class="lg:col-span-2 space-y-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-[118px] sm:w-[135px] object-fill flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
           </div>
           <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
             High-fidelity document conversion with guaranteed layout and font preservation. Fast, private, and automated document workflow toolkit.
@@ -1086,7 +1086,9 @@
 
       if (IMAGE_ICONS[canonical]) {
         const item = IMAGE_ICONS[canonical];
-        return `<img src="${item.src}" alt="${item.alt}" class="w-full h-full object-contain drop-shadow-xs">`;
+        // the 320px artwork has a wide transparent margin (about 25% per side); the Excel icons are already full-bleed
+        const pad = /tool-(pdf-to-pptx|pdf-to-word|word-to-pdf|pptx-to-pdf|jpg-to-pdf)\.png(\?.*)?$/.test(item.src) ? " scale-[1.4]" : "";
+        return `<img src="${item.src}" alt="${item.alt}" class="w-full h-full object-contain drop-shadow-xs${pad}">`;
       }
 
       switch (canonical) {
@@ -1466,7 +1468,7 @@
       const heroH1 = document.getElementById("hero-main-h1");
       const heroSub = document.getElementById("hero-main-sub");
       if (isHome) {
-        if (heroH1) heroH1.innerHTML = `<span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 mb-0 sm:mb-0.5">All Your File Tools. One Simple Place.</span><span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span>`;
+        if (heroH1) heroH1.innerHTML = `<span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span><span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span>`;
         if (heroSub) {
           heroSub.className = "text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed";
           heroSub.textContent = `Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.`;
