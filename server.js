@@ -224,7 +224,7 @@ function renderToolPage(toolId, req, res) {
           "@type": "WebApplication",
           "@id": `${tool.canonical}#app`,
           "url": tool.canonical,
-          "name": tool.title,
+          "name": tool.name || tool.h1,
           "description": tool.metaDescription,
           "applicationCategory": "BusinessApplication",
           "operatingSystem": "All modern browsers (Chrome, Edge, Firefox, Safari)",
@@ -247,12 +247,6 @@ function renderToolPage(toolId, req, res) {
             {
               "@type": "ListItem",
               "position": 2,
-              "name": tool.category,
-              "item": `https://pdfconverterfree.in/#category-${encodeURIComponent(tool.category.toLowerCase().replace(/\\s+/g, '-'))}`
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
               "name": tool.name || tool.h1,
               "item": tool.canonical
             }

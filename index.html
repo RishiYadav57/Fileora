@@ -41,12 +41,7 @@
         "@id": "https://pdfconverterfree.in/#website",
         "url": "https://pdfconverterfree.in/",
         "name": "Fileora",
-        "description": "High-fidelity document conversion engine with 1:1 layout preservation.",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://pdfconverterfree.in/{search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
+        "description": "Free online file conversion and PDF tools."
       },
       {
         "@type": "SoftwareApplication",
@@ -59,7 +54,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Browser-first and secure document processing suite offering PDF to Word, PowerPoint, Excel, JPG, and reverse conversions with automatic file deletion."
+        "description": "Free online file converter and PDF toolkit: convert PDF to Word, PowerPoint, Excel and JPG, convert Word, PowerPoint, Excel and JPG to PDF, and organize, compress and protect PDFs. Uploaded files are deleted automatically after a short time."
       }
     ]
   }
@@ -1520,12 +1515,7 @@
               "@id": "https://pdfconverterfree.in/#website",
               "url": "https://pdfconverterfree.in/",
               "name": "Fileora",
-              "description": "High-fidelity document conversion engine with 1:1 layout preservation.",
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://pdfconverterfree.in/{search_term_string}",
-                "query-input": "required name=search_term_string"
-              }
+              "description": "Free online file conversion and PDF tools."
             },
             {
               "@type": "SoftwareApplication",
@@ -1538,7 +1528,7 @@
                 "price": "0",
                 "priceCurrency": "USD"
               },
-              "description": "Browser-first and secure document processing suite offering PDF to Word, PowerPoint, Excel, JPG, and reverse conversions with automatic file deletion."
+              "description": "Free online file converter and PDF toolkit: convert PDF to Word, PowerPoint, Excel and JPG, convert Word, PowerPoint, Excel and JPG to PDF, and organize, compress and protect PDFs. Uploaded files are deleted automatically after a short time."
             }
           ]
         }, null, 2);
@@ -1550,7 +1540,7 @@
               "@type": "WebApplication",
               "@id": `${canonicalUrl}#app`,
               "url": canonicalUrl,
-              "name": seo.title,
+              "name": seo.name || seo.h1,
               "description": seo.metaDescription,
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "All modern browsers (Chrome, Edge, Firefox, Safari)",
@@ -1573,12 +1563,6 @@
                 {
                   "@type": "ListItem",
                   "position": 2,
-                  "name": seo.category,
-                  "item": `https://pdfconverterfree.in/#category-${encodeURIComponent(seo.category.toLowerCase().replace(/\\s+/g, '-'))}`
-                },
-                {
-                  "@type": "ListItem",
-                  "position": 3,
                   "name": seo.name || seo.h1,
                   "item": canonicalUrl
                 }
