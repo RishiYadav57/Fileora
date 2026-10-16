@@ -195,6 +195,20 @@ function getLocalDb() {
 }
 
 // 4. Database Query Executor (D1 if configured, otherwise built-in SQLite)
+// Turns Cloudflare's error payload into a short, safe string: " [code 10000: Authentication error]".
+// Only the numeric code and message text are used; anything resembling a secret (the configured token, long token-like strings,
+// Bearer values) is replaced, and nothing from request headers or environment values is ever included.
+function sanitizeCloudflareText(text) {
+  let t = String(text == null ? '' : text);
+  if (D1_API_TOKEN) t = t.split(D1_API_TOKEN).join('<redacted>');
+  return t.replace(/Bearer\s+\S+/gi, 'Bearer <redacted>').replace(/[A-Za-z0-9_\-]{32,}/g, '<redacted>').replace(/\s+/g, ' ').slice(0, 200);
+}
+function describeCloudflareErrors(body) {
+  const list = body && Array.isArray(body.errors) ? body.errors.slice(0, 3) : [];
+  if (!list.length) return '';
+  return ' [' + list.map((e) => `code ${Number.isFinite(Number(e && e.code)) ? Number(e.code) : '?'}: ${sanitizeCloudflareText(e && e.message)}`).join('; ') + ']';
+}
+
 async function executeD1Query(sql, params = []) {
   if (!isD1Configured) {
     if (REQUIRE_D1) throw new Error('A persistent job database is required (REQUIRE_D1=true) but Cloudflare D1 is not configured.');
@@ -225,14 +239,24 @@ async function executeD1Query(sql, params = []) {
         signal: AbortSignal.timeout(15000)
       });
       if (!res.ok) {
-        const err = new Error(`Cloudflare D1 query failed (HTTP ${res.status})`);
+        // Cloudflare explains a refusal in the body: { errors: [{ code, message }] }. Show only that, sanitised.
+        // Only the content type (media type, no parameters) and the sanitised code/message are reported, never the raw body.
+        const ctype = String(res.headers.get('content-type') || 'none').split(';')[0].trim().toLowerCase().replace(/[^a-z0-9.+\/\-]/g, '').slice(0, 60) || 'none';
+        let body = null;
+        let shape = 'unreadable body';
+        try {
+          const text = await res.text();
+          if (!text) shape = 'empty body';
+          else { try { body = JSON.parse(text); shape = Array.isArray(body && body.errors) && body.errors.length ? '' : 'JSON without errors[]'; } catch (e) { shape = 'non-JSON body'; } }
+        } catch (e) { /* body could not be read */ }
+        const detail = describeCloudflareErrors(body);
+        const err = new Error(`Cloudflare D1 query failed (HTTP ${res.status}, content-type ${ctype})${detail || ` [${shape}]`}`);
         err.transient = res.status >= 500 || res.status === 429;
         throw err;
       }
       const json = await res.json();
       if (!json || !json.success) {
-        const first = json && Array.isArray(json.errors) && json.errors[0] && json.errors[0].message;
-        throw new Error(`Cloudflare D1 reported an error${first ? ': ' + String(first).slice(0, 120) : ''}`);
+        throw new Error(`Cloudflare D1 reported an error${describeCloudflareErrors(json)}`);
       }
       const result = json.result && json.result[0];
       return (result && result.results) || [];
@@ -766,7 +790,7 @@ async function verifyPersistence({ attempts = 3, delayMs = 1500 } = {}) {
       await executeD1Query('SELECT COUNT(*) AS n FROM conversion_jobs');
       return { ok: true, reason: 'Cloudflare D1 reachable and the conversion_jobs table exists', persistent: true };
     } catch (e) {
-      last = String(e && e.message || e).slice(0, 160);
+      last = String(e && e.message || e).slice(0, 320);
       if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
     }
   }
