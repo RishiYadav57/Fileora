@@ -19,6 +19,7 @@
 !/jobgate.js
 !/converter-engine.js
 !/seo-data.js
+!/seo-render.js
 !/tools_converter.py
 !/assets/
 !/assets/**

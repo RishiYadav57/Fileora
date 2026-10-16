@@ -2040,7 +2040,7 @@
         steps: [
           { title: "Select or drop your PDF", detail: "Drop your PDF document into the conversion area. Fileora reads the PDF structure locally in your browser memory." },
           { title: "Automatic Layout & Table Reconstruction", detail: "Our dual-engine reconstructs tables, inline typography, headings, font colors, and high-resolution images." },
-          { title: "Download Clean Word (.docx)", detail: "Your converted Microsoft Word document is generated and downloaded immediately with no watermark and zero disk retention." }
+          { title: "Download Clean Word (.docx)", detail: "Your converted Microsoft Word document is generated and downloaded with no watermark. Converted files are kept in temporary storage for up to 60 minutes and then deleted automatically." }
         ],
         fidelity: "Preserves font sizes, bold/italic weights, paragraph line-heights, table borders, merged cells, headers/footers, and embedded illustrations.",
         faqs: [
@@ -2349,7 +2349,7 @@
         fidelity: "Reads text and embedded diagrams; handles complex multi-column documents.",
         faqs: [
           { q: "Can it summarize scanned documents?", a: "Yes. Scanned PDFs and image documents are read visually via high-resolution OCR inspection." },
-          { q: "Is my document used to train AI models?", a: "No. Document text is processed with strict zero-data-retention parameters." },
+          { q: "Is my document used to train AI models?", a: "Fileora does not use your documents to train AI models. The document text is sent to Google's Gemini API to produce the result and is handled under Google's API terms, so avoid submitting confidential files." },
           { q: "Does AI Summarizer work offline or without cloud API keys?", a: "Yes. When cloud AI keys are not present, an intelligent offline extractive NLP summarizer analyzes your document immediately." }
         ],
         related: ["translate-pdf", "pdf-to-word", "compress-pdf"]
@@ -5311,8 +5311,8 @@
     }
 
     const MODALS = {
-      'security-modal': { title: 'Security Architecture', body: '<p>All uploaded documents undergo in-memory transformation and are immediately purged from disk once the download stream concludes.</p>' },
-      'privacy-modal': { title: 'Privacy Policy', body: '<p>Zero persistent storage, zero telemetry logs, and zero retention of document bytes.</p><p>The AI tools (AI Summarizer, Translate PDF and PDF to Excel) send the text extracted from your document to Google\'s Gemini API to produce the result.</p>' },
+      'security-modal': { title: 'Security Architecture', body: '<p>Original uploads are deleted from the server as soon as conversion finishes. Converted files you download from the results page are kept in private temporary storage for 60 minutes and then deleted automatically, or immediately if you delete them. See the <a href="/file-retention" class="text-blue-600 underline">File Retention Policy</a>.</p>' },
+      'privacy-modal': { title: 'Privacy Policy', body: '<p>We do not require accounts. Original uploads are deleted as soon as conversion finishes, and converted files are kept in private temporary storage for 60 minutes (or until you delete them) before automatic deletion. See the <a href="/file-retention" class="text-blue-600 underline">File Retention Policy</a>.</p><p>The AI tools (AI Summarizer, Translate PDF and PDF to Excel) send the text extracted from your document to Google\'s Gemini API to produce the result.</p>' },
       'terms-modal': { title: 'Terms of Use', body: '<p>Terms of use will be published here soon.</p>' },
       'about-modal': { title: 'About Fileora', body: '<p>Fileora is a document and PDF toolkit for converting, organizing, securing and translating files.</p>' },
       'contact-modal': { title: 'Contact', body: '<p>Contact details will be added here soon.</p>' }

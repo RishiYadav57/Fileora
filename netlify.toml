@@ -74,15 +74,12 @@
   to = "/robots.txt"
   status = 200
 
+# Every tool has its own static page (tools/<slug>.html, built by scripts/build-public.js), so no SPA rewrite is needed.
 [[redirects]]
   from = "/tools"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/tools/*"
-  to = "/index.html"
-  status = 200
+  to = "/#all-tools"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/tool/:slug"
@@ -309,6 +306,30 @@
 [[redirects]]
   from = "/rotate-pdf"
   to = "/tools/organize-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/xlsm-to-pdf"
+  to = "/tools/excel-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/tools/pdf-to-xlsm"
+  to = "/tools/pdf-to-excel"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/xlsm-to-pdf"
+  to = "/tools/excel-to-pdf"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/pdf-to-xlsm"
+  to = "/tools/pdf-to-excel"
   status = 301
   force = true
 
