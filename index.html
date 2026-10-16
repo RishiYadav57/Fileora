@@ -1068,13 +1068,16 @@
       return info ? info.tool.ext.split(",").map(s => s.trim().toLowerCase()) : [];
     }
 
-    // Artwork for the Organize PDF tools (used in the tool box and in the menus, which otherwise show a letter badge)
+    // Artwork for the Organize and Optimize PDF tools (used in the tool box and in the menus, which otherwise show a letter badge)
     const ORGANIZE_ICONS = {
       "merge-pdf": { src: "/assets/tool-merge-pdf.png", alt: "Merge PDF" },
       "split-pdf": { src: "/assets/tool-split-pdf.png", alt: "Split PDF" },
       "remove-pages": { src: "/assets/tool-remove-pages.png", alt: "Remove pages" },
       "extract-pages": { src: "/assets/tool-extract-pages.png", alt: "Extract pages" },
-      "organize-pdf": { src: "/assets/tool-organize-pdf.png", alt: "Organize PDF" }
+      "organize-pdf": { src: "/assets/tool-organize-pdf.png", alt: "Organize PDF" },
+      "compress-pdf": { src: "/assets/tool-compress-pdf.png", alt: "Compress PDF" },
+      "repair-pdf": { src: "/assets/tool-repair-pdf.png", alt: "Repair PDF" },
+      "compress-image": { src: "/assets/tool-compress-image.png", alt: "Compress Image" }
     };
 
     // Small icon for menu rows: the artwork when we have it, otherwise the first-letter badge
