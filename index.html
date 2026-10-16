@@ -1068,8 +1068,23 @@
       return info ? info.tool.ext.split(",").map(s => s.trim().toLowerCase()) : [];
     }
 
-    // Artwork for the Organize and Optimize PDF tools (used in the tool box and in the menus, which otherwise show a letter badge)
-    const ORGANIZE_ICONS = {
+    // Artwork per tool. Used for the tool box on each tool page and for the menu rows / search results
+    // (tools without artwork keep a first-letter badge or an inline icon).
+    const TOOL_IMAGE_ICONS = {
+      "pdf-to-powerpoint": { src: "/assets/tool-pdf-to-pptx.png", alt: "PDF to PPTX" },
+      "pdf-to-word": { src: "/assets/tool-pdf-to-word.png", alt: "PDF to Word" },
+      "word-to-pdf": { src: "/assets/tool-word-to-pdf.png", alt: "Word to PDF" },
+      "powerpoint-to-pdf": { src: "/assets/tool-pptx-to-pdf.png", alt: "PPTX to PDF" },
+      "excel-to-pdf": { src: "/assets/tool-excel-to-pdf.png", alt: "Excel to PDF" },
+      "pdf-to-excel": { src: "/assets/tool-pdf-to-excel.png", alt: "PDF to Excel" },
+      "jpg-to-pdf": { src: "/assets/tool-jpg-to-pdf.png", alt: "JPG to PDF" },
+      "pdf-to-jpg": { src: "/assets/tool-jpg-to-pdf.png", alt: "PDF to JPG" },
+      "word-to-powerpoint": { src: "/assets/tool-pdf-to-pptx.png", alt: "Word to PowerPoint" },
+      "powerpoint-to-word": { src: "/assets/tool-pdf-to-word.png", alt: "PowerPoint to Word" },
+      "ai-summarizer": { src: "/assets/tool-ai-summarizer.png", alt: "AI Summarizer" },
+      "scan-pdf": { src: "/assets/tool-scan-pdf.png", alt: "Scan PDF (OCR)" },
+      "translate-pdf": { src: "/assets/tool-translate-pdf.png", alt: "Translate PDF" },
+      "enhance-image": { src: "/assets/tool-enhance-image.png", alt: "Enhance Image" },
       "merge-pdf": { src: "/assets/tool-merge-pdf.png", alt: "Merge PDF" },
       "split-pdf": { src: "/assets/tool-split-pdf.png", alt: "Split PDF" },
       "remove-pages": { src: "/assets/tool-remove-pages.png", alt: "Remove pages" },
@@ -1082,30 +1097,14 @@
 
     // Small icon for menu rows: the artwork when we have it, otherwise the first-letter badge
     function menuIconHtml(tool, badgeClass) {
-      const art = ORGANIZE_ICONS[tool.id];
+      const art = TOOL_IMAGE_ICONS[resolveToolId(tool.id) || tool.id];
       if (art) return `<img src="${art.src}" alt="" width="28" height="28" class="w-7 h-7 object-contain flex-shrink-0" loading="lazy" decoding="async">`;
       return `<div class="${badgeClass}">${tool.name.charAt(0)}</div>`;
     }
 
     function getToolIconHtml(toolId) {
       const canonical = resolveToolId(toolId) || toolId;
-
-      const IMAGE_ICONS = {
-        "pdf-to-powerpoint": { src: "/assets/tool-pdf-to-pptx.png", alt: "PDF to PPTX" },
-        "pdf-to-word": { src: "/assets/tool-pdf-to-word.png", alt: "PDF to Word" },
-        "word-to-pdf": { src: "/assets/tool-word-to-pdf.png", alt: "Word to PDF" },
-        "powerpoint-to-pdf": { src: "/assets/tool-pptx-to-pdf.png", alt: "PPTX to PDF" },
-        "excel-to-pdf": { src: "/assets/tool-excel-to-pdf.png", alt: "Excel to PDF" },
-        "pdf-to-excel": { src: "/assets/tool-pdf-to-excel.png", alt: "PDF to Excel" },
-        "jpg-to-pdf": { src: "/assets/tool-jpg-to-pdf.png", alt: "JPG to PDF" },
-        "pdf-to-jpg": { src: "/assets/tool-jpg-to-pdf.png", alt: "PDF to JPG" },
-        "word-to-powerpoint": { src: "/assets/tool-pdf-to-pptx.png", alt: "Word to PowerPoint" },
-        "powerpoint-to-word": { src: "/assets/tool-pdf-to-word.png", alt: "PowerPoint to Word" },
-        "ai-summarizer": { src: "/assets/tool-ai-summarizer.png", alt: "AI Summarizer" },
-        "scan-pdf": { src: "/assets/tool-scan-pdf.png", alt: "Scan PDF (OCR)" },
-        "translate-pdf": { src: "/assets/tool-translate-pdf.png", alt: "Translate PDF" },
-        ...ORGANIZE_ICONS
-      };
+      const IMAGE_ICONS = TOOL_IMAGE_ICONS;
 
       if (IMAGE_ICONS[canonical]) {
         const item = IMAGE_ICONS[canonical];
