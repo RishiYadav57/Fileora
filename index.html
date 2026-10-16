@@ -1690,6 +1690,7 @@
               <span class="${LABEL_CLS}">Watermark Text:</span>
               <input type="text" id="ctrl-watermark" value="CONFIDENTIAL" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs outline-none w-48">
             </div>`;
+          break;
         case "powerpoint-to-word":
           html = `
             <div class="space-y-3 text-xs">
@@ -3697,6 +3698,11 @@
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+        if (doc.isEncrypted) {
+          const locked = new Error(`"${file.name}" is password-protected. Use Unlock PDF first.`);
+          locked.skipFallback = true;
+          throw locked;
+        }
         const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const angle = Math.PI / 4;
         for (const page of doc.getPages()) {
@@ -3722,6 +3728,7 @@
         triggerDownload(pdfBlob(await doc.save()), `${baseName(file)}_watermarked.pdf`);
         return "Watermark added successfully.";
       } catch (clientErr) {
+        if (clientErr && clientErr.skipFallback) throw clientErr;
         // Fallback to server route
         const res = await postFile("/api/pdf/watermark", file, { text });
         triggerDownload(await res.blob(), `${baseName(file)}_watermarked.pdf`);
@@ -3952,6 +3959,9 @@
       if (entries.length === 0) throw new Error("The selected ZIP archive contains no files.");
 
       setProcessButton(true, `Extracting ${entries.length} file(s)...`);
+      // One archive with several files: collect them all as one batch and open the downloads page once at the end
+      const ownBatch = entries.length > 1 && !(window.__batchSession && window.__batchSession.active);
+      if (ownBatch) window.__batchSession = { active: true, total: entries.length, current: 0, items: [], pendingUploads: [] };
       let extractedCount = 0;
       for (let i = 0; i < entries.length; i++) {
         const entryName = entries[i];
@@ -3960,6 +3970,13 @@
         if (i > 0) await new Promise(r => setTimeout(r, 200));
         triggerDownload(entryBlob, safeName);
         extractedCount++;
+      }
+      if (ownBatch) {
+        await Promise.all(window.__batchSession.pendingUploads);
+        const items = window.__batchSession.items.slice();
+        window.__batchSession.active = false;
+        batchUI.items = items; batchUI.total = items.length; batchUI.failed = []; batchUI.cancelled = false;
+        batchGoToDownloads();
       }
       return `Extracted ${extractedCount} file(s) from "${file.name}".`;
     }
@@ -4707,7 +4724,11 @@
         if (thisExecId !== currentExecutionId) return;
         if (err.name === 'AbortError') return;
         console.error(err);
-        alert("Notice: " + (err.message || "Something went wrong. Please try again."));
+        const raw = String((err && err.message) || "");
+        const friendly = /SOI not found|not a valid (jpeg|jpg|png)|Unknown file format|Failed to parse|Invalid (jpeg|jpg|png)|incorrect header check/i.test(raw)
+          ? "This image could not be read. Please try a different JPG or PNG file."
+          : raw;
+        alert("Notice: " + (friendly || "Something went wrong. Please try again."));
       } finally {
         if (thisExecId === currentExecutionId) {
           executionLive = false;

@@ -78,11 +78,15 @@ function heavyGate(req, res, next) { require('./jobgate').enter(req, res, next);
 // 3. Sliding-Window Rate Limiter
 const rateLimitBuckets = new Map();
 
+// The client address. X-Forwarded-For is written by the visitor as well, so its FIRST entry can be anything; the entry added by our own
+// proxy (Render) is the LAST one. TRUST_PROXY_HOPS (default 1) says how many proxies sit in front of the app; 0 ignores the header.
 function getClientIp(req) {
+  const hops = Math.max(0, parseInt(process.env.TRUST_PROXY_HOPS || '1', 10) || 0);
   const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    const ips = forwarded.split(',').map(s => s.trim());
-    if (ips[0]) return ips[0];
+  if (hops > 0 && forwarded) {
+    const ips = String(forwarded).split(',').map((x) => x.trim()).filter(Boolean);
+    const ip = ips[Math.max(0, ips.length - hops)];
+    if (ip) return ip;
   }
   return req.socket ? req.socket.remoteAddress || '127.0.0.1' : '127.0.0.1';
 }
@@ -332,5 +336,6 @@ module.exports = {
   inspectArchiveSafety,
   handleMulterError,
   rejectOversizedRequest,
-  safeUnlink
+  safeUnlink,
+  getClientIp
 };

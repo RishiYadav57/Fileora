@@ -48,11 +48,19 @@ const r2Storage = require('./storage');
 const security = require('./security');
 const mailer = require('./mailer');
 
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason && reason.code ? reason.code : (reason && reason.name) || 'error');
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for Vercel deployment (expose size headers used by Compress PDF)
-app.use(cors({ origin: '*', exposedHeaders: ['X-Original-Size', 'X-Result-Size', 'X-Target-Met', 'X-Converter-Fallback'] }));
+app.disable('x-powered-by');
+app.use((req, res, next) => { res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin'); next(); });
+app.use(cors({ origin: '*', exposedHeaders: [
+  'X-Original-Size', 'X-Result-Size', 'X-Target-Met', 'X-Converter-Fallback', 'X-Already-Optimized', 'X-Format', 'X-Native-Pages',
+  'X-Original-W', 'X-Original-H', 'X-Output-W', 'X-Output-H', 'X-Page-Count', 'X-Repair-Status', 'X-Scanned-Pages', 'X-Total-Pages', 'X-Words-Added'] }));
 
 // General IP-based rate limiting (120 req/min)
 // Per-IP rate limit for API calls only: page and asset requests (one page view is ~20 of them) must not eat the budget
@@ -245,9 +253,7 @@ allToolSlugs.forEach(slug => {
 // Contact submission backend endpoint with Gmail SMTP notifications
 const contactLogFile = path.join(__dirname, 'contact_submissions.log');
 app.post('/api/contact', async (req, res) => {
-  const clientIp = req.headers['x-forwarded-for']
-    ? req.headers['x-forwarded-for'].split(',')[0].trim()
-    : (req.socket ? req.socket.remoteAddress || '127.0.0.1' : '127.0.0.1');
+  const clientIp = security.getClientIp(req);
 
   // 1. Sliding-window rate limit (Max 5 submissions per 10 minutes per IP)
   const rateCheck = mailer.checkContactRateLimit(clientIp);
@@ -442,6 +448,12 @@ app.get('/api/jobs/:jobId/download', async (req, res) => {
     res.setHeader('Content-Disposition', filenameUtils.contentDisposition(downloadName));
     res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
 
+    result.stream.on('error', (streamErr) => {
+      console.error('[API /api/jobs/:jobId/download] Stream error:', streamErr && streamErr.code ? streamErr.code : 'stream failed');
+      if (!res.headersSent) res.status(500).json({ error: 'DOWNLOAD_FAILED', message: 'Failed to stream converted file from storage.' });
+      else res.destroy();
+    });
+    res.on('close', () => { try { result.stream.destroy(); } catch (e) { /* already closed */ } });
     result.stream.pipe(res);
   } catch (err) {
     console.error('[API /api/jobs/:jobId/download] Streaming error:', err);
@@ -1528,7 +1540,7 @@ app.post('/api/translate', async (req, res) => {
     const { text, targetLang } = req.body;
     const langName = LANGS[targetLang];
     if (!langName) return res.status(400).json({ error: 'Unsupported target language.' });
-    if (!text || text.trim().length < 2) return res.status(400).json({ error: 'No text to translate.' });
+    if (typeof text !== 'string' || text.trim().length < 2) return res.status(400).json({ error: 'No text to translate.' });
 
     const apiKey = requireGeminiKey(res);
     if (!apiKey) return;
@@ -1559,7 +1571,7 @@ function escapeHtml(s) {
 app.post('/api/translate/pdf', security.concurrencyLimiter, async (req, res) => {
   const { text, targetLang, filename } = req.body;
   if (!LANGS[targetLang]) return res.status(400).json({ error: 'Unsupported target language.' });
-  if (!text || text.trim().length < 2) return res.status(400).json({ error: 'No text to build the PDF from.' });
+  if (typeof text !== 'string' || text.trim().length < 2) return res.status(400).json({ error: 'No text to build the PDF from.' });
 
   const htmlPath = newOutPath('translated', 'html');
   let pdfPath;
@@ -1600,7 +1612,7 @@ ${paragraphs}
 app.post('/api/ai/tables', async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text || text.trim().length < 20) {
+    if (typeof text !== 'string' || text.trim().length < 20) {
       return res.status(400).json({ error: 'Not enough text to look for tables.' });
     }
     const apiKey = requireGeminiKey(res);
@@ -2261,9 +2273,9 @@ app.post('/api/pdf/protect', security.concurrencyLimiter, gatedUpload.single('fi
   const output = newOutPath('protected', 'pdf');
   const password = String(req.body.password || '');
 
-  if (password.length < 1 || password.length > 100) {
+  if (password.length < 1 || password.length > 40) {
     safeUnlink(input);
-    return res.status(400).json({ error: 'Enter a password (up to 100 characters).' });
+    return res.status(400).json({ error: 'Enter a password (up to 40 characters).' });
   }
 
   try {
@@ -2525,7 +2537,7 @@ app.use((req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const httpServer = app.listen(PORT, () => {
   console.log(`Fileora conversion engine listening on port ${PORT}`);
   // One startup line for the platform logs: runtime facts and which backends are configured (booleans only, no values)
   let sqliteOk = false; try { require('node:sqlite'); sqliteOk = true; } catch (e) {}
@@ -2542,3 +2554,8 @@ app.listen(PORT, () => {
     }
   }).catch(() => {});
 });
+
+// A client that opens a connection and then sends its upload very slowly would hold one of the few conversion slots: give up on a request that has not fully arrived after 3 minutes (about 0.9 Mbit/s for a 20 MB batch) and on headers after 30 s
+httpServer.requestTimeout = 180000;
+httpServer.headersTimeout = 30000;
+

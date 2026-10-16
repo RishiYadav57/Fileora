@@ -156,7 +156,7 @@
           <a href="/" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md shadow-blue-500/20">
             Convert a New File
           </a>
-          <button onclick="window.location.reload()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm transition border border-slate-200 dark:border-slate-700">
+          <button id="error-retry" onclick="window.location.reload()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm transition border border-slate-200 dark:border-slate-700">
             Retry Connection
           </button>
         </div>
@@ -505,7 +505,7 @@
         }
       }
 
-      function showError(title, message) {
+      function showError(title, message, canRetry) {
         stateLoading && stateLoading.classList.add('hidden');
         stateSuccess && stateSuccess.classList.add('hidden');
         stateDeleted && stateDeleted.classList.add('hidden');
@@ -513,11 +513,14 @@
           stateError.classList.remove('hidden');
           $('error-title').textContent = title;
           $('error-desc').textContent = message;
+          const retryBtn = $('error-retry');
+          if (retryBtn) retryBtn.classList.toggle('hidden', !canRetry);
         }
+        document.title = title + ' | Fileora';
       }
 
       if (jobsList.length === 0) {
-        showError('Invalid Download Link', 'The download link is missing required authorization parameters.');
+        showError('Invalid Download Link', 'The download link is missing required authorization parameters.', false);
         return;
       }
 
@@ -742,6 +745,7 @@
             const it = items[idx];
             if (!res.ok) {
               it.status = 'expired';
+              it.httpStatus = res.status;
               it.error = res.status === 410 ? 'Expired and automatically deleted'
                 : res.status === 403 ? 'Access denied (invalid download token)'
                 : res.status === 404 ? 'Not found or already deleted'
@@ -757,13 +761,21 @@
           })
           .catch(() => {
             const it = items[idx];
-            it.status = 'expired'; it.error = 'Network error while loading this file'; it.convertedFilename = it.convertedFilename || 'converted_file';
+            it.status = 'expired'; it.httpStatus = 0; it.error = 'Network error while loading this file'; it.convertedFilename = it.convertedFilename || 'converted_file';
             replaceRow(it);
           })
       );
       Promise.all(metaFetches).then(() => {
         if (!items.some(i => i.status === 'ready') && !items.some(i => i.status === 'failed')) {
-          showError(items.length === 1 ? 'Unable to Download File' : 'Unable to Retrieve Files', items[0] && items[0].error ? items[0].error : 'The converted files could not be found or have expired.');
+          const st = items[0] && items[0].httpStatus;
+          const temporary = !st || st >= 500; // network trouble or a server error: trying again can help; expired / deleted / wrong token will not
+          const heading = st === 410 ? (items.length === 1 ? 'This Download Has Expired' : 'These Downloads Have Expired')
+            : st === 404 ? (items.length === 1 ? 'File Not Found' : 'Files Not Found')
+            : (items.length === 1 ? 'Unable to Download File' : 'Unable to Retrieve Files');
+          const detail = st === 410 ? 'Converted files are deleted automatically 60 minutes after they are created. Please convert the file again.'
+            : st === 404 ? 'This file was not found. It may already have been deleted. Please convert the file again.'
+            : (items[0] && items[0].error ? items[0].error : 'The converted files could not be found or have expired.');
+          showError(heading, detail, temporary);
           return;
         }
         // A single converted file starts downloading by itself (existing behaviour)
