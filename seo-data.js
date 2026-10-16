@@ -146,7 +146,7 @@ const SEO_DATA = {
   "organize-pdf": {
     "id": "organize-pdf",
     "toolNumber": 5,
-    "name": "Organize PDF",
+    "name": "Customize PDF",
     "title": "Organize PDF Pages Online | Fileora",
     "metaDescription": "Organize your PDF by arranging pages and using the supported page-management options to create a more structured document.",
     "canonical": "https://pdfconverterfree.in/tools/organize-pdf",
