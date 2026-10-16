@@ -26,6 +26,34 @@ const SAMPLE_MS = 2000;
 
 const active = new Set();
 const queue = [];
+
+// ---- real progress, reported to the browser through GET /api/progress/:id --------------------------------------------
+// The page sends a random X-Progress-Id with a conversion request; the server records what that job is genuinely doing
+// (waiting in the queue, reading, converting page N of M, validating, preparing the download). Bounded and short-lived.
+const PROGRESS_ID = /^[a-f0-9]{16,32}$/;
+const progressStore = new Map();
+function setProgressFor(id, patch) {
+  if (!id) return;
+  const cur = progressStore.get(id) || {};
+  // a converter that goes through the pages twice (read them, then build them) restarts the counter: that is a new phase
+  if (patch.stage === 'pages' && cur.stage === 'pages' && patch.page < (cur.page || 0)) cur.phase = (cur.phase || 0) + 1;
+  progressStore.set(id, Object.assign(cur, patch, { t: Date.now() }));
+  if (progressStore.size > 500) progressStore.delete(progressStore.keys().next().value);
+}
+function setProgress(patch) { const job = als.getStore(); if (job) setProgressFor(job.progressId, patch); }
+function getProgress(id) {
+  if (!PROGRESS_ID.test(String(id || ''))) return null;
+  const p = progressStore.get(id);
+  return p ? { stage: p.stage, page: p.page || 0, pages: p.pages || 0, position: p.position || 0, phase: p.phase || 0 } : { stage: 'unknown', page: 0, pages: 0, position: 0, phase: 0 };
+}
+setInterval(() => { const cut = Date.now() - 15 * 60 * 1000; for (const [k, v] of progressStore) if (v.t < cut) progressStore.delete(k); }, 5 * 60 * 1000).unref();
+
+// lines the converters print on stderr: "FILEORA_PROGRESS page=3 total=8" (ours) or pdf2docx's "(3/8) Page 3"
+function parseProgressLine(line) {
+  let m = /FILEORA_PROGRESS page=(\d+) total=(\d+)/.exec(line);
+  if (!m) m = /\((\d+)\/(\d+)\)\s+Page/.exec(line);
+  return m ? { stage: 'pages', page: parseInt(m[1], 10), pages: parseInt(m[2], 10) } : null;
+}
 let nextId = 1;
 
 const mb = (n) => Math.round((n / 1048576) * 10) / 10;
@@ -102,7 +130,23 @@ function execFileTracked(cmd, args, opts) {
       reject(err);
     });
     const timer = timeout ? setTimeout(() => { timedOut = true; killTree(child); }, timeout) : null;
-    if (job) job.children.add(child);
+    if (job) {
+      job.children.add(child);
+      setProgressFor(job.progressId, { stage: 'converting' });
+      if (child.stderr) {
+        let buf = '';
+        child.stderr.on('data', (chunk) => {
+          buf += chunk.toString('utf8');
+          let i;
+          while ((i = buf.indexOf('\n')) >= 0) {
+            const p = parseProgressLine(buf.slice(0, i));
+            if (p) setProgressFor(job.progressId, p);
+            buf = buf.slice(i + 1);
+          }
+          if (buf.length > 4000) buf = buf.slice(-500);
+        });
+      }
+    }
   });
 }
 
@@ -137,6 +181,7 @@ function startJob(job) {
   job.startedAt = Date.now();
   job.sampler = setInterval(() => sampleJob(job), SAMPLE_MS);
   job.sampler.unref();
+  setProgressFor(job.progressId, { stage: 'reading', position: 0 });
   log('job_start', job, `declaredSizeMB=${mb(job.declaredBytes)} waitedMs=${job.startedAt - job.queuedAt}`);
   als.run(job, job.next);
 }
@@ -147,6 +192,7 @@ function pump() {
     clearTimeout(job.waitTimer);
     startJob(job);
   }
+  queue.forEach((j, i) => setProgressFor(j.progressId, { stage: 'queued', position: i + 1 }));
 }
 
 function uploadedBytesAndPaths(req) {
@@ -164,7 +210,7 @@ function cleanupUploads(req) {
   const leftovers = uploadedBytesAndPaths(req).paths;
   const sweep = () => { for (const p of leftovers) { try { fs.unlinkSync(p); } catch (e) { /* already gone or still being closed */ } } };
   sweep();
-  setTimeout(sweep, 3000).unref(); // a half-written upload may only be released once its stream closes
+  for (const ms of [250, 800, 3000]) setTimeout(sweep, ms).unref(); // a half-written upload is only released once its stream closes (Windows keeps it locked until then)
 }
 
 // Called before the upload body is read. Refuses new work immediately when the server already holds as many
@@ -219,6 +265,7 @@ function enter(req, res, next) {
   if (req.__gateJob) return next();
   const job = {
     id: nextId++, tool: toolName(req), req, next, children: new Set(), aborted: false,
+    progressId: PROGRESS_ID.test(String(req.headers['x-progress-id'] || '')) ? String(req.headers['x-progress-id']) : null,
     declaredBytes: parseInt(req.headers['content-length'] || '0', 10) || 0,
     queuedAt: Date.now(), startedAt: 0, peakChildMB: 0, peakCgroupMB: 0
   };
@@ -234,6 +281,7 @@ function enter(req, res, next) {
     return res.status(503).json(BUSY_BODY);
   }
   queue.push(job);
+  setProgressFor(job.progressId, { stage: 'queued', position: queue.length });
   log('job_queued', job);
   job.waitTimer = setTimeout(() => {
     const i = queue.indexOf(job);
@@ -259,4 +307,4 @@ for (const sig of ['SIGTERM', 'SIGINT']) {
   process.once(sig, () => { killAll(); process.exit(0); });
 }
 
-module.exports = { enter, admit, cleanupUploads, execFileTracked, stats, currentJob: () => als.getStore() };
+module.exports = { setProgress, getProgress, enter, admit, cleanupUploads, execFileTracked, stats, currentJob: () => als.getStore() };

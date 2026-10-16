@@ -258,6 +258,7 @@
       overflow: hidden !important;
     }
   </style>
+  <script src="/assets/config.js"></script>
   <script src="/assets/warmup.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white transition-colors duration-200 overflow-x-hidden">
@@ -274,7 +275,7 @@
           </button>
 
           <a href="/" onclick="event.preventDefault(); loadTool('pdf-to-powerpoint', true, true);" class="flex items-center gap-2.5 group">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
           </a>
         </div>
 
@@ -311,7 +312,7 @@
       <div>
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 w-auto">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-6 w-auto">
           </div>
           <button onclick="toggleMobileDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white text-base font-bold">✕</button>
         </div>
@@ -645,7 +646,7 @@
         <!-- Brand & Mission Column (span 2 cols) -->
         <div class="lg:col-span-2 space-y-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
+            <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
           </div>
           <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
             High-fidelity document conversion with guaranteed layout and font preservation. Fast, private, and automated document workflow toolkit.
@@ -777,15 +778,9 @@
   </div>
 
   <script>
-    // BACKEND API ENDPOINT CONFIGURATION (Production server running LibreOffice + Poppler + Gemini)
-    const CLOUD_BACKEND_URL = 'https://docgrid-project.onrender.com';
-    const LOCAL_BACKEND_URL = 'http://localhost:3000';
-
-    // Prioritize local Node backend on port 3000 if running locally or opened via file://
-    const isLocalOrFile = window.location.hostname === 'localhost' ||
-                          window.location.hostname === '127.0.0.1' ||
-                          window.location.protocol === 'file:';
-    let BACKEND_URL = isLocalOrFile ? LOCAL_BACKEND_URL : CLOUD_BACKEND_URL;
+    // BACKEND API ENDPOINT: one shared definition in /assets/config.js (also used by the download page and the warm-up).
+    // The page talks to its own server when it is served by one; static hosting talks to the production backend.
+    let BACKEND_URL = FILEORA_CONFIG.backend();
 
     const TOOL_CATEGORIES = [
       {
@@ -812,9 +807,9 @@
         id: "convert-to",
         name: "Convert to PDF",
         tools: [
-          { id: "word-to-pdf", name: "WORD to PDF", ext: ".docx", desc: "1:1 Exact conversion of DOCX files into formatted PDF documents." },
-          { id: "powerpoint-to-pdf", name: "POWERPOINT to PDF", ext: ".pptx", desc: "1:1 Exact conversion of PPTX presentations with all graphics intact." },
-          { id: "excel-to-pdf", name: "EXCEL to PDF", ext: ".xlsx,.csv", desc: "Transform spreadsheets and tables into formatted PDF sheets." },
+          { id: "word-to-pdf", name: "WORD to PDF", ext: ".docx,.doc", desc: "1:1 Exact conversion of DOCX files into formatted PDF documents." },
+          { id: "powerpoint-to-pdf", name: "POWERPOINT to PDF", ext: ".pptx,.ppt", desc: "1:1 Exact conversion of PPTX presentations with all graphics intact." },
+          { id: "excel-to-pdf", name: "EXCEL to PDF", ext: ".xlsx,.xls,.csv", desc: "Transform spreadsheets and tables into formatted PDF sheets." },
           { id: "jpg-to-pdf", name: "JPG to PDF", ext: ".jpg,.jpeg,.png,.webp", desc: "Convert JPG and PNG images with aspect fitting." }
         ]
       },
@@ -3162,10 +3157,57 @@
       return new Blob([bytes], { type: "application/pdf" });
     }
 
-    // Calls the Fileora server. If local dev server is unreachable, automatically falls back to live Cloud backend.
+    // ---- real progress from the server --------------------------------------------------------------
+    // Conversion requests carry a random id; while one is in flight the page asks GET /api/progress/:id every 2 s and shows
+    // what the server is genuinely doing. Nothing here is estimated: no percentages, no guessed page counts.
+    function newProgressId() {
+      const b = new Uint8Array(12); crypto.getRandomValues(b);
+      return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+    }
+    function progressLabel(p) {
+      if (!p) return null;
+      switch (p.stage) {
+        case "queued": return p.position > 0 ? `Waiting for other conversions (${p.position} ahead)…` : "Waiting for other conversions…";
+        case "reading": return "Reading file…";
+        case "converting": return "Converting…";
+        case "pages": return p.pages > 0 ? `${p.phase > 0 ? "Building" : "Processing"} page ${p.page} of ${p.pages}…` : "Converting…";
+        case "validating": return "Validating output…";
+        case "preparing": return "Preparing download…";
+        default: return null;
+      }
+    }
+    function startProgressPolling(id, execId) {
+      let stopped = false, last = "";
+      const tick = async () => {
+        if (stopped) return;
+        try {
+          const r = await fetch(`${BACKEND_URL}/api/progress/${id}`, { cache: "no-store" });
+          if (r.ok && !stopped && execId === currentExecutionId) {
+            const label = progressLabel(await r.json());
+            if (label && label !== last) { last = label; setProcessButton(true, label); }
+          }
+        } catch (e) { /* the server may still be waking up: keep the last label */ }
+        if (!stopped) setTimeout(tick, 2000);
+      };
+      setTimeout(tick, 1500);
+      return () => { stopped = true; };
+    }
+
+    // Calls the Fileora server (retrying while it wakes up).
     async function serverFetch(endpoint, init) {
       const execId = currentExecutionId;
-      const urlsToTry = [BACKEND_URL, LOCAL_BACKEND_URL, CLOUD_BACKEND_URL].filter((v, i, a) => v && a.indexOf(v) === i);
+      const progressId = (init && init.method === "POST" && !/\/api\/(summarize|translate|ai\/)/.test(endpoint)) ? newProgressId() : null;
+      if (progressId) init = Object.assign({}, init, { headers: Object.assign({}, init.headers || {}, { "X-Progress-Id": progressId }) });
+      const stopPolling = progressId ? startProgressPolling(progressId, execId) : () => {};
+      try {
+        return await serverFetchOnce(endpoint, init, execId);
+      } finally {
+        stopPolling();
+      }
+    }
+
+    async function serverFetchOnce(endpoint, init, execId) {
+      const urlsToTry = [BACKEND_URL]; // never silently switch to another server (a local page must not reach production, nor the reverse)
 
       let lastErr = null;
       for (const targetBase of urlsToTry) {

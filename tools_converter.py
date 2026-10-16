@@ -1540,6 +1540,7 @@ def reconstruct_pdf_to_docx_editable(input_path, output_path, lang='eng', positi
 
     with tempfile.TemporaryDirectory(prefix='editable_docx_', ignore_cleanup_errors=True) as tmp_dir:
         for idx, page in enumerate(doc_pdf):
+            _progress(idx + 1, len(doc_pdf))
             pw = page.rect.width
             ph = page.rect.height
             page_area = pw * ph
@@ -2339,6 +2340,11 @@ def _ocr_refine(page, d, only_junk=False):
                 blk['bbox'] = (min(l['bbox'][0] for l in blk['lines']), min(l['bbox'][1] for l in blk['lines']), max(l['bbox'][2] for l in blk['lines']), max(l['bbox'][3] for l in blk['lines']))
         return
 
+    for blk in d.get('blocks', []):          # OCR boxes are measured at another size than the text is set in: no width matching for them
+        if blk.get('type') == 0:
+            for ln in blk['lines']:
+                for x in ln.get('spans', []):
+                    x['_ocr'] = True
     # a word whose ink colour differs strongly from the rest of its line is part of a logo / icon, not text ('17' in front
     # of 'BLUESTOCK'): drop it so the artwork survives as a picture
     def span_col(x):
@@ -2483,6 +2489,49 @@ def _ocr_refine(page, d, only_junk=False):
                 sz = bsize
             for x in ln.get('spans', []):
                 x['size'] = sz
+
+    # decorative marks drawn under a text line in a different colour (the green swoosh under a logo-like word) are not text:
+    # keep them as a picture of exactly that region instead of losing them
+    try:
+        import cv2
+        all_boxes = [tuple(l['bbox']) for bk in d.get('blocks', []) if bk.get('type') == 0 for l in bk['lines']]
+        for blk in d.get('blocks', []):
+            if blk.get('type') != 0:
+                continue
+            for ln in blk['lines']:
+                st = ln.get('_st') or stats(ln['bbox'])
+                bx = ln['bbox']; H = bx[3] - bx[1]; W = bx[2] - bx[0]
+                # only display-size lines (logo-like words, headings) carry such marks; checking every body line is costly
+                if st is None or H < 20 or W < 30 or len(line_text(ln)) < 3 or not ref_size or H < 2.0 * ref_size:
+                    continue
+                reg = (bx[0], bx[1], bx[2], bx[3] + 0.7 * H)           # the line and a band below it
+                sub = crop(reg)
+                if sub is None or sub.shape[0] < 8:
+                    continue
+                flat = sub.reshape(-1, 3)
+                ys = st['diff'] >= max(60, 0.7 * st['diff'].max()) if st['diff'].size else None
+                if ys is None or not ys.any():
+                    continue
+                ink_col = np.median(st['flat'][ys], axis=0)
+                bgc = np.median(flat, axis=0)
+                foreign = ((np.abs(flat - ink_col).max(axis=1) > 110) & (np.abs(flat - bgc).max(axis=1) > 70)).reshape(sub.shape[:2]).astype(np.uint8)
+                if foreign.sum() < 120:
+                    continue
+                n, lab, stt, _ = cv2.connectedComponentsWithStats(foreign, connectivity=8)
+                for i in range(1, n):
+                    x, y, w, h, area = stt[i]
+                    if area < 150 or w < 12 or h < 8 or (y + h / 2.0) < 0.62 * H:      # lower part of the line, or below it
+                        continue
+                    rect = (reg[0] + x - 1, reg[1] + y - 1, reg[0] + x + w + 1, reg[1] + y + h + 1)
+                    def overlaps_other(o):
+                        if o == tuple(bx):
+                            return False
+                        ix = max(0.0, min(rect[2], o[2]) - max(rect[0], o[0])); iy = max(0.0, min(rect[3], o[3]) - max(rect[1], o[1]))
+                        return ix * iy > 0.2 * (rect[2] - rect[0]) * (rect[3] - rect[1])
+                    if not any(overlaps_other(o) for o in all_boxes):
+                        d.setdefault('_artwork', []).append(rect)
+    except Exception:
+        pass
 
     # ink colour per line; bold hint per text row
     all_lines = []
@@ -2767,7 +2816,7 @@ def _match_run_width(run, text, span, size, bold, italic):
     try:
         bb = span.get('bbox')
         n = len(text)
-        if not bb or n < 4 or '	' in text:
+        if span.get('_ocr') or not bb or n < 4 or '	' in text:
             return
         target = float(bb[2]) - float(bb[0])
         name = (run.font.name or 'Arial').lower()
@@ -2780,6 +2829,14 @@ def _match_run_width(run, text, span, size, bold, italic):
         d = (target - width) / n
         if abs(d * 100) >= 1 and abs(d) <= 0.35 * size:
             run.font._element.set('spc', str(int(round(d * 100))))
+    except Exception:
+        pass
+
+
+def _progress(page, total):
+    """Tell the server which page is being processed (read from stderr by the job gate)."""
+    try:
+        print(f'FILEORA_PROGRESS page={page} total={total}', file=sys.stderr, flush=True)
     except Exception:
         pass
 
@@ -2810,6 +2867,7 @@ def pdf_to_pptx(input_path, output_path, dpi=240):
     
     with tempfile.TemporaryDirectory(prefix='editable_pptx_', ignore_cleanup_errors=True) as tmp_dir:
         for idx, page in enumerate(doc):
+            _progress(idx + 1, len(doc))
             pw, ph = page.rect.width, page.rect.height
             page_area = pw * ph
             slide = prs.slides.add_slide(blank_layout)

@@ -90,6 +90,7 @@
       document.documentElement.classList.remove('dark');
     }
   </script>
+  <script src="/assets/config.js"></script>
   <script src="/assets/warmup.js" defer></script>
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -99,7 +100,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-2.5 flex-shrink-0 group">
-        <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-8 sm:h-9 w-auto">
+        <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-7 sm:h-8 w-auto">
       </a>
 
       <!-- Quick Nav Links -->
@@ -543,7 +544,8 @@
       let uid = 0;
       const makeItem = (o) => Object.assign({ key: 'r' + (++uid), status: 'ready', customName: '', editing: false, editError: '', saving: false, downloading: false, deleting: false }, o);
       const nameOf = (it) => it.customName || it.convertedFilename || it.name || 'converted_file';
-      const jobUrl = (it) => `/api/jobs/${encodeURIComponent(it.jobId)}/download?token=${encodeURIComponent(it.token)}` + (it.customName ? `&name=${encodeURIComponent(it.customName)}` : '');
+      const API = FILEORA_CONFIG.apiBase();
+      const jobUrl = (it) => `${API}/api/jobs/${encodeURIComponent(it.jobId)}/download?token=${encodeURIComponent(it.token)}` + (it.customName ? `&name=${encodeURIComponent(it.customName)}` : '');
       const byKey = (k) => items.find(i => i.key === k);
 
       // Written by the converter page: batch size and which files failed
@@ -740,7 +742,7 @@
 
       let autoDownloaded = false;
       const metaFetches = jobsList.map((j, idx) =>
-        fetch(`/api/jobs/${encodeURIComponent(j.jobId)}?token=${encodeURIComponent(j.token)}`)
+        fetch(`${API}/api/jobs/${encodeURIComponent(j.jobId)}?token=${encodeURIComponent(j.token)}`)
           .then(async res => {
             const data = await res.json().catch(() => ({}));
             const it = items[idx];
@@ -865,7 +867,7 @@
       });
 
       async function deleteJob(it) {
-        const res = await fetch(`/api/jobs/${encodeURIComponent(it.jobId)}?token=${encodeURIComponent(it.token)}`, { method: 'DELETE' });
+        const res = await fetch(`${API}/api/jobs/${encodeURIComponent(it.jobId)}?token=${encodeURIComponent(it.token)}`, { method: 'DELETE' });
         if (res.ok) return { ok: true };
         const j = await res.json().catch(() => ({}));
         return { ok: false, error: j.message || 'Could not delete the file.' };

@@ -54,7 +54,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: '*', exposedHeaders: ['X-Original-Size', 'X-Result-Size', 'X-Target-Met', 'X-Converter-Fallback'] }));
 
 // General IP-based rate limiting (120 req/min)
-app.use(security.rateLimiter(false));
+// Per-IP rate limit for API calls only: page and asset requests (one page view is ~20 of them) must not eat the budget
+app.use('/api', security.rateLimiter(false));
 app.use('/api', security.rejectOversizedRequest);
 
 // Express JSON body limit for text / table payloads
@@ -424,8 +425,54 @@ const upload = multer({
 
 // Upload middleware used by every heavy route: multer stores the file (size limits enforced), then the request enters the
 // shared run queue. Arrays are accepted by Express, so a route can list `gatedUpload.single('file')` as one middleware.
+// Cheap structural check of the stored upload, so a failed conversion of a damaged / wrong-type file is reported as such
+// (HTTP 422 with a clear message) instead of a generic 500. It never blocks a file: if the converter still succeeds, the
+// result is delivered as usual.
+const EXPECTED_PART = { docx: 'word/document.xml', pptx: 'ppt/presentation.xml' };
+const INPUT_PROBLEM_TEXT = {
+  damaged: 'This file appears to be damaged or incomplete, so it could not be converted. Try opening and re-saving it, then upload it again.',
+  wrongtype: 'This file does not look like the type this tool expects, so it could not be converted. Please check that you chose the right tool.',
+  legacy: 'Older Office formats (.doc, .ppt, .xls) are not fully supported by this tool. Please save the file in the newer format (.docx, .pptx, .xlsx) and try again.'
+};
+function inputGuard(kind) {
+  return async (req, res, next) => {
+    try {
+      const f = req.file && req.file.path;
+      if (f) {
+        const head = Buffer.alloc(8); const fd = fs.openSync(f, 'r'); fs.readSync(fd, head, 0, 8, 0);
+        const size = fs.fstatSync(fd).size; let tail = Buffer.alloc(0);
+        if (kind === 'pdf') { tail = Buffer.alloc(Math.min(2048, size)); fs.readSync(fd, tail, 0, tail.length, size - tail.length); }
+        fs.closeSync(fd);
+        if (kind === 'pdf') {
+          if (!tail.toString('latin1').includes('%%EOF')) req.__inputProblem = 'damaged';
+        } else if (head[0] === 0xd0 && head[1] === 0xcf && head[2] === 0x11 && head[3] === 0xe0) {
+          req.__inputProblem = 'legacy';
+        } else if (kind === 'docx' || kind === 'pptx') {
+          try {
+            const zip = await require('jszip').loadAsync(fs.readFileSync(f));
+            if (!zip.file('[Content_Types].xml')) req.__inputProblem = 'damaged';
+            else if (!zip.file(EXPECTED_PART[kind])) req.__inputProblem = 'wrongtype';
+          } catch (e) { req.__inputProblem = 'damaged'; }
+        } else if (kind === 'office') {
+          try { if (!(await require('jszip').loadAsync(fs.readFileSync(f))).file('[Content_Types].xml')) req.__inputProblem = 'damaged'; }
+          catch (e) { if (!(head[0] === 0x50 ? false : /^[\x20-\x7e\r\n\t]*$/.test(head.toString('latin1')))) req.__inputProblem = 'damaged'; }
+        }
+      }
+    } catch (e) { /* the guard only informs; never blocks */ }
+    const origJson = res.json.bind(res);
+    res.json = (body) => {
+      if (res.statusCode === 500 && req.__inputProblem && body && body.error) {
+        res.status(422);
+        return origJson({ error: 'FILE_PROBLEM', reason: req.__inputProblem, message: INPUT_PROBLEM_TEXT[req.__inputProblem] });
+      }
+      return origJson(body);
+    };
+    next();
+  };
+}
+
 const gatedUpload = {
-  single: (name) => [upload.single(name), security.heavyGate],
+  single: (name, kind) => (kind ? [upload.single(name), security.heavyGate, inputGuard(kind)] : [upload.single(name), security.heavyGate]),
   array: (name, max) => [upload.array(name, max), security.validateBatchSize, security.heavyGate]
 };
 
@@ -702,7 +749,9 @@ async function downloadAndClean(res, filePath, downloadName, alsoDelete) {
   // Last check before anything is offered to the user: the file exists, is not empty, has the format its extension
   // claims and can be opened (PDF page count, Office package structure, image signature, archive entries).
   try {
+    jobgate.setProgress({ stage: 'validating' });
     await assertValidOutput(filePath);
+    jobgate.setProgress({ stage: 'preparing' });
   } catch (verifyErr) {
     console.error('[output-check] rejected output:', String(verifyErr.message || verifyErr).replace(/[A-Za-z]:\\[^\s]*/g, '<path>'));
     safeUnlink(filePath);
@@ -939,6 +988,14 @@ function safeBase(filename) {
 
 // Health Check
 let workingGeminiModel = null;
+// What the page shows while a conversion runs (queue position, page N of M, validating ...). Only coarse numbers.
+app.get('/api/progress/:id', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const p = jobgate.getProgress(req.params.id);
+  if (!p) return res.status(400).json({ error: 'INVALID_ID' });
+  res.json(p);
+});
+
 app.get('/health', (req, res) => {
   // Used by the website to wake the service and by uptime checks. Does no conversion work, takes no queue slot and
   // initialises nothing; only coarse job counts are reported (no paths, versions, keys or model names).
@@ -1742,7 +1799,7 @@ app.post('/api/convert/to-xlsx', security.concurrencyLimiter, gatedUpload.single
 // =====================================================================
 // 1. HIGH-FIDELITY OFFICE CONVERTER (DOCX, PPTX, XLSX to PDF)
 // =====================================================================
-app.post('/api/convert/to-pdf', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/convert/to-pdf', security.concurrencyLimiter, gatedUpload.single('file', 'office'), async (req, res) => {
   if (!await validateUploadSafety(req, res, 'office')) return;
 
   const input = req.file.path;
@@ -1802,7 +1859,7 @@ app.post('/api/convert/to-pdf', security.concurrencyLimiter, gatedUpload.single(
 });
 
 // 2. HIGH-FIDELITY PDF TO WORD (PDF to DOCX via pdf2docx real tool, LibreOffice secondary, Native fallback)
-app.post('/api/convert/to-docx', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/convert/to-docx', security.concurrencyLimiter, gatedUpload.single('file', 'pdf'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
@@ -1840,7 +1897,7 @@ app.post('/api/convert/to-docx', security.concurrencyLimiter, gatedUpload.single
 });
 
 // 3. PDF TO POWERPOINT (Exact Aspect Ratio via PyMuPDF + python-pptx real tool)
-app.post('/api/convert/to-pptx', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/convert/to-pptx', security.concurrencyLimiter, gatedUpload.single('file', 'pdf'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
@@ -1898,7 +1955,7 @@ app.post('/api/convert/to-pptx', security.concurrencyLimiter, gatedUpload.single
 });
 
 // WORD TO POWERPOINT (.docx to .pptx)
-app.post('/api/convert/word-to-pptx', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/convert/word-to-pptx', security.concurrencyLimiter, gatedUpload.single('file', 'docx'), async (req, res) => {
   if (!await validateUploadSafety(req, res, 'office')) return;
   const input = req.file.path;
   const originalName = req.file.originalname;
@@ -1949,8 +2006,8 @@ async function handlePptxToDocx(req, res) {
     }
   }
 }
-app.post('/api/convert/pptx-to-docx', security.concurrencyLimiter, gatedUpload.single('file'), handlePptxToDocx);
-app.post('/api/convert/powerpoint-to-word', security.concurrencyLimiter, gatedUpload.single('file'), handlePptxToDocx);
+app.post('/api/convert/pptx-to-docx', security.concurrencyLimiter, gatedUpload.single('file', 'pptx'), handlePptxToDocx);
+app.post('/api/convert/powerpoint-to-word', security.concurrencyLimiter, gatedUpload.single('file', 'pptx'), handlePptxToDocx);
 
 // 4. MERGE PDFS (pdf-lib) - kept as a server fallback; the page now merges in the browser
 app.post('/api/pdf/merge', security.concurrencyLimiter, gatedUpload.array('files', 10), async (req, res) => {
@@ -2554,4 +2611,7 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Fileora conversion engine listening on port ${PORT}`);
+  // One startup line for the platform logs: runtime facts and which backends are configured (booleans only, no values)
+  let sqliteOk = false; try { require('node:sqlite'); sqliteOk = true; } catch (e) {}
+  console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);
 });

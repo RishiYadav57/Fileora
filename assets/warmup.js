@@ -12,11 +12,7 @@
  */
 (function () {
   'use strict';
-  // Keep in sync with CLOUD_BACKEND_URL in index.html (tests/test-warmup.js checks that they match).
-  var CLOUD_BACKEND_URL = 'https://docgrid-project.onrender.com';
-  var LOCAL_BACKEND_URL = 'http://localhost:3000';
-  var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
-  var base = isLocal ? LOCAL_BACKEND_URL : CLOUD_BACKEND_URL;
+  var base = (window.FILEORA_CONFIG && window.FILEORA_CONFIG.backend()) || location.origin; // shared config (assets/config.js)
   var KEY = 'fileora_warm_at';
   var FRESH_MS = 4 * 60 * 1000;
   var REQUEST_TIMEOUT_MS = 8000;

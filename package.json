@@ -17,5 +17,8 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "pptxgenjs": "^3.12.0"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }

@@ -153,7 +153,13 @@ function getLocalDb() {
   if (!fs.existsSync(storageDir)) {
     fs.mkdirSync(storageDir, { recursive: true });
   }
-  const { DatabaseSync } = require('node:sqlite');
+  let DatabaseSync;
+  try {
+    ({ DatabaseSync } = require('node:sqlite'));
+  } catch (e) {
+    // Node older than 22.5 has no built-in SQLite: fail with a clear operator message instead of a bare MODULE_NOT_FOUND
+    throw new Error(`Local job database unavailable: this Node.js (${process.version}) has no node:sqlite (needs 22.5+). Use a newer Node image or configure Cloudflare D1.`);
+  }
   const dbPath = path.join(storageDir, 'jobs.sqlite');
   localDb = new DatabaseSync(dbPath);
   localDb.exec(`

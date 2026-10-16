@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HOME=/tmp
 
-# Node.js 20, LibreOffice (headless), Poppler, Ghostscript (compress/repair),
+# Node.js 22 (storage.js needs the built-in node:sqlite module, available from Node 22.5), LibreOffice (headless), Poppler, Ghostscript (compress/repair),
 # qpdf (protect/unlock/repair) and fonts (Latin, Indic, Arabic, CJK) for translated PDFs
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     fonts-noto-core \
     fonts-noto-cjk \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
