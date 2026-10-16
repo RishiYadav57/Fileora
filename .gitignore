@@ -26,6 +26,8 @@
 !/tessdata/*.traineddata
 !/scripts/
 !/scripts/build-public.js
+!/migrations/
+!/migrations/*.sql
 # never, even inside allowed folders
 .env
 *.pdf

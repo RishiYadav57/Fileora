@@ -19,7 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Load environment variables from .env if present (zero-dependency)
 (function loadEnv() {
   const envPath = path.join(__dirname, '.env');
-  if (fs.existsSync(envPath)) {
+  if (process.env.FILEORA_SKIP_DOTENV !== 'true' && fs.existsSync(envPath)) { // FILEORA_SKIP_DOTENV: test hook, keeps tests away from real credentials
     try {
       const content = fs.readFileSync(envPath, 'utf8');
       content.split('\n').forEach(line => {
@@ -2614,4 +2614,13 @@ app.listen(PORT, () => {
   // One startup line for the platform logs: runtime facts and which backends are configured (booleans only, no values)
   let sqliteOk = false; try { require('node:sqlite'); sqliteOk = true; } catch (e) {}
   console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);
+  // Job records must live somewhere reliable. With REQUIRE_D1=true a missing or unusable D1 stops the process (a failed
+  // deploy keeps the previous version running) instead of serving jobs that cannot be found later.
+  r2Storage.verifyPersistence().then((st) => {
+    console.log(`[startup] job database: ${st.ok ? 'ok' : 'PROBLEM'} - ${st.reason}`);
+    if (!st.ok && process.env.REQUIRE_D1 === 'true') {
+      console.error('[startup] REQUIRE_D1=true and the job database is not usable: exiting so this deploy fails instead of losing jobs.');
+      process.exit(1);
+    }
+  }).catch(() => {});
 });

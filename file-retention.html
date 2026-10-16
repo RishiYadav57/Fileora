@@ -258,9 +258,9 @@
         <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
           <div class="flex items-center justify-between gap-2">
             <span class="font-bold text-slate-900 dark:text-white text-xs">Orphaned R2 Objects</span>
-            <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px]">24 hr threshold</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px]">Retention period (60 min)</span>
           </div>
-          <p class="text-[11px] text-slate-600 dark:text-slate-400">S3 prefix scanner compares against DB and purges unlinked keys (25 hours)</p>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Storage objects with no live record are purged once they are older than the retention period (about 70 minutes at most)</p>
         </div>
         <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
           <div class="flex items-center justify-between gap-2">
@@ -315,9 +315,9 @@
             </tr>
             <tr>
               <td class="py-2.5 px-4 font-semibold">Orphaned R2 Objects</td>
-              <td class="py-2.5 px-4 font-bold">24 hours threshold</td>
-              <td class="py-2.5 px-4">S3 prefix scanner compares against DB and purges unlinked keys</td>
-              <td class="py-2.5 px-4">25 hours</td>
+              <td class="py-2.5 px-4 font-bold">Older than the retention period (60 min)</td>
+              <td class="py-2.5 px-4">Each sweep lists stored objects, and deletes those older than the retention period that the job database confirms have no live record. If the database cannot be reached, nothing is deleted and the sweep is retried</td>
+              <td class="py-2.5 px-4">About 70 minutes</td>
             </tr>
             <tr>
               <td class="py-2.5 px-4 font-semibold">Manual User Deletion</td>

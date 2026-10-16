@@ -20,7 +20,7 @@ const {
 // Load environment variables from .env if present (zero-dependency)
 (function loadEnv() {
   const envPath = path.join(__dirname, '.env');
-  if (fs.existsSync(envPath)) {
+  if (process.env.FILEORA_SKIP_DOTENV !== 'true' && fs.existsSync(envPath)) { // FILEORA_SKIP_DOTENV: test hook, keeps tests away from real credentials
     try {
       const content = fs.readFileSync(envPath, 'utf8');
       content.split('\n').forEach(line => {
@@ -96,6 +96,18 @@ const isPlaceholderSecret = !R2_SECRET_ACCESS_KEY ||
 
 const isR2Configured = Boolean(R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && !isPlaceholderSecret);
 const isD1Configured = Boolean(D1_ACCOUNT_ID && D1_DATABASE_ID && D1_API_TOKEN);
+// Test hook only (tests point it at a local mock); production always uses the real Cloudflare API.
+const D1_API_BASE = (process.env.CLOUDFLARE_API_BASE || 'https://api.cloudflare.com').replace(/\/+$/, '');
+// REQUIRE_D1=true: never use the temporary local database (set it in production once D1 is configured)
+const REQUIRE_D1 = process.env.REQUIRE_D1 === 'true';
+// Some but not all D1 settings present: almost certainly a mistake. Refuse to guess (a silent local database would make
+// valid jobs look missing and their R2 objects look orphaned).
+const d1PartiallyConfigured = !isD1Configured && Boolean(process.env.CLOUDFLARE_API_TOKEN || process.env.D1_DATABASE_ID);
+if (d1PartiallyConfigured) {
+  console.error('[Storage] Cloudflare D1 is only partly configured (needs D1_DATABASE_ID, CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID or R2_ACCOUNT_ID). Job storage will refuse to run until this is fixed.');
+} else if (!isD1Configured && (process.env.R2_ACCOUNT_ID || process.env.R2_ACCESS_KEY_ID)) {
+  console.warn('[Storage] WARNING: Cloudflare D1 is not configured, so job records live in a temporary local database that is lost on restart. Configure D1 for persistent job records.');
+}
 
 // Initialize R2 S3 Client (if configured)
 let s3Client = null;
@@ -104,6 +116,7 @@ if (isR2Configured) {
     s3Client = new S3Client({
       region: 'auto',
       endpoint: R2_ENDPOINT,
+      forcePathStyle: process.env.R2_FORCE_PATH_STYLE === 'true', // test hook for local mocks; R2 itself uses virtual-hosted style
       credentials: {
         accessKeyId: R2_ACCESS_KEY_ID,
         secretAccessKey: R2_SECRET_ACCESS_KEY
@@ -184,6 +197,8 @@ function getLocalDb() {
 // 4. Database Query Executor (D1 if configured, otherwise built-in SQLite)
 async function executeD1Query(sql, params = []) {
   if (!isD1Configured) {
+    if (REQUIRE_D1) throw new Error('A persistent job database is required (REQUIRE_D1=true) but Cloudflare D1 is not configured.');
+    if (d1PartiallyConfigured) throw new Error('Cloudflare D1 is only partly configured; refusing to fall back to a local database.');
     const db = getLocalDb();
     const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
     const stmt = db.prepare(sql);
@@ -195,28 +210,43 @@ async function executeD1Query(sql, params = []) {
     }
   }
 
-  const url = `https://api.cloudflare.com/client/v4/accounts/${D1_ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${D1_API_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ sql, params })
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Cloudflare D1 query failed (${res.status}): ${errText}`);
+  // Remote database. Failures are never turned into "no rows": the caller gets an error. Reads, deletes and schema
+  // statements are idempotent and are retried a couple of times on transient errors; an INSERT is attempted once.
+  const url = `${D1_API_BASE}/client/v4/accounts/${D1_ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query`;
+  const idempotent = /^\s*(SELECT|DELETE|CREATE)/i.test(sql);
+  const attempts = idempotent ? 3 : 1;
+  let lastErr = null;
+  for (let n = 0; n < attempts; n++) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${D1_API_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sql, params }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!res.ok) {
+        const err = new Error(`Cloudflare D1 query failed (HTTP ${res.status})`);
+        err.transient = res.status >= 500 || res.status === 429;
+        throw err;
+      }
+      const json = await res.json();
+      if (!json || !json.success) {
+        const first = json && Array.isArray(json.errors) && json.errors[0] && json.errors[0].message;
+        throw new Error(`Cloudflare D1 reported an error${first ? ': ' + String(first).slice(0, 120) : ''}`);
+      }
+      const result = json.result && json.result[0];
+      return (result && result.results) || [];
+    } catch (e) {
+      lastErr = e;
+      const transient = e.transient || e.name === 'TimeoutError' || e.name === 'AbortError' || e instanceof TypeError; // TypeError = network failure from fetch
+      if (n < attempts - 1 && transient) {
+        await new Promise((r) => setTimeout(r, 300 * 3 ** n));
+        continue;
+      }
+      break;
+    }
   }
-
-  const json = await res.json();
-  if (!json.success) {
-    throw new Error(`D1 API error: ${JSON.stringify(json.errors || json)}`);
-  }
-
-  const result = json.result && json.result[0];
-  return (result && result.results) || [];
+  throw lastErr;
 }
 
 let d1Initialized = false;
@@ -489,7 +519,11 @@ async function deleteJob(jobId, token) {
         Key: job.object_key
       }));
     } catch (e) {
-      console.warn('[Storage] Delete R2 object notice:', e.message);
+      if (e.name !== 'NoSuchKey' && e.$metadata?.httpStatusCode !== 404) {
+        // keep the record: the cleanup sweep (or another attempt) can still find and retry this object
+        console.warn(`[Storage] Could not delete R2 object for ${job.job_id}:`, e.name || e.message);
+        return { error: 'STORAGE_ERROR', status: 502, message: 'The file could not be deleted from storage right now. Please try again in a moment.' };
+      }
     }
   } else {
     try {
@@ -505,30 +539,34 @@ async function deleteJob(jobId, token) {
 /**
  * Cleans up expired conversion jobs and their R2 objects in bounded batches.
  */
+let lastExpiredFailures = 0;
 async function cleanExpiredJobs(batchSize = CLEANUP_BATCH_SIZE) {
   const now = Date.now();
   let totalPurged = 0;
-  const maxIterations = 10; // Safety cap: max 10 batches per run
+  let failures = 0;
+  let cursor = '';              // keyset pagination: rows whose object could not be deleted stay in the table and are retried next run
+  const maxIterations = 10;     // safety cap: max 10 batches per run
 
   for (let i = 0; i < maxIterations; i++) {
     const expiredRows = await executeD1Query(
-      'SELECT job_id, object_key, converted_filename FROM conversion_jobs WHERE expires_at < ? LIMIT ?',
-      [now, batchSize]
+      'SELECT job_id, object_key, converted_filename FROM conversion_jobs WHERE expires_at < ? AND job_id > ? ORDER BY job_id LIMIT ?',
+      [now, cursor, batchSize]
     );
 
     if (!expiredRows || expiredRows.length === 0) break;
 
     for (const row of expiredRows) {
-      // 1. Delete from R2
+      cursor = row.job_id;
+      let storageGone = true;
+      // 1. Delete the stored object first
       if (isR2Configured && s3Client && row.object_key) {
         try {
-          await s3Client.send(new DeleteObjectCommand({
-            Bucket: R2_BUCKET_NAME,
-            Key: row.object_key
-          }));
+          await s3Client.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: row.object_key }));
         } catch (delErr) {
           if (delErr.name !== 'NoSuchKey' && delErr.$metadata?.httpStatusCode !== 404) {
-            console.warn(`[Storage Cleanup] Notice deleting R2 object for ${row.job_id}:`, delErr.message);
+            storageGone = false;
+            failures++;
+            console.warn(`[Storage Cleanup] Could not delete R2 object for ${row.job_id} (will retry):`, delErr.name || delErr.message);
           }
         }
       } else {
@@ -541,65 +579,68 @@ async function cleanExpiredJobs(batchSize = CLEANUP_BATCH_SIZE) {
         } catch (e) {}
       }
 
-      // 2. Delete database record
-      await executeD1Query('DELETE FROM conversion_jobs WHERE job_id = ?', [row.job_id]);
-      totalPurged++;
+      // 2. Only when the object is gone, delete the record (it is the only pointer needed to retry otherwise)
+      if (storageGone) {
+        await executeD1Query('DELETE FROM conversion_jobs WHERE job_id = ?', [row.job_id]);
+        totalPurged++;
+      }
     }
 
     if (expiredRows.length < batchSize) break;
   }
 
+  lastExpiredFailures = failures;
   return totalPurged;
 }
 
 /**
  * Scans R2 for orphaned objects that no longer have active database records and exceed safe age.
  */
-async function cleanOrphanedR2Objects(maxKeys = 100) {
+const ORPHAN_KEY = /^converted\/(cjob_[a-f0-9]{32})\//;
+async function cleanOrphanedR2Objects(maxKeys = 1000, maxPages = 10) {
   if (!isR2Configured || !s3Client) return 0;
 
   let purgedOrphans = 0;
+  let token;
+  // An object is only an orphan once it is older than the retention period (min. 15 minutes: it may still be mid-upload,
+  // its record is written right after the upload) and the job database positively says it has no live record.
+  const safetyBufferMs = Math.max(OUTPUT_RETENTION_MINUTES, 15) * 60 * 1000;
   try {
-    const listCmd = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
-      Prefix: 'converted/',
-      MaxKeys: maxKeys
-    });
-    const s3Res = await s3Client.send(listCmd);
-    const contents = s3Res.Contents || [];
-    if (contents.length === 0) return 0;
-
-    const safetyBufferMs = Math.max(OUTPUT_RETENTION_MINUTES, 15) * 60 * 1000;
-    const now = Date.now();
-
-    for (const obj of contents) {
-      if (!obj.Key) continue;
-      const parts = obj.Key.split('/');
-      if (parts.length < 3) continue;
-      const jobId = parts[1];
-
-      // Age of object
-      const ageMs = now - (obj.LastModified ? new Date(obj.LastModified).getTime() : now);
-      if (ageMs < safetyBufferMs) continue; // Skip recent objects (could be mid-upload)
-
-      // Check if job exists in database
-      const rows = await executeD1Query('SELECT job_id, expires_at FROM conversion_jobs WHERE job_id = ? LIMIT 1', [jobId]);
-      const shouldDelete = (rows.length === 0) || (rows[0].expires_at && rows[0].expires_at < now);
-
-      if (shouldDelete) {
-        try {
-          await s3Client.send(new DeleteObjectCommand({
-            Bucket: R2_BUCKET_NAME,
-            Key: obj.Key
-          }));
-          purgedOrphans++;
-        } catch (delErr) {
-          console.warn(`[Storage Cleanup] Orphan delete notice for ${obj.Key}:`, delErr.message);
+    for (let page = 0; page < maxPages; page++) {
+      const s3Res = await s3Client.send(new ListObjectsV2Command({
+        Bucket: R2_BUCKET_NAME, Prefix: 'converted/', MaxKeys: maxKeys, ContinuationToken: token
+      }));
+      const now = Date.now();
+      const candidates = [];
+      for (const obj of s3Res.Contents || []) {
+        const m = obj.Key && ORPHAN_KEY.exec(obj.Key);
+        if (!m || !obj.LastModified) continue;               // only keys this application wrote
+        if (now - new Date(obj.LastModified).getTime() < safetyBufferMs) continue;
+        candidates.push({ key: obj.Key, jobId: m[1] });
+      }
+      for (let i = 0; i < candidates.length; i += 50) {
+        const chunk = candidates.slice(i, i + 50);
+        const ids = [...new Set(chunk.map((c) => c.jobId))];
+        // If this query fails it throws: the sweep stops here and nothing further is deleted (a failed lookup is not "no record")
+        const rows = await executeD1Query(`SELECT job_id, expires_at FROM conversion_jobs WHERE job_id IN (${ids.map(() => '?').join(',')})`, ids);
+        const byId = new Map((rows || []).map((r) => [r.job_id, r]));
+        for (const c of chunk) {
+          const row = byId.get(c.jobId);
+          const isOrphan = !row || (row.expires_at && row.expires_at < now);
+          if (!isOrphan) continue;
+          try {
+            await s3Client.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: c.key }));
+            purgedOrphans++;
+          } catch (delErr) {
+            console.warn('[Storage Cleanup] Orphan delete failed (will retry next sweep):', delErr.name || delErr.message);
+          }
         }
       }
+      if (!s3Res.IsTruncated || !s3Res.NextContinuationToken) break;
+      token = s3Res.NextContinuationToken;
     }
   } catch (err) {
-    console.warn('[Storage Cleanup] Orphaned R2 sweep notice:', err.message);
+    console.warn('[Storage Cleanup] Orphaned R2 sweep stopped early:', err.message);
   }
 
   return purgedOrphans;
@@ -674,6 +715,7 @@ async function runFullCleanup(extraDirs = []) {
       expiredJobs,
       orphanedR2,
       staleTempFiles,
+      retryPending: lastExpiredFailures,
       durationMs,
       retentionConfig: {
         outputRetentionMinutes: OUTPUT_RETENTION_MINUTES,
@@ -695,14 +737,41 @@ async function runFullCleanup(extraDirs = []) {
 
 // 6. Production Schedulers
 // Periodic background sweep every CLEANUP_INTERVAL_MINUTES
-const cleanupTimer = setInterval(() => {
-  runFullCleanup().catch(() => {});
-}, CLEANUP_INTERVAL_MINUTES * 60 * 1000).unref();
+let cleanupTimer = null;
+if (process.env.FILEORA_DISABLE_SCHEDULER !== 'true') { // test hook
+  cleanupTimer = setInterval(() => {
+    runFullCleanup().catch(() => {});
+  }, CLEANUP_INTERVAL_MINUTES * 60 * 1000).unref();
 
-// Run immediate startup sweep after 5 seconds to purge jobs that expired while offline
-setTimeout(() => {
-  runFullCleanup().catch(() => {});
-}, 5000).unref();
+  // Run immediate startup sweep after 5 seconds to purge jobs that expired while offline
+  setTimeout(() => {
+    runFullCleanup().catch(() => {});
+  }, 5000).unref();
+}
+
+/**
+ * Startup check for the job database. Returns { ok, reason } (never throws, never includes secrets).
+ * With REQUIRE_D1=true the server must not run on a missing or unusable D1 (job records would silently be lost or wrong).
+ */
+async function verifyPersistence({ attempts = 3, delayMs = 1500 } = {}) {
+  if (REQUIRE_D1 && !isD1Configured) {
+    return { ok: false, reason: d1PartiallyConfigured ? 'REQUIRE_D1 is set but D1 is only partly configured' : 'REQUIRE_D1 is set but Cloudflare D1 is not configured' };
+  }
+  if (!isD1Configured) {
+    return { ok: !d1PartiallyConfigured, reason: d1PartiallyConfigured ? 'D1 is only partly configured' : 'using the temporary local database (D1 not configured)', persistent: false };
+  }
+  let last = '';
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await executeD1Query('SELECT COUNT(*) AS n FROM conversion_jobs');
+      return { ok: true, reason: 'Cloudflare D1 reachable and the conversion_jobs table exists', persistent: true };
+    } catch (e) {
+      last = String(e && e.message || e).slice(0, 160);
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  return { ok: false, reason: `Cloudflare D1 is configured but not usable: ${last}` };
+}
 
 /**
  * Lightweight test of R2 bucket connection without exposing credentials.
@@ -766,6 +835,7 @@ module.exports = {
   cleanStaleTempFiles,
   runFullCleanup,
   testR2Connection,
+  verifyPersistence,
   sanitizeFilename,
   getMimeType,
   JOB_ID_REGEX,
