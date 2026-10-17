@@ -1,5 +1,5 @@
 /**
- * Cloudflare R2 & Ephemeral Storage Engine for Fileora (pdfconverterfree.in)
+ * Cloudflare R2 & Ephemeral Storage Engine for FileCorner (pdfconverterfree.in)
  * Provides refresh-safe, multi-tenant secure temporary file storage, configurable retention,
  * server-side expiry authorization, orphaned object sweeps, and automated multi-phase cleanup.
  */

@@ -1,5 +1,5 @@
 /**
- * Fileora - Core High-Fidelity Conversion Engine
+ * FileCorner - Core High-Fidelity Conversion Engine
  * Production-grade document converter supporting:
  * - PDF to DOCX (Text, Headings, Lists, Tables, Images, Scanned OCR Fallback)
  * - PDF to XLSX (Deterministic 2D Table Extraction)
@@ -1984,7 +1984,7 @@
       const totalPages = pdf.getPageCount();
       for (let i = 0; i < totalPages; i++) {
         const pg = pdf.getPage(i);
-        pg.drawText(`Page ${i + 1} of ${totalPages}  |  Fileora Verified Document`, {
+        pg.drawText(`Page ${i + 1} of ${totalPages}  |  FileCorner Verified Document`, {
           x: margin,
           y: 25,
           size: 8,
@@ -2120,7 +2120,7 @@
       const totalPages = pdf.getPageCount();
       for (let i = 0; i < totalPages; i++) {
         const pg = pdf.getPage(i);
-        pg.drawText(`Page ${i + 1} of ${totalPages}  |  Fileora Verified Document`, {
+        pg.drawText(`Page ${i + 1} of ${totalPages}  |  FileCorner Verified Document`, {
           x: margin,
           y: 20,
           size: 8,
@@ -2438,7 +2438,7 @@
       finishSlide();
 
       if (!slidesData.length) {
-        slidesData.push({ title: 'Document Summary', items: [{ text: 'Document converted with Fileora' }], tables: [], images: [] });
+        slidesData.push({ title: 'Document Summary', items: [{ text: 'Document converted with FileCorner' }], tables: [], images: [] });
       }
 
       const pres = new PptxGen();

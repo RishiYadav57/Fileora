@@ -1,4 +1,4 @@
-/* Fileora backend warm-up. Loaded (deferred) by every public page.
+/* FileCorner backend warm-up. Loaded (deferred) by every public page.
  * A free Render service goes to sleep after ~15 minutes without traffic; the first request then takes 60-90 s while it
  * boots. Sending one tiny request as soon as a visitor lands starts that boot while they read the page / pick a file.
  *

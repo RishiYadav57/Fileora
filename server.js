@@ -302,7 +302,7 @@ app.post('/api/contact', async (req, res) => {
     return res.json({
       success: true,
       referenceId: result.referenceId,
-      message: `Thank you for reaching out to Fileora. Your message has been received and routed to our support team (Ref: ${result.referenceId}). We will review your query promptly.`
+      message: `Thank you for reaching out to FileCorner. Your message has been received and routed to our support team (Ref: ${result.referenceId}). We will review your query promptly.`
     });
   } catch (err) {
     console.error('[Contact] SMTP delivery error:', err.message || err);
@@ -1469,7 +1469,7 @@ async function buildNativeSummaryPdf(summary, name, pageCount) {
     height: 52,
     color: rgb(0.06, 0.2, 0.45)
   });
-  page.drawText('Fileora AI Summary', {
+  page.drawText('FileCorner AI Summary', {
     x: 55,
     y: 728,
     size: 17,
@@ -1593,7 +1593,7 @@ async function buildNativeSummaryPdf(summary, name, pageCount) {
   const total = doc.getPageCount();
   for (let i = 0; i < total; i++) {
     const p = doc.getPage(i);
-    p.drawText(`Page ${i + 1} of ${total}  |  Fileora AI Summary  |  Private & Secure`, {
+    p.drawText(`Page ${i + 1} of ${total}  |  FileCorner AI Summary  |  Private & Secure`, {
       x: 45,
       y: 35,
       size: 8,
@@ -1629,7 +1629,7 @@ app.post('/api/summary/pdf', security.concurrencyLimiter, async (req, res) => {
   .foot { font-size: 8.5pt; color: #94a3b8; margin-top: 16pt; }
 </style></head>
 <body>
-<h1>Fileora AI Summary</h1>
+<h1>FileCorner AI Summary</h1>
 <p class="meta">Document: ${escapeHtml(name)}${pageCount ? ` | ${Number(pageCount) || ''} pages` : ''} | Created ${new Date().toISOString().slice(0, 10)}</p>
 ${summaryToHtml(summary, dirAttr)}
 <p class="foot">Created automatically with Google Gemini. Please check important details against the original document.</p>
@@ -1642,7 +1642,7 @@ ${summaryToHtml(summary, dirAttr)}
   } catch (err) {
     safeUnlink(htmlPath);
     safeUnlink(pdfPath);
-    console.log('LibreOffice unavailable/failed for summary PDF. Engaging native Fileora PDF engine...');
+    console.log('LibreOffice unavailable/failed for summary PDF. Engaging native FileCorner PDF engine...');
     try {
       const pdfBytes = await buildNativeSummaryPdf(summary, name, pageCount);
       const out = newOutPath('summary', 'pdf');
@@ -1980,7 +1980,7 @@ app.post('/api/pdf/merge', security.concurrencyLimiter, gatedUpload.array('files
     const outputPath = path.join(outDir, `Merged-${Date.now()}.pdf`);
     fs.writeFileSync(outputPath, mergedBytes);
 
-    return downloadAndClean(res, outputPath, 'Fileora_Merged.pdf');
+    return downloadAndClean(res, outputPath, 'FileCorner_Merged.pdf');
   } catch (err) {
     req.files.forEach((f) => safeUnlink(f.path));
     console.error(err);
@@ -2552,7 +2552,7 @@ app.use((req, res) => {
     if (fs.existsSync(p404)) {
       res.sendFile(p404);
     } else {
-      res.type('html').send('<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested page does not exist. <a href="/">Return to Fileora</a></p></body></html>');
+      res.type('html').send('<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested page does not exist. <a href="/">Return to FileCorner</a></p></body></html>');
     }
   } else if (req.accepts('json')) {
     res.json({ error: 'Page or resource not found.' });
@@ -2562,7 +2562,7 @@ app.use((req, res) => {
 });
 
 const httpServer = app.listen(PORT, () => {
-  console.log(`Fileora conversion engine listening on port ${PORT}`);
+  console.log(`FileCorner conversion engine listening on port ${PORT}`);
   // One startup line for the platform logs: runtime facts and which backends are configured (booleans only, no values)
   let sqliteOk = false; try { require('node:sqlite'); sqliteOk = true; } catch (e) {}
   console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);

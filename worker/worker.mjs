@@ -1,4 +1,4 @@
-// Fileora R2 cleanup (Cloudflare Worker, cron trigger).
+// FileCorner R2 cleanup (Cloudflare Worker, cron trigger).
 // The Render backend deletes expired files on a timer, but a free Render instance sleeps after ~15 minutes without traffic, so
 // that timer does not run while it sleeps. This Worker runs on Cloudflare's schedule instead and physically deletes converted
 // files that are older than MAX_AGE_MINUTES, whether or not the backend is awake.

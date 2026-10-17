@@ -1,4 +1,4 @@
-/* Single place that defines where the Fileora API lives. Loaded synchronously (it is tiny) by every public page before
+/* Single place that defines where the FileCorner API lives. Loaded synchronously (it is tiny) by every public page before
  * any other script; the converter, the download page and the warm-up all read FILEORA_CONFIG instead of hardcoding a URL.
  * Contains no credentials. */
 (function () {

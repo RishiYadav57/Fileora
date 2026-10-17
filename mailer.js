@@ -1,5 +1,5 @@
 /**
- * Production-ready Gmail SMTP Mailer Module for Fileora
+ * Production-ready Gmail SMTP Mailer Module for FileCorner
  * Handles validation, sanitization, rate limiting, and email dispatch
  * using Nodemailer over TLS (Port 465).
  */
@@ -182,7 +182,7 @@ async function sendContactEmail(submissionData) {
   // Plain-text alternative
   const plainText = [
     `======================================================`,
-    `FILEORA - NEW CONTACT SUBMISSION`,
+    `FILECORNER - NEW CONTACT SUBMISSION`,
     `======================================================`,
     ``,
     `Reference ID : ${referenceId}`,
@@ -218,7 +218,7 @@ async function sendContactEmail(submissionData) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td>
-              <h1 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">Fileora</h1>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">FileCorner</h1>
               <p style="margin: 4px 0 0 0; font-size: 13px; color: #bfdbfe;">New User Support &amp; Inquiry Submission</p>
             </td>
             <td align="right">
@@ -275,7 +275,7 @@ async function sendContactEmail(submissionData) {
     <!-- Footer -->
     <tr>
       <td style="padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center;">
-        Fileora Automated Dispatcher &bull; <a href="https://pdfconverterfree.in" style="color: #64748b; text-decoration: none;">pdfconverterfree.in</a>
+        FileCorner Automated Dispatcher &bull; <a href="https://pdfconverterfree.in" style="color: #64748b; text-decoration: none;">pdfconverterfree.in</a>
       </td>
     </tr>
 
@@ -285,7 +285,7 @@ async function sendContactEmail(submissionData) {
   `;
 
   const mailOptions = {
-    from: `"Fileora Support" <${smtpUser}>`,
+    from: `"FileCorner Support" <${smtpUser}>`,
     to: recipient,
     replyTo: name ? `"${name}" <${email}>` : email,
     subject: subject,

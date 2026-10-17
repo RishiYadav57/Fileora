@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Security & File Handling Architecture | Fileora</title>
+  <title>Security & File Handling Architecture | FileCorner</title>
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://pdfconverterfree.in/file-retention">
-  <meta name="description" content="Detailed technical overview of Fileora's document security, in-browser sandboxing, temporary file retention (60 minutes), and cleanup workflows.">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/fileora-icon-32.png">
+  <meta name="description" content="Detailed technical overview of FileCorner's document security, in-browser sandboxing, temporary file retention (60 minutes), and cleanup workflows.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/filecorner-icon-32.png">
   <link rel="icon" href="/assets/favicon.ico" sizes="any">
-  <link rel="apple-touch-icon" href="/assets/fileora-icon-180.png">
+  <link rel="apple-touch-icon" href="/assets/filecorner-icon-180.png">
   <link rel="manifest" href="/assets/site.webmanifest">
   <meta name="theme-color" content="#2463EB">
 
@@ -51,7 +51,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 gap-4">
         <a href="/" class="flex items-center gap-2.5 group">
-          <img src="/assets/fileora-logo.png" alt="Fileora" width="1407" height="357" class="h-6 sm:h-7 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+          <img src="/assets/filecorner-logo.png" alt="FileCorner" width="1842" height="357" class="h-6 sm:h-7 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
         </a>
 
         <div class="flex items-center gap-3">
@@ -172,7 +172,7 @@
           Temporary Storage Only
         </h3>
         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Fileora does not keep permanent copies of your documents. Original uploads are deleted from the server as soon as conversion finishes. Converted files that you download from the results page are held in a private Cloudflare R2 bucket for 60 minutes, together with a small job record (file name, size, expiry and a random download token, never the file contents) in our job database, and are then deleted automatically by a cleanup sweep, or immediately if you delete them from the download page. There are no user profile directories.
+          FileCorner does not keep permanent copies of your documents. Original uploads are deleted from the server as soon as conversion finishes. Converted files that you download from the results page are held in a private Cloudflare R2 bucket for 60 minutes, together with a small job record (file name, size, expiry and a random download token, never the file contents) in our job database, and are then deleted automatically by a cleanup sweep, or immediately if you delete them from the download page. There are no user profile directories.
         </p>
       </div>
 
@@ -202,7 +202,7 @@
     <section class="p-6 rounded-3xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
       <h3 class="font-bold text-sm text-slate-900 dark:text-white">Recommended User Security Precautions</h3>
       <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        While Fileora minimizes risk through client-side architecture and short-lived temporary storage, you should practice standard document security hygiene:
+        While FileCorner minimizes risk through client-side architecture and short-lived temporary storage, you should practice standard document security hygiene:
       </p>
       <ul class="text-xs text-slate-600 dark:text-slate-300 list-disc list-inside space-y-1.5 pl-2">
         <li>Always clear your local browser cache when using public or shared computers.</li>
@@ -216,7 +216,7 @@
   <!-- Footer -->
   <footer class="mt-auto border-t border-slate-200/80 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <span>&copy; 2026 Fileora. High-Fidelity Document Processing Engine.</span>
+      <span>&copy; 2026 FileCorner. High-Fidelity Document Processing Engine.</span>
       <div class="flex items-center gap-4 text-xs">
         <a href="/" class="hover:text-blue-600 dark:hover:text-blue-400">Home</a>
         <a href="/about" class="hover:text-blue-600 dark:hover:text-blue-400">About</a>
