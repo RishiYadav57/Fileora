@@ -17,6 +17,8 @@
 !/storage.js
 !/mailer.js
 !/jobgate.js
+!/complexity.js
+!/output_verify.py
 !/converter-engine.js
 !/seo-data.js
 !/seo-render.js

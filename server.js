@@ -7,7 +7,7 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const { PDFDocument, StandardFonts, degrees, rgb, ParseSpeeds } = require('pdf-lib');
-const converterEngine = require('./converter-engine');
+const complexity = require('./complexity');
 const SEO_DATA = require('./seo-data.js');
 const { renderToolHtml } = require('./seo-render.js');
 
@@ -64,7 +64,18 @@ app.use(cors({ origin: '*', exposedHeaders: [
 
 // General IP-based rate limiting (120 req/min)
 // Per-IP rate limit for API calls only: page and asset requests (one page view is ~20 of them) must not eat the budget
-app.use('/api', security.rateLimiter(false));
+const generalLimiter = security.rateLimiter(false);
+const progressBuckets = new Map();
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'GET' || !req.path.startsWith('/progress/')) return generalLimiter(req, res, next);
+  const ip = security.getClientIp(req);
+  const now = Date.now();
+  const b = progressBuckets.get(ip);
+  if (!b || now >= b.resetAt) progressBuckets.set(ip, { count: 1, resetAt: now + 60000 });
+  else if (++b.count > 600) return res.status(429).set('Retry-After', '10').json({ error: 'RATE_LIMIT_EXCEEDED', message: 'Too many status requests.' });
+  if (progressBuckets.size > 5000) { for (const [k, v] of progressBuckets) if (now >= v.resetAt) progressBuckets.delete(k); }
+  next();
+});
 app.use('/api', security.rejectOversizedRequest);
 
 // Express JSON body limit for text / table payloads
@@ -330,9 +341,16 @@ const multerStorage = multer.diskStorage({
 const upload = multer({
   storage: multerStorage,
   limits: {
-    fileSize: security.LIMITS.MAX_FILE_SIZE_BYTES + 1, // multer rejects when the size REACHES the limit, so +1 lets exactly 10,000,000 B through and still rejects 15,000,001 B
-    files: security.LIMITS.MAX_FILES_PER_BATCH      // Up to 3 files
+    fileSize: security.LIMITS.MAX_FILE_SIZE_BYTES + 1, // multer rejects when the size REACHES the limit, so +1 lets exactly 3,000,000 B through and still rejects 3,000,001 B
+    files: security.LIMITS.MAX_FILES_PER_BATCH,     // Up to 3 files
+    fields: 20,
+    fieldSize: 100 * 1000
   }
+});
+// A finished result handed back by the page for temporary storage (its own, larger-than-an-input cap)
+const uploadOutput = multer({
+  storage: multerStorage,
+  limits: { fileSize: security.LIMITS.MAX_OUTPUT_UPLOAD_BYTES + 1, files: 1, fields: 20, fieldSize: 100 * 1000 }
 });
 
 // Upload middleware used by every heavy route: multer stores the file (size limits enforced), then the request enters the
@@ -348,6 +366,7 @@ const INPUT_PROBLEM_TEXT = {
 };
 function inputGuard(kind) {
   return async (req, res, next) => {
+    let tooComplex = null;
     try {
       const f = req.file && req.file.path;
       if (f) {
@@ -364,13 +383,27 @@ function inputGuard(kind) {
             const zip = await require('jszip').loadAsync(fs.readFileSync(f));
             if (!zip.file('[Content_Types].xml')) req.__inputProblem = 'damaged';
             else if (!zip.file(EXPECTED_PART[kind])) req.__inputProblem = 'wrongtype';
+            else tooComplex = await complexity.assessZip(zip);
           } catch (e) { req.__inputProblem = 'damaged'; }
         } else if (kind === 'office') {
-          try { if (!(await require('jszip').loadAsync(fs.readFileSync(f))).file('[Content_Types].xml')) req.__inputProblem = 'damaged'; }
-          catch (e) { if (!(head[0] === 0x50 ? false : /^[\x20-\x7e\r\n\t]*$/.test(head.toString('latin1')))) req.__inputProblem = 'damaged'; }
+          if (/\.csv$/i.test(req.file.originalname || '')) {
+            tooComplex = complexity.assessCsv(fs.readFileSync(f));
+          } else {
+            try {
+              const zip = await require('jszip').loadAsync(fs.readFileSync(f));
+              if (!zip.file('[Content_Types].xml')) req.__inputProblem = 'damaged';
+              else tooComplex = await complexity.assessZip(zip);
+            }
+            catch (e) { if (!(head[0] === 0x50 ? false : /^[\x20-\x7e\r\n\t]*$/.test(head.toString('latin1')))) req.__inputProblem = 'damaged'; }
+          }
         }
       }
     } catch (e) { /* the guard only informs; never blocks */ }
+    // Documents that are too long / complex for the free server are refused now, before any conversion work starts
+    if (tooComplex) {
+      safeUnlink(req.file && req.file.path);
+      return res.status(422).json(tooComplex);
+    }
     const origJson = res.json.bind(res);
     res.json = (body) => {
       if (res.statusCode === 500 && req.__inputProblem && body && body.error) {
@@ -382,6 +415,49 @@ function inputGuard(kind) {
     next();
   };
 }
+
+// ---------------------------------------------------------------------
+// Tools that are switched off on the free server. DISABLED_TOOLS (comma separated) overrides the default list.
+//   scan-pdf, enhance-image : OCR / image enhancement need more memory and time than the free server has
+//   word-to-pptx            : can be added to the list to switch it off (not disabled by default)
+// pptx-editable (editable PowerPoint -> Word) is switched on only with FILEORA_ENABLE_PPTX_EDITABLE=true.
+// A disabled tool answers before the upload is read: it cannot be reached by calling the route directly.
+// ---------------------------------------------------------------------
+const DISABLED_TOOLS = new Set(String(process.env.DISABLED_TOOLS === undefined ? 'scan-pdf,enhance-image' : process.env.DISABLED_TOOLS)
+  .split(',').map((x) => x.trim().toLowerCase()).filter(Boolean));
+const PPTX_EDITABLE_ENABLED = String(process.env.FILEORA_ENABLE_PPTX_EDITABLE || '').toLowerCase() === 'true';
+const TOOL_LABELS = { 'scan-pdf': 'Scan PDF', 'enhance-image': 'Enhance image', 'word-to-pptx': 'Word to PowerPoint', 'pptx-editable': 'Editable PowerPoint to Word' };
+function requireTool(tool) {
+  return (req, res, next) => {
+    if (!DISABLED_TOOLS.has(tool)) return next();
+    const reply = () => {
+      if (!res.headersSent) res.status(503).json({ error: 'TOOL_DISABLED', tool, message: `${TOOL_LABELS[tool] || 'This tool'} is temporarily unavailable on the free server. Please try another tool.` });
+    };
+    // read and discard the body so the browser receives the message instead of a reset connection
+    if (parseInt(req.headers['content-length'] || '0', 10) > 6 * 1000 * 1000) { res.setHeader('Connection', 'close'); reply(); }
+    else { req.on('end', reply); req.on('error', () => {}); req.resume(); }
+  };
+}
+// What the page needs to know before the visitor picks a tool or a file
+app.get('/api/capabilities', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const disabled = new Set(DISABLED_TOOLS);
+  if (!PPTX_EDITABLE_ENABLED) disabled.add('pptx-editable');
+  res.json({
+    disabledTools: [...disabled],
+    limits: {
+      maxFileBytes: security.LIMITS.MAX_FILE_SIZE_BYTES,
+      maxBatchBytes: security.LIMITS.MAX_BATCH_SIZE_BYTES,
+      maxFilesPerBatch: security.LIMITS.MAX_FILES_PER_BATCH,
+      maxPdfPages: complexity.LIMITS.PDF_MAX_PAGES,
+      maxPptxSlides: complexity.LIMITS.PPTX_MAX_SLIDES,
+      maxXlsxRows: complexity.LIMITS.XLSX_MAX_ROWS,
+      maxCsvRows: complexity.LIMITS.CSV_MAX_ROWS,
+      maxPdfImages: complexity.LIMITS.PDF_MAX_IMAGES
+    },
+    queue: jobgate.stats()
+  });
+});
 
 const gatedUpload = {
   single: (name, kind) => (kind ? [upload.single(name), security.heavyGate, inputGuard(kind)] : [upload.single(name), security.heavyGate]),
@@ -464,8 +540,8 @@ app.get('/api/jobs/:jobId/download', async (req, res) => {
 });
 
 // 3. Client upload endpoint to store client-side converted files in R2
-app.post('/api/jobs/upload', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
-  if (!await validateUploadSafety(req, res, null)) return;
+app.post('/api/jobs/upload', security.lightLimiter, uploadOutput.single('file'), async (req, res) => {
+  if (!await validateUploadSafety(req, res, null, security.LIMITS.MAX_OUTPUT_UPLOAD_BYTES)) return;
 
   try {
     const originalName = req.file.originalname;
@@ -593,18 +669,18 @@ function isPdfEncrypted(filePath) {
 }
 
 // Validates file size, magic bytes and archive safety
-async function validateUploadSafety(req, res, expectedType) {
+async function validateUploadSafety(req, res, expectedType, maxBytes = security.LIMITS.MAX_FILE_SIZE_BYTES) {
   if (!req.file) {
     res.status(400).json({ error: 'NO_FILE', message: 'No file received.' });
     return false;
   }
 
-  // 1. Enforce individual file size limit (10 MB)
-  if (req.file.size > security.LIMITS.MAX_FILE_SIZE_BYTES) {
+  // 1. Enforce individual file size limit (3 MB for inputs)
+  if (req.file.size > maxBytes) {
     safeUnlink(req.file.path);
     res.status(413).json({
       error: 'FILE_TOO_LARGE',
-      message: 'Maximum file size is 10 MB.'
+      message: `Maximum file size is ${security.mbText(maxBytes)}.`
     });
     return false;
   }
@@ -645,7 +721,7 @@ function requirePdf(req, res, allowEncrypted) {
     safeUnlink(req.file.path);
     res.status(413).json({
       error: 'FILE_TOO_LARGE',
-      message: 'Maximum file size is 10 MB.'
+      message: `Maximum file size is ${security.mbText(security.LIMITS.MAX_FILE_SIZE_BYTES)}.`
     });
     return false;
   }
@@ -730,6 +806,50 @@ async function downloadAndClean(res, filePath, downloadName, alsoDelete) {
 
 // A primary engine failed and a weaker fallback is about to run: log the real reason (incl. Python stderr)
 // and flag the response so clients/tests can tell the result did not come from the primary pipeline.
+// A conversion that failed because the machine ran out of memory must not be redone by a cheaper "fallback" engine: those engines
+// return a stripped-down file with HTTP 200, which the visitor cannot tell from a good result. Answer with a clear error instead.
+function isResourceFailure(err) {
+  if (!err || err.timedOut || err.code === 'ABORTED') return false;
+  if (err.signal === 'SIGKILL') return true;
+  return /MemoryError|Unable to allocate|Cannot allocate memory|ENOMEM|std::bad_alloc|out of memory|memory allocation failed|paging file is too small|WinError 1455/i.test(String(err.stderr || '') + ' ' + String(err.message || ''));
+}
+// What the visitor is told when a conversion cannot deliver a complete file. Every failure ends here: there is no weaker second
+// engine that returns "something". Temporary files are removed, the answer is a clear error, and a client that already left gets nothing.
+function describeFailure(err, fallbackMessage) {
+  const txt = `${(err && err.stderr) || ''} ${(err && err.message) || ''}`;
+  if (err && err.code === 'ABORTED') return null;
+  if (/SCANNED_PDF_UNSUPPORTED/.test(txt)) {
+    return { status: 422, error: 'SCANNED_PDF_UNSUPPORTED', message: 'This PDF contains scanned pages (pictures of text). Converting scanned PDFs is temporarily unavailable. Please use a PDF with selectable text.' };
+  }
+  const complex = /TOO_COMPLEX:\s*([^\r\n]+)/.exec(txt);
+  if (complex) return { status: 422, error: 'TOO_COMPLEX', message: complex[1].trim().slice(0, 300) };
+  if (/TOOL_DISABLED/.test(txt)) return { status: 503, error: 'TOOL_DISABLED', message: 'This tool is temporarily unavailable on the free server.' };
+  if (isResourceFailure(err)) {
+    return { status: 422, error: 'TOO_HEAVY_FOR_SERVER', message: 'This file needs more memory than the free server has, so it was not converted. Try a smaller file, fewer pages, or split the document.' };
+  }
+  if (err && err.timedOut) return { status: 504, error: 'CONVERSION_TIMEOUT', message: 'The conversion took too long and was stopped. Try a smaller or simpler file.' };
+  if (/OUTPUT_INCOMPLETE/.test(txt)) {
+    return { status: 500, error: 'OUTPUT_INCOMPLETE', message: 'The converted file was missing part of the original content, so it was not delivered. Please try again, or try a smaller or simpler file.' };
+  }
+  if ((err && err.outputInvalid) || /OUTPUT_UNREADABLE|did not produce valid/.test(txt)) {
+    return { status: 500, error: 'OUTPUT_INVALID', message: 'The converted file could not be verified, so it was not delivered. Please try again, or try a different file.' };
+  }
+  return { status: 500, error: 'CONVERSION_FAILED', message: fallbackMessage || 'The conversion failed.' };
+}
+function failConversion(res, err, files, fallbackMessage) {
+  (files || []).forEach((f) => { if (f) safeUnlink(f); });
+  const f = describeFailure(err, fallbackMessage);
+  const detail = String((err && (err.stderr || err.message)) || err).replace(/[A-Za-z]:\\[^\s]*/g, '<path>').split('\n').map((l) => l.trim()).filter(Boolean).slice(-3).join(' | ').slice(0, 400);
+  console.error(`[conversion-failed] ${f ? f.error : 'client_left'}: ${detail}`);
+  if (!f || res.headersSent) return;
+  res.status(f.status).json({ error: f.error, message: f.message });
+}
+// Only a plain failure is worth a second attempt: not memory, not a timeout, not an incomplete or unreadable result, not a cancel
+function isRetryable(err) {
+  const f = describeFailure(err);
+  return Boolean(f) && f.error === 'CONVERSION_FAILED';
+}
+
 function fallbackNotice(res, stage, err) {
   const detail = String((err && (err.stderr || err.message)) || err).split(String.fromCharCode(10)).map(l => l.trim()).filter(Boolean).slice(-3).join(' | ').slice(0, 400);
   console.warn(`[fallback] ${stage} failed -> using secondary engine: ${detail}`);
@@ -797,7 +917,12 @@ async function assertValidOutput(filePath) {
   const size = st.size;
   const verifiedKey = `${filePath}|${size}|${st.mtimeMs}`;
   if (verifiedOutputs.has(verifiedKey)) return;
-  await assertValidOutputUncached(filePath, ext, size);
+  try {
+    await assertValidOutputUncached(filePath, ext, size);
+  } catch (e) {
+    e.outputInvalid = true;
+    throw e;
+  }
   verifiedOutputs.add(verifiedKey);
   if (verifiedOutputs.size > 500) verifiedOutputs.delete(verifiedOutputs.values().next().value);
 }
@@ -846,7 +971,7 @@ const toolsConverterPath = path.join(__dirname, 'tools_converter.py');
 async function runRealTool(toolCmd, inputPath, outputPath, extraArgs = []) {
   const pyCmd = getPythonCmd();
   const args = [toolsConverterPath, toolCmd, inputPath, outputPath, ...extraArgs];
-  const proc = await execFileP(pyCmd, args, { timeout: 280000, maxBuffer: 64 * 1024 * 1024 });
+  const proc = await execFileP(pyCmd, args, { timeout: 150000, maxBuffer: 64 * 1024 * 1024 });
   if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 50) {
     throw new Error(`Real tool ${toolCmd} did not produce valid non-empty output at ${outputPath}`);
   }
@@ -854,17 +979,13 @@ async function runRealTool(toolCmd, inputPath, outputPath, extraArgs = []) {
   return { outputPath, stdout: proc.stdout || '', stderr: proc.stderr || '' };
 }
 
-// A fallback engine can 'succeed' with an almost empty document; refuse such output so the next engine gets a chance
-async function docxHasContent(filePath) {
-  try {
-    const JSZip = require('jszip');
-    const zip = await JSZip.loadAsync(fs.readFileSync(filePath));
-    const f = zip.file('word/document.xml');
-    if (!f) return false;
-    const xml = await f.async('string');
-    const text = (xml.match(/<w:t[ >][^<]*/g) || []).join('').length;
-    return text >= 40 || /<w:drawing|<w:pict/.test(xml);
-  } catch (e) { return false; }
+// Compares a result made by Node-side LibreOffice with its source (words, end of the document, page/slide count): a conversion that
+// was cut short or came out as a stub leaves a file that opens, so size and structure checks alone do not catch it.
+// Throws (python exit 3, "OUTPUT_INCOMPLETE" on stderr) when a meaningful part is missing. See output_verify.py.
+const verifyScriptPath = path.join(__dirname, 'output_verify.py');
+async function verifyContent(kind, srcPath, outPath) {
+  jobgate.setProgress({ stage: 'verifying' });
+  await execFileP(getPythonCmd(), [verifyScriptPath, kind, srcPath, outPath], { timeout: 60000, maxBuffer: 1024 * 1024 });
 }
 
 // LibreOffice cannot load a .docx whose document.xml points at comments that have no comments part (Word ignores them)
@@ -898,10 +1019,15 @@ async function libreConvert(inputPath, targetExt, extraArgs) {
     '--outdir', outDir,
     inputPath
   ];
-  await withLibreOffice(() => execFileP(loCmd, args, { timeout: 120000 }));
   const out = path.join(outDir, `${path.parse(inputPath).name}.${targetExt.split(':')[0]}`);
-  if (!fs.existsSync(out)) throw new Error('The converted file was not produced.');
-  await assertValidOutput(out);
+  try {
+    await withLibreOffice(() => execFileP(loCmd, args, { timeout: 120000 }));
+    if (!fs.existsSync(out)) throw new Error('The converted file was not produced.');
+    await assertValidOutput(out);
+  } catch (e) {
+    safeUnlink(out); // a half-written result must not stay behind
+    throw e;
+  }
   return out;
 }
 
@@ -1694,38 +1820,26 @@ app.post('/api/convert/tables-to-xlsx', security.concurrencyLimiter, async (req,
   }
 });
 
-// PDF TO EXCEL (.pdf to .xlsx via PyMuPDF table & OCR extractor + native engine fallback)
+// PDF TO EXCEL (.pdf to .xlsx via the PyMuPDF table extractor). The result is compared with the PDF inside the converter; there is
+// no weaker second engine: a file that cannot be converted completely is an error, never a reduced file.
 app.post('/api/convert/to-xlsx', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
   const originalName = req.file.originalname;
-  let output = newOutPath('tables', 'xlsx');
+  const output = newOutPath('tables', 'xlsx');
 
   try {
-    // Primary: Deterministic Table & OCR Spreadsheet Extractor
     await runRealTool('pdf2xlsx', input, output);
-    downloadAndClean(res, output, `${path.parse(originalName).name}.xlsx`, [input]);
+    return downloadAndClean(res, output, `${path.parse(originalName).name}.xlsx`, [input]);
   } catch (err) {
-    fallbackNotice(res, 'Real pdf2xlsx tool', err);
-    try {
-      const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-      const data = new Uint8Array(fs.readFileSync(input));
-      const doc = await pdfjsLib.getDocument({ data }).promise;
-      const xlsxBuf = await converterEngine.convertPdfToXlsx(doc);
-      fs.writeFileSync(output, xlsxBuf);
-      downloadAndClean(res, output, `${path.parse(originalName).name}.xlsx`, [input]);
-    } catch (fallbackErr) {
-      safeUnlink(input);
-      safeUnlink(output);
-      console.error('All PDF to Excel engines failed:', fallbackErr);
-      res.status(500).json({ error: 'Could not convert this PDF to Excel spreadsheet.' });
-    }
+    failConversion(res, err, [input, output], 'Could not convert this PDF to an Excel spreadsheet.');
   }
 });
 
 // =====================================================================
-// 1. HIGH-FIDELITY OFFICE CONVERTER (DOCX, PPTX, XLSX to PDF)
+// 1. OFFICE TO PDF (DOCX, PPTX via LibreOffice; XLSX, CSV via the spreadsheet optimiser)
+// Word and PowerPoint results are compared with the source (words, end of document, page/slide count) before they are offered.
 // =====================================================================
 app.post('/api/convert/to-pdf', security.concurrencyLimiter, gatedUpload.single('file', 'office'), async (req, res) => {
   if (!await validateUploadSafety(req, res, 'office')) return;
@@ -1733,205 +1847,105 @@ app.post('/api/convert/to-pdf', security.concurrencyLimiter, gatedUpload.single(
   const input = req.file.path;
   const originalName = req.file.originalname;
   const ext = path.extname(originalName).toLowerCase();
+  const downloadName = `${path.parse(originalName).name}.pdf`;
+  const failText = 'Document compilation failed. Check that the file is a valid, unprotected document.';
   let out;
+  const started = Date.now();
   try {
-    // For spreadsheets (XLSX, XLS, CSV), use our high-fidelity optimizer (auto landscape, proportional widths, word wrap, borders, repeated headers)
+    // Spreadsheets: auto landscape, proportional widths, word wrap, borders, repeated headers (verified inside the converter)
     if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
       out = newOutPath('converted', 'pdf');
       await runRealTool('xlsx2pdf', input, out);
-      return downloadAndClean(res, out, `${path.parse(originalName).name}.pdf`, [input]);
+      return downloadAndClean(res, out, downloadName, [input]);
     }
-
-    // Primary for DOCX/PPTX: LibreOffice headless (preserves exact PPTX/DOCX aspect ratio, layout, and images)
+    if (ext !== '.docx' && ext !== '.pptx') {
+      safeUnlink(input);
+      return res.status(415).json({ error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Please upload a .docx, .pptx, .xlsx or .csv file.' });
+    }
+    // LibreOffice headless preserves the page layout, fonts and images
     out = await libreConvert(input, 'pdf');
-    return downloadAndClean(res, out, `${path.parse(originalName).name}.pdf`, [input]);
+    await verifyContent(ext === '.pptx' ? 'pptx2pdf' : 'docx2pdf', input, out);
+    return downloadAndClean(res, out, downloadName, [input]);
   } catch (err) {
-    fallbackNotice(res, 'Primary conversion', err);
-    try {
-      out = newOutPath('converted', 'pdf');
-      if (ext === '.pptx') {
-        await runRealTool('pptx2pdf', input, out);
-      } else if (ext === '.docx') {
-        await runRealTool('docx2pdf', input, out);
-      } else if (ext === '.xlsx' || ext === '.csv' || ext === '.xls') {
-        out = await libreConvert(input, 'pdf');
-      } else {
-        throw new Error(`Unsupported format: ${ext}`);
-      }
-      return downloadAndClean(res, out, `${path.parse(originalName).name}.pdf`, [input]);
-    } catch (realToolErr) {
-      fallbackNotice(res, 'Real tool runner', realToolErr);
+    // One more attempt through the Python pipeline (same LibreOffice, with document/deck preparation) when the first attempt failed
+    // quickly and not for lack of resources or because the result was incomplete. Its result is verified the same way.
+    if (isRetryable(err) && (ext === '.docx' || ext === '.pptx') && Date.now() - started < 30000) {
+      safeUnlink(out);
       try {
-        const fileBytes = fs.readFileSync(input);
-        let pdfBytes;
-        if (ext === '.docx') {
-          pdfBytes = await converterEngine.convertDocxToPdf(fileBytes);
-        } else if (ext === '.xlsx' || ext === '.csv' || ext === '.xls') {
-          pdfBytes = await converterEngine.convertXlsxToPdf(fileBytes);
-        } else if (ext === '.pptx') {
-          pdfBytes = await converterEngine.convertPptxToPdf(fileBytes);
-        } else {
-          throw new Error(`Unsupported format for native conversion: ${ext}`);
-        }
         out = newOutPath('converted', 'pdf');
-        fs.writeFileSync(out, pdfBytes);
-        downloadAndClean(res, out, `${path.parse(originalName).name}.pdf`, [input]);
-      } catch (fallbackErr) {
-        safeUnlink(input);
-        safeUnlink(out);
-        console.error('All document compilation engines failed:', fallbackErr);
-        res.status(500).json({ error: 'Document compilation failed. Check that the file is a valid, unprotected document.' });
+        await runRealTool(ext === '.pptx' ? 'pptx2pdf' : 'docx2pdf', input, out);
+        return downloadAndClean(res, out, downloadName, [input]);
+      } catch (err2) {
+        return failConversion(res, err2, [input, out], failText);
       }
     }
+    failConversion(res, err, [input, out], failText);
   }
 });
 
-// 2. HIGH-FIDELITY PDF TO WORD (PDF to DOCX via pdf2docx real tool, LibreOffice secondary, Native fallback)
+// 2. PDF TO WORD (pdf2docx with typography/table post-processing; the result is compared with the PDF inside the converter)
 app.post('/api/convert/to-docx', security.concurrencyLimiter, gatedUpload.single('file', 'pdf'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
   const originalName = req.file.originalname;
-  let out;
+  const out = newOutPath('converted', 'docx');
   try {
-    // Primary: Real pdf2docx tool (extracts full text, tables, styles, images, layout 1:1)
-    out = newOutPath('converted', 'docx');
     await runRealTool('pdf2docx', input, out);
-    downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
+    return downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
   } catch (err) {
-    fallbackNotice(res, 'pdf2docx tool', err);
-    try {
-      out = await libreConvert(input, 'docx');
-      if (!await docxHasContent(out)) throw new Error('LibreOffice produced an empty document');
-      downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
-    } catch (loErr) {
-      fallbackNotice(res, 'LibreOffice PDF-to-DOCX', loErr);
-      try {
-        const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-        const data = new Uint8Array(fs.readFileSync(input));
-        const doc = await pdfjsLib.getDocument({ data }).promise;
-        const docxBuf = await converterEngine.convertPdfToDocx(doc);
-        out = newOutPath('converted', 'docx');
-        fs.writeFileSync(out, docxBuf);
-        downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
-      } catch (fallbackErr) {
-        safeUnlink(input);
-        safeUnlink(out);
-        console.error('All PDF-to-DOCX engines failed:', fallbackErr);
-        res.status(500).json({ error: 'Conversion to Word failed. If the PDF is password-protected, unlock it first.' });
-      }
-    }
+    failConversion(res, err, [input, out], 'Conversion to Word failed. If the PDF is password-protected, unlock it first.');
   }
 });
 
-// 3. PDF TO POWERPOINT (Exact Aspect Ratio via PyMuPDF + python-pptx real tool)
+// 3. PDF TO POWERPOINT (editable text boxes and tables with the exact page size, python-pptx)
 app.post('/api/convert/to-pptx', security.concurrencyLimiter, gatedUpload.single('file', 'pdf'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
   const originalName = req.file.originalname;
-  let output = newOutPath('slides', 'pptx');
-
+  const output = newOutPath('slides', 'pptx');
   try {
-    // Primary: Native Editable PDF to PPTX (reconstructs text boxes, tables, and separate images)
     await runRealTool('pdf2pptx', input, output);
-    downloadAndClean(res, output, `${path.parse(originalName).name}.pptx`, [input]);
+    return downloadAndClean(res, output, `${path.parse(originalName).name}.pptx`, [input]);
   } catch (err) {
-    fallbackNotice(res, 'Real pdf2pptx tool', err);
-    try {
-      const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-        const data = new Uint8Array(fs.readFileSync(input));
-        const doc = await pdfjsLib.getDocument({ data }).promise;
-        const pagesData = await converterEngine.extractPdfPagesData(doc);
-
-        const pptxgen = require('pptxgenjs');
-        const pres = new pptxgen();
-        pres.defineLayout({ name: 'PDFSLIDE', width: 10, height: 7.5 });
-        pres.layout = 'PDFSLIDE';
-
-        for (const pg of pagesData) {
-          let slide = pres.addSlide();
-          const layout = converterEngine.analyzePageLayout(pg);
-          let curY = 0.8;
-          for (const el of layout.elements) {
-            if (!el.text) continue;
-            if (curY > 6.8) {
-              slide = pres.addSlide();
-              curY = 0.8;
-            }
-            const isTitle = el.type === 'heading1' || el.type === 'heading2';
-            slide.addText(el.text, {
-              x: 0.8,
-              y: curY,
-              w: 8.4,
-              fontSize: isTitle ? 18 : 12,
-              bold: isTitle,
-              color: isTitle ? '0F172A' : '334155'
-            });
-            curY += isTitle ? 0.6 : 0.4;
-          }
-        }
-        await pres.writeFile({ fileName: output });
-        downloadAndClean(res, output, `${path.parse(originalName).name}.pptx`, [input]);
-      } catch (fallbackErr) {
-        safeUnlink(input);
-        safeUnlink(output);
-        console.error('All PDF to PPTX engines failed:', fallbackErr);
-        res.status(500).json({ error: 'Could not convert this PDF to PowerPoint. If it is password-protected, unlock it first.' });
-      }
-    }
-});
-
-// WORD TO POWERPOINT (.docx to .pptx)
-app.post('/api/convert/word-to-pptx', security.concurrencyLimiter, gatedUpload.single('file', 'docx'), async (req, res) => {
-  if (!await validateUploadSafety(req, res, 'office')) return;
-  const input = req.file.path;
-  const originalName = req.file.originalname;
-  let out = newOutPath('converted', 'pptx');
-  try {
-    // Primary: Real docx2pptx pipeline (LibreOffice DOCX->PDF with exact layout + PyMuPDF exact aspect ratio PPTX)
-    await runRealTool('docx2pptx', input, out);
-    downloadAndClean(res, out, `${path.parse(originalName).name}.pptx`, [input]);
-  } catch (err) {
-    fallbackNotice(res, 'Real docx2pptx tool', err);
-    try {
-      const fileBytes = fs.readFileSync(input);
-      const pptxBuf = await converterEngine.convertDocxToPptx(fileBytes);
-      fs.writeFileSync(out, pptxBuf);
-      downloadAndClean(res, out, `${path.parse(originalName).name}.pptx`, [input]);
-    } catch (fallbackErr) {
-      safeUnlink(input);
-      safeUnlink(out);
-      console.error('All DOCX-to-PPTX conversion engines failed:', fallbackErr);
-      res.status(500).json({ error: 'Word to PowerPoint conversion failed. Please ensure the document is a valid .docx file.' });
-    }
+    failConversion(res, err, [input, output], 'Could not convert this PDF to PowerPoint. If it is password-protected, unlock it first.');
   }
 });
 
-// POWERPOINT TO WORD (.pptx to .docx)
+// WORD TO POWERPOINT (.docx to .pptx): LibreOffice DOCX->PDF with exact layout, then the PDF->PPTX reconstruction
+app.post('/api/convert/word-to-pptx', requireTool('word-to-pptx'), security.concurrencyLimiter, gatedUpload.single('file', 'docx'), async (req, res) => {
+  if (!await validateUploadSafety(req, res, 'office')) return;
+  const input = req.file.path;
+  const originalName = req.file.originalname;
+  const out = newOutPath('converted', 'pptx');
+  try {
+    await runRealTool('docx2pptx', input, out);
+    return downloadAndClean(res, out, `${path.parse(originalName).name}.pptx`, [input]);
+  } catch (err) {
+    failConversion(res, err, [input, out], 'Word to PowerPoint conversion failed. Please ensure the document is a valid .docx file.');
+  }
+});
+
+// POWERPOINT TO WORD (.pptx to .docx). Only the layout-preserving mode (one picture per slide) is available on the free server;
+// the editable rebuild renders the deck several times and is switched off (FILEORA_ENABLE_PPTX_EDITABLE=true turns it back on).
+const PPTX_LAYOUT_MODES = ['layout', 'visual', 'render'];
 async function handlePptxToDocx(req, res) {
   if (!await validateUploadSafety(req, res, 'office')) return;
   const input = req.file.path;
   const originalName = req.file.originalname;
-  const mode = (req.body && req.body.mode) ? String(req.body.mode).trim().toLowerCase() : 'editable';
-  let out = newOutPath('converted', 'docx');
+  const requested = (req.body && req.body.mode) ? String(req.body.mode).trim().toLowerCase() : 'layout';
+  if (!PPTX_LAYOUT_MODES.includes(requested) && !PPTX_EDITABLE_ENABLED) {
+    safeUnlink(input);
+    return res.status(503).json({ error: 'TOOL_DISABLED', tool: 'pptx-editable', message: 'Editable mode is temporarily unavailable. Please use the layout-preserving mode.' });
+  }
+  const mode = PPTX_LAYOUT_MODES.includes(requested) ? 'layout' : requested;
+  const out = newOutPath('converted', 'docx');
   try {
-    // Primary: High-fidelity Dual-Mode Converter (layout vs editable)
     await runRealTool('pptx2docx', input, out, [mode]);
-    downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
+    return downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
   } catch (err) {
-    fallbackNotice(res, 'Real pptx2docx tool', err);
-    try {
-      const fileBytes = fs.readFileSync(input);
-      const docxBuf = await converterEngine.convertPptxToDocx(fileBytes, { mode });
-      fs.writeFileSync(out, docxBuf);
-      downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
-    } catch (fallbackErr) {
-      safeUnlink(input);
-      safeUnlink(out);
-      console.error('PowerPoint to Word fallback error:', fallbackErr);
-      res.status(500).json({ error: 'PowerPoint to Word conversion failed. Please ensure the document is a valid .pptx file.' });
-    }
+    failConversion(res, err, [input, out], 'PowerPoint to Word conversion failed. Please ensure the document is a valid .pptx file.');
   }
 }
 app.post('/api/convert/pptx-to-docx', security.concurrencyLimiter, gatedUpload.single('file', 'pptx'), handlePptxToDocx);
@@ -2408,7 +2422,7 @@ app.post('/api/pdf/unlock', security.concurrencyLimiter, gatedUpload.single('fil
 });
 
 // 10. SCAN PDF (Page analysis, deskew, contrast & PyMuPDF searchable OCR engine)
-app.post('/api/pdf/scan', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/pdf/scan', requireTool('scan-pdf'), security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
   if (!requirePdf(req, res)) return;
 
   const input = req.file.path;
@@ -2451,7 +2465,7 @@ app.post('/api/pdf/scan', security.concurrencyLimiter, gatedUpload.single('file'
 });
 
 // 11. ENHANCE IMAGE (OpenCV + Pillow High-Fidelity Image Enhancement)
-app.post('/api/image/enhance', security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
+app.post('/api/image/enhance', requireTool('enhance-image'), security.concurrencyLimiter, gatedUpload.single('file'), async (req, res) => {
   if (!await validateUploadSafety(req, res, 'image')) return;
 
   const input = req.file.path;

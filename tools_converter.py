@@ -16,6 +16,10 @@ Guaranteed 98-100% Layout, Typography, Image & Geometry Preservation
 
 import sys
 import os
+# numpy/OpenCV start one BLAS worker thread per visible core and reserve a large buffer for each (about 350 MB of committed memory on a
+# 12-core machine, measured), which is wasted on a small server whose CPU quota is a fraction of one core. Must be set before numpy loads.
+for _v in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS'):
+    os.environ.setdefault(_v, '1')
 import re
 import subprocess
 import shutil
@@ -1997,6 +2001,76 @@ def _maybe_prefer_positioned(input_path, output_path, scanned=False):
     except Exception as e:
         print(f"WARN: layout comparison skipped: {e}", file=sys.stderr)
 
+def _is_oom(e):
+    """True when an exception means the machine ran out of memory (a cheaper fallback engine would only return a degraded file)."""
+    if isinstance(e, MemoryError):
+        return True
+    m = str(e).lower()
+    return any(k in m for k in ('unable to allocate', 'cannot allocate memory', 'memory allocation failed', 'out of memory', 'bad_alloc'))
+
+
+# OCR (text recognition on scanned pages) is switched off on the free server: it needs several hundred MB and minutes of CPU per
+# document, and a half-finished OCR result is exactly the "looks valid but is incomplete" output we must not deliver.
+# FILEORA_ENABLE_OCR=true turns it back on (for a larger server).
+OCR_ENABLED = os.environ.get('FILEORA_ENABLE_OCR', '').strip().lower() in ('1', 'true', 'yes')
+SCANNED_PDF_MESSAGE = ('SCANNED_PDF_UNSUPPORTED: This PDF contains scanned pages (pictures of text). Converting scanned PDFs is '
+                       'temporarily unavailable. Please use a PDF with selectable text.')
+
+
+class ScannedPdfUnsupported(BaseException):
+    """BaseException on purpose: several `except Exception` handlers around OCR would otherwise swallow it and carry on without text."""
+    pass
+
+
+def _scan_like_page(page):
+    """No usable text layer and a picture that covers a large part of the page: a scan, not a blank page or a plain cover."""
+    try:
+        area = page.rect.width * page.rect.height
+        if area <= 0:
+            return False
+        big_picture = any(i.get('bbox') and (i['bbox'][2] - i['bbox'][0]) * (i['bbox'][3] - i['bbox'][1]) >= 0.25 * area for i in page.get_image_info())
+    except Exception:
+        return False
+    return big_picture and len(page.get_text().strip()) < 10
+
+
+try:
+    MAX_PDF_PAGES = max(1, int(os.environ.get('MAX_PDF_PAGES', '40')))
+except ValueError:
+    MAX_PDF_PAGES = 40
+
+
+try:
+    MAX_PDF_IMAGES = max(1, int(os.environ.get('MAX_PDF_IMAGES', '12')))
+except ValueError:
+    MAX_PDF_IMAGES = 12
+
+
+def _precheck_pdf(path, scan_fraction=0.3):
+    """Refuses, before any heavy work and in one pass over the file: documents that are too long or hold too many pictures (the cost
+    grows with the page count and, much faster, with the pictures: bench 8 pages with 3 pictures 6 s, 31 pages with 11 pictures 19 s),
+    and mostly-scanned documents while OCR is off."""
+    doc = fitz.open(path)
+    try:
+        n = len(doc)
+        if n > MAX_PDF_PAGES:
+            raise ValueError(f"TOO_COMPLEX: This document has {n} pages. The free server converts up to {MAX_PDF_PAGES} pages at a time. "
+                             f"Please split it into smaller parts and convert them one at a time.")
+        images = set()
+        scans = 0
+        for p in doc:
+            images.update(i[0] for i in p.get_images(full=False))
+            if not OCR_ENABLED and _scan_like_page(p):
+                scans += 1
+        if len(images) > MAX_PDF_IMAGES:
+            raise ValueError(f"TOO_COMPLEX: This document contains {len(images)} pictures. The free server converts documents with up to "
+                             f"{MAX_PDF_IMAGES} pictures. Please split it into smaller parts and convert them one at a time.")
+        if n and scans / float(n) >= scan_fraction:
+            raise ScannedPdfUnsupported(SCANNED_PDF_MESSAGE)
+    finally:
+        doc.close()
+
+
 def pdf_to_docx(input_path, output_path):
     """
     High-Fidelity Native PDF to Word Converter:
@@ -2005,6 +2079,7 @@ def pdf_to_docx(input_path, output_path):
     3. Pure digital documents are converted with pdf2docx (stream table splitting disabled) and post-processed for typography and borders.
     4. Guarantees 100% editable output with zero full-page screenshot substitutions.
     """
+    _precheck_pdf(input_path)
     doc_check = fitz.open(input_path)
     total_pages = len(doc_check)
     if total_pages == 0:
@@ -2065,6 +2140,8 @@ def pdf_to_docx(input_path, output_path):
         enhance_docx_fidelity(output_path, input_path)
         _maybe_prefer_positioned(input_path, output_path)
     except Exception as e:
+        if _is_oom(e):
+            raise  # no memory: do not hand back a reduced-quality document as if it were the real result
         # Seamless fallback to Native Editable Document Reconstructor
         reconstruct_pdf_to_docx_editable(input_path, output_path)
     finally:
@@ -2252,13 +2329,58 @@ def _ocr_page_job(args):
         doc.close()
 
 
+def _cgroup_limits():
+    """(cpu cores, memory bytes) granted to this container by cgroup v2 or v1, None when unlimited or unknown."""
+    cpus = mem = None
+    try:
+        with open('/sys/fs/cgroup/cpu.max') as f:
+            quota, period = f.read().split()[:2]
+            if quota != 'max':
+                cpus = int(quota) / float(period)
+    except Exception:
+        try:
+            with open('/sys/fs/cgroup/cpu/cpu.cfs_quota_us') as f:
+                quota = int(f.read().strip())
+            with open('/sys/fs/cgroup/cpu/cpu.cfs_period_us') as f:
+                period = int(f.read().strip())
+            if quota > 0:
+                cpus = quota / float(period)
+        except Exception:
+            pass
+    for path in ('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in_bytes'):
+        try:
+            with open(path) as f:
+                v = f.read().strip()
+            if v != 'max' and int(v) < (1 << 50):
+                mem = int(v)
+                break
+        except Exception:
+            continue
+    return cpus, mem
+
+
+def _ocr_worker_count():
+    """OCR processes to start. Each holds a rendered page plus Tesseract (about 100-200 MB), so a small container (Render Free:
+    512 MB, 0.1 CPU) gets one; OCR_WORKERS overrides."""
+    env = os.environ.get('OCR_WORKERS', '')
+    if env.isdigit():
+        return max(1, min(8, int(env)))
+    n = os.cpu_count() or 2
+    cpus, mem = _cgroup_limits()
+    if cpus is not None:
+        n = min(n, max(1, int(cpus)))
+    if mem is not None and mem < 1536 * 1024 * 1024:
+        return 1
+    return max(1, min(4, n))
+
+
 def prefetch_ocr(path, page_numbers, lang, tessdata_dir):
     """OCR many scanned pages in parallel (OCR is CPU-bound; 100 pages one after another exceeds any sane timeout)."""
     page_numbers = list(page_numbers)
-    if len(page_numbers) < 3:
+    if len(page_numbers) < 3 or not OCR_ENABLED:
         return
     from concurrent.futures import ProcessPoolExecutor
-    workers = max(1, min(4, (os.cpu_count() or 2)))
+    workers = _ocr_worker_count()
     try:
         with ProcessPoolExecutor(max_workers=workers) as ex:
             for pno, words, d in ex.map(_ocr_page_job, [(path, p, lang, tessdata_dir) for p in page_numbers]):
@@ -2587,6 +2709,10 @@ def _ocr_text_dict(page, lang, tessdata_dir, use_cache=True):
     """OCR text dict that also catches display-size text. Tesseract skips very large headings at 300 dpi, so the page is
     also recognised at a low resolution (where those headings look normal-sized) and blocks that the first pass did
     not find are added. Returns (words, text_dict); results prefetched in parallel are reused."""
+    if not OCR_ENABLED:
+        if _scan_like_page(page):
+            raise ScannedPdfUnsupported(SCANNED_PDF_MESSAGE)
+        return page.get_text('words'), page.get_text('dict')   # a blank page: nothing to recognise
     key = (os.path.abspath(page.parent.name or ''), page.number, lang)
     if use_cache and key in _OCR_CACHE:
         return _OCR_CACHE[key]
@@ -2862,6 +2988,7 @@ def pdf_to_pptx(input_path, output_path, dpi=240):
         doc.close()
         raise ValueError("PDF has 0 pages.")
     
+    _precheck_pdf(input_path)
     prefetch_ocr(input_path, [p.number for p in doc if _page_needs_ocr(p)], 'eng', tessdata_dir)
 
     prs = Presentation()
@@ -4580,6 +4707,7 @@ def pdf_to_xlsx(input_path, output_path, lang='eng'):
     if not os.path.exists(tessdata_dir):
         tessdata_dir = os.path.join(os.getcwd(), 'tessdata')
 
+    _precheck_pdf(input_path)
     doc_pdf = fitz.open(input_path)
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
@@ -4742,6 +4870,9 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if cmd == 'scan_pdf':
+        if not OCR_ENABLED:
+            print("ERROR: TOOL_DISABLED: Scan PDF (OCR) is temporarily unavailable.", file=sys.stderr)
+            sys.exit(5)
         lang = extra[0] if len(extra) > 0 else 'eng'
         mode = extra[1] if len(extra) > 1 else 'smart'
         try:
@@ -4755,6 +4886,9 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if cmd == 'enhance_image':
+        if os.environ.get('FILEORA_ENABLE_ENHANCE', '').strip().lower() not in ('1', 'true', 'yes'):
+            print("ERROR: TOOL_DISABLED: Image enhancement is temporarily unavailable.", file=sys.stderr)
+            sys.exit(5)
         preset = extra[0] if len(extra) > 0 else 'balanced'
         sharpen = extra[1] if len(extra) > 1 else 'medium'
         denoise = extra[2] if len(extra) > 2 else 'mild'
@@ -4775,15 +4909,41 @@ if __name__ == '__main__':
             print(f"ERROR: {e}", file=sys.stderr)
             sys.exit(1)
 
+    def _finish(kind):
+        """Compare the result with the source; an incomplete result is deleted and reported, never delivered."""
+        import output_verify
+        try:
+            info = output_verify.verify(kind, in_file, out_file)
+        except output_verify.IncompleteOutput as e:
+            try: os.remove(out_file)
+            except OSError: pass
+            print(f"OUTPUT_INCOMPLETE: {e}", file=sys.stderr)
+            sys.exit(3)
+        except Exception as e:
+            try: os.remove(out_file)
+            except OSError: pass
+            print(f"OUTPUT_UNREADABLE: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(4)
+        print(f"VERIFIED:{info}")
+
     if cmd == 'pptx2docx':
         mode = extra[0] if extra else 'layout'
+        if str(mode).strip().lower() not in ('layout', 'visual', 'render') and \
+                os.environ.get('FILEORA_ENABLE_PPTX_EDITABLE', '').strip().lower() not in ('1', 'true', 'yes'):
+            print("ERROR: TOOL_DISABLED: Editable PowerPoint-to-Word mode is temporarily unavailable.", file=sys.stderr)
+            sys.exit(5)
         try:
             pptx_to_docx(in_file, out_file, mode=mode)
-            print("SUCCESS")
-            sys.exit(0)
+        except ScannedPdfUnsupported as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(2)
         except Exception as e:
             print(f"ERROR: {e}", file=sys.stderr)
             sys.exit(1)
+        if str(mode).strip().lower() in ('layout', 'visual', 'render'):
+            _finish('pptx2docx')
+        print("SUCCESS")
+        sys.exit(0)
     
     dispatch = {
         'pptx2pdf': pptx_to_pdf,
@@ -4801,8 +4961,12 @@ if __name__ == '__main__':
         
     try:
         dispatch[cmd](in_file, out_file)
-        print("SUCCESS")
-        sys.exit(0)
+    except ScannedPdfUnsupported as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
+    _finish(cmd)
+    print("SUCCESS")
+    sys.exit(0)

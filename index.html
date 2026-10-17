@@ -410,7 +410,7 @@
             </button>
 
             <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
-              <span>Maximum 10 MB per file &middot; Maximum 20 MB total per batch &middot; Up to 3 files</span>
+              <span>Maximum 3 MB per file &middot; Maximum 5 MB total per batch &middot; Up to 3 files</span>
             </div>
           </div>
         </div>
@@ -1173,7 +1173,7 @@
               <a href="/tools/${t.id}" onclick="selectSearchedTool('${t.id}', event)" class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 ${menuIconHtml(t, "w-6 h-6 rounded bg-brand-50 dark:bg-slate-800 text-brand-600 dark:text-brand-400 font-bold font-mono text-[10px] flex items-center justify-center flex-shrink-0")}
                 <div class="truncate">
-                  <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">${t.name}</div>
+                  <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">${t.name}${unavailBadge(t.id)}</div>
                   <div class="text-[10px] text-slate-400 truncate">${t.categoryName} •${t.ext}</div>
                 </div>
               </a>
@@ -1352,7 +1352,7 @@
       const grid = document.getElementById("mobile-quick-grid");
       grid.innerHTML = MOBILE_QUICK_TOOLS.map(t => `
         <a href="/tools/${t.id}" onclick="selectPopularTool('${t.id}', event)" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-left hover:border-brand-500 bg-slate-50 dark:bg-slate-800/40 transition block">
-          <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${t.name}</div>
+          <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${t.name}${unavailBadge(t.id)}</div>
         </a>
       `).join('');
     }
@@ -1585,6 +1585,23 @@
       }
     }
 
+    // Tools the free server has switched off (OCR, image enhancement). The page starts with the usual list and refreshes it from
+    // GET /api/capabilities, so the server stays the single source of truth.
+    const UNAVAILABLE_TOOLS = new Set(["scan-pdf", "enhance-image"]);
+    const UNAVAILABLE_NOTE = "Temporarily unavailable on the free server.";
+    const unavailBadge = (id) => UNAVAILABLE_TOOLS.has(id) ? ' <span class="ml-1 rounded bg-slate-200 px-1 py-px text-[9px] font-semibold uppercase text-slate-600">Unavailable</span>' : "";
+    (async () => {
+      try {
+        const r = await fetch(`${BACKEND_URL}/api/capabilities`, { cache: "no-store" });
+        if (!r.ok) return;
+        const caps = await r.json();
+        if (Array.isArray(caps.disabledTools)) {
+          UNAVAILABLE_TOOLS.clear();
+          caps.disabledTools.forEach(t => UNAVAILABLE_TOOLS.add(t));
+        }
+      } catch (e) { /* keep the defaults */ }
+    })();
+
     function loadTool(toolId, isHome = false, pushToHistory = true) {
       cancelActiveExecution();
       const canonicalSlug = resolveToolId(toolId) || toolId;
@@ -1614,7 +1631,7 @@
 
       document.getElementById("tool-title").textContent = tool.name;
       document.getElementById("tool-format-badge").textContent = tool.ext;
-      document.getElementById("tool-description").textContent = tool.desc;
+      document.getElementById("tool-description").textContent = UNAVAILABLE_TOOLS.has(canonicalSlug) ? `${UNAVAILABLE_NOTE} ${tool.desc}` : tool.desc;
       document.getElementById("dropzone-action-name").textContent = tool.name;
       const iconBox = document.getElementById("tool-icon-box");
       if (iconBox) {
@@ -1697,13 +1714,12 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <span class="${LABEL_CLS}">Conversion Mode:</span>
                 <select id="ctrl-pptx-mode" class="${INPUT_CLS}">
-                  <option value="editable" selected>Editable Mode (Native Word Text, Tables & Images)</option>
-                  <option value="layout">Layout-Preserving (Visual Shapes & Word Text Boxes)</option>
+                  <option value="layout" selected>Layout-Preserving (one slide per Word page)</option>
                 </select>
               </div>
               <div class="${HINT_CLS}">
-                • <b>Layout-Preserving</b>: Faithfully preserves complex posters, multi-column blocks, diagrams, and section backgrounds on matching 1:1 Word pages.<br>
-                • <b>Editable</b>: Reconstructs slides into native editable Word paragraphs, tables, and positioned shapes.
+                • <b>Layout-Preserving</b>: Faithfully preserves complex posters, multi-column blocks, diagrams, and section backgrounds on matching 1:1 Word pages. Slides are pictures, so the text is not individually editable.<br>
+                • <b>Editable mode</b> is temporarily unavailable on the free server.
               </div>
             </div>`;
           break;
@@ -2063,7 +2079,7 @@
         faqs: [
           { q: "Will the PDF look identical on mobile and desktop?", a: "Yes. PDF fixes the document formatting in place, eliminating font discrepancies across different devices and versions of Microsoft Office." },
           { q: "Does Word to PDF support batch conversion?", a: "Yes. Switch to Batch Mode to convert multiple Word documents into PDFs simultaneously." },
-          { q: "Is there any file size limit?", a: "Documents up to 10 MB per file (20 MB and 3 files per batch) are supported with zero waiting queues." }
+          { q: "Is there any file size limit?", a: "Documents up to 3 MB per file (5 MB and 3 files per batch) are supported. If other conversions are running yours waits in a short queue." }
         ],
         related: ["pdf-to-word", "word-to-powerpoint", "compress-pdf", "protect-pdf"]
       },
@@ -2974,8 +2990,8 @@
       }
     }
 
-    const MAX_FILE_SIZE = 10 * 1000 * 1000; // 10 MB (decimal), same as the server
-    const MAX_BATCH_SIZE = 20 * 1000 * 1000; // 20 MB (decimal), same as the server
+    const MAX_FILE_SIZE = 3 * 1000 * 1000; // 3 MB (decimal), same as the server
+    const MAX_BATCH_SIZE = 5 * 1000 * 1000; // 5 MB (decimal), same as the server
     const MAX_FILE_COUNT = 3;
 
     function handleFiles(files) {
@@ -2994,11 +3010,11 @@
       }
       if (!ok.length) { showUploadNotice(notices); return; }
 
-      // 1. Validate individual file size <= 10 MB
+      // 1. Validate individual file size <= 3 MB
       const oversized = ok.filter(f => f.size > MAX_FILE_SIZE);
       if (oversized.length > 0) {
         const names = oversized.slice(0, 3).map(f => `${f.name} (${formatSize(f.size)})`).join(", ") + (oversized.length > 3 ? ` and ${oversized.length - 3} more` : "");
-        notices.push((processingMode === "batch" ? "Each file must be 10 MB or smaller." : "Maximum file size is 10 MB.") + ` Not added: ${names}.`);
+        notices.push((processingMode === "batch" ? "Each file must be 3 MB or smaller." : "Maximum file size is 3 MB.") + ` Not added: ${names}.`);
         ok = ok.filter(f => f.size <= MAX_FILE_SIZE);
       }
       if (!ok.length) { showUploadNotice(notices); return; }
@@ -3006,7 +3022,7 @@
       if (processingMode === "single") {
         fileQueue = [ok[0]];
       } else {
-        // 2. Validate max file count <= 5 and combined batch size <= 20 MB
+        // 2. Validate max file count <= 3 and combined batch size <= 5 MB
         let newQueue = [...fileQueue];
         let countExceeded = false;
         let batchSizeExceeded = false;
@@ -3028,7 +3044,7 @@
           notices.push(`Maximum ${MAX_FILE_COUNT} files per batch. Extra files were not added.`);
         }
         if (batchSizeExceeded) {
-          notices.push("Maximum combined batch size is 20 MB. Some files were not added.");
+          notices.push("Maximum combined batch size is 5 MB. Some files were not added.");
         }
 
         fileQueue = newQueue;
@@ -3166,7 +3182,7 @@
     }
 
     // ---- real progress from the server --------------------------------------------------------------
-    // Conversion requests carry a random id; while one is in flight the page asks GET /api/progress/:id every 2 s and shows
+    // Conversion requests carry a random id; while one is in flight the page asks GET /api/progress/:id every 4.5 s and shows
     // what the server is genuinely doing. Nothing here is estimated: no percentages, no guessed page counts.
     function newProgressId() {
       const b = new Uint8Array(12); crypto.getRandomValues(b);
@@ -3175,11 +3191,16 @@
     function progressLabel(p) {
       if (!p) return null;
       switch (p.stage) {
-        case "queued": return p.position > 0 ? `Waiting for other conversions (${p.position} ahead)…` : "Waiting for other conversions…";
+        case "queued": {
+          const ahead = p.position > 0 ? `${p.position - 1} ahead of you` : "";
+          const wait = p.etaSec > 0 ? `, about ${p.etaSec < 60 ? p.etaSec + " s" : Math.round(p.etaSec / 60) + " min"} (estimate)` : "";
+          return p.position > 0 ? `Waiting for other conversions (${ahead}${wait})…` : "Waiting for other conversions…";
+        }
         case "reading": return "Reading file…";
         case "converting": return "Converting…";
         case "pages": return p.pages > 0 ? `${p.phase > 0 ? "Building" : "Processing"} page ${p.page} of ${p.pages}…` : "Converting…";
         case "validating": return "Validating output…";
+        case "verifying": return "Checking the result is complete…";
         case "preparing": return "Preparing download…";
         default: return null;
       }
@@ -3195,9 +3216,9 @@
             if (label && label !== last) { last = label; setProcessButton(true, label); }
           }
         } catch (e) { /* the server may still be waking up: keep the last label */ }
-        if (!stopped) setTimeout(tick, 2000);
+        if (!stopped) setTimeout(tick, 4500);
       };
-      setTimeout(tick, 1500);
+      setTimeout(tick, 2500);
       return () => { stopped = true; };
     }
 
@@ -3282,21 +3303,36 @@
       throw new Error(SERVER_DOWN_MSG);
     }
 
-    // The server understood the request and refused it (bad/oversized/unsupported file, rate limit):
-    // a client-side fallback would only mask the real problem, so surface the message instead.
+    // The server answered with an error (refused file, too heavy, queue full, timeout, incomplete result ...): show its message.
+    // A simplified in-browser converter must never stand in for a server that said no; it is only a last resort (with a visible
+    // notice) when the server cannot be reached at all.
     function isServerRejection(err) {
-      return !!err && err.httpStatus >= 400 && err.httpStatus < 500;
+      return !!err && err.httpStatus >= 400;
     }
 
     async function postFile(endpoint, file, fields) {
       const fd = new FormData();
       fd.append("file", file);
       Object.entries(fields || {}).forEach(([k, v]) => fd.append(k, v));
-      const res = await serverFetch(endpoint, { method: "POST", body: fd });
+      const direct = /^\/api\/convert\//.test(endpoint);
+      const res = await serverFetch(endpoint, direct ? { method: "POST", body: fd, headers: { "X-Create-Job": "true" } } : { method: "POST", body: fd });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         const err = new Error(j.message || j.error || "The conversion server reported an issue.");
         err.httpStatus = res.status;
+        err.code = j.error;
+        throw err;
+      }
+      if (direct && (res.headers.get("content-type") || "").includes("application/json")) {
+        // the server stored the finished file itself: keep the reference, no download-and-upload round trip
+        const job = await res.json();
+        if (job && job.jobId && job.downloadUrl) {
+          const ref = new Blob([], { type: "application/octet-stream" });
+          ref.__job = job;
+          return { ok: true, status: 200, headers: res.headers, blob: async () => ref, json: async () => job };
+        }
+        const err = new Error("The server did not return a download for this file. Please try again.");
+        err.httpStatus = 502;
         throw err;
       }
       return res;
@@ -3893,8 +3929,8 @@
     }
 
     async function runPowerpointToWord(file) {
-      const mode = document.getElementById("ctrl-pptx-mode") ? document.getElementById("ctrl-pptx-mode").value : "editable";
-      setProcessButton(true, `Converting PowerPoint to Word (${mode === 'editable' ? 'Editable' : 'Layout-Preserving'} mode)...`);
+      const mode = document.getElementById("ctrl-pptx-mode") ? document.getElementById("ctrl-pptx-mode").value : "layout";
+      setProcessButton(true, "Converting PowerPoint to Word (layout-preserving mode)...");
       let blob = null;
       let clientFallbackUsed = false;
       try {
@@ -4632,6 +4668,10 @@
         return;
       }
 
+      if (UNAVAILABLE_TOOLS.has(currentToolId)) {
+        alert(`${findTool(currentToolId)?.tool?.name || "This tool"} is temporarily unavailable on the free server. Please try another tool.`);
+        return;
+      }
       const runner = TOOL_RUNNERS[currentToolId];
       if (!runner) {
         alert("This tool is not available yet.");
@@ -5223,6 +5263,16 @@
       // output of a conversion that was cancelled (or superseded) while it was still running: drop it
       if (typeof executionLive !== "undefined" && !executionLive) return;
       lastDownloadFilename = filename;
+      // result already stored by the server (direct store): use its download reference as it is
+      if (blob && blob.__job) {
+        const job = blob.__job;
+        if (window.__batchSession && window.__batchSession.active) {
+          window.__batchSession.items.push({ jobId: job.jobId, token: job.downloadToken, downloadUrl: job.downloadUrl, filename: job.filename || filename, size: job.size || 0 });
+          return;
+        }
+        window.location.href = job.downloadUrl;
+        return;
+      }
       const safeBlob = blob instanceof Blob ? blob : new Blob([blob]);
 
       // If active in a multi-file batch session, upload and collect without immediate page navigation

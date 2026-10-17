@@ -3,7 +3,7 @@
  *
  *  - At most HEAVY_CONCURRENCY jobs run at once (default 1) across EVERY route that uses
  *    security.concurrencyLimiter (all conversions, PDF tools, OCR, LibreOffice, image tools).
- *  - Up to HEAVY_QUEUE_MAX further requests wait (default 4, for at most HEAVY_QUEUE_WAIT_MS);
+ *  - Up to HEAVY_QUEUE_MAX further requests wait (default 2, for at most HEAVY_QUEUE_WAIT_MS);
  *    anything beyond that gets a clear 503 "server busy" before any upload is read.
  *  - Child processes started through execFileTracked() belong to the request that started them.
  *    If the client disconnects (Cancel, closed tab) they are killed as a process tree, no new child
@@ -20,7 +20,7 @@ const fs = require('fs');
 const als = new AsyncLocalStorage();
 const IS_WIN = process.platform === 'win32';
 const MAX_ACTIVE = Math.max(1, parseInt(process.env.HEAVY_CONCURRENCY || '1', 10) || 1);
-const MAX_QUEUE = Math.max(0, parseInt(process.env.HEAVY_QUEUE_MAX || '4', 10) || 0);
+const MAX_QUEUE = Math.max(0, parseInt(process.env.HEAVY_QUEUE_MAX || '2', 10) || 0);
 const QUEUE_WAIT_MS = parseInt(process.env.HEAVY_QUEUE_WAIT_MS || '120000', 10) || 120000;
 const SAMPLE_MS = 2000;
 
@@ -41,10 +41,26 @@ function setProgressFor(id, patch) {
   if (progressStore.size > 500) progressStore.delete(progressStore.keys().next().value);
 }
 function setProgress(patch) { const job = als.getStore(); if (job) setProgressFor(job.progressId, patch); }
+// How long a job that is queued at `position` (1 = next) will probably wait: what the running job still needs plus one typical job
+// per request ahead. "Typical" is a moving average of the jobs this server actually finished (12 s until it has seen some).
+// It is an estimate, rounded to 5 s, and it is only given while the job is really waiting.
+let avgJobMs = 12000;
+function estimateWaitSec(position) {
+  const now = Date.now();
+  let untilSlot = 0;
+  if (active.size >= MAX_ACTIVE) {
+    untilSlot = Math.min(...[...active].map((j) => Math.max(3000, avgJobMs - (now - j.startedAt))));
+  }
+  const ms = untilSlot + Math.max(0, position - 1) * avgJobMs / MAX_ACTIVE;
+  return Math.max(5, Math.round(ms / 5000) * 5);
+}
 function getProgress(id) {
   if (!PROGRESS_ID.test(String(id || ''))) return null;
   const p = progressStore.get(id);
-  return p ? { stage: p.stage, page: p.page || 0, pages: p.pages || 0, position: p.position || 0, phase: p.phase || 0 } : { stage: 'unknown', page: 0, pages: 0, position: 0, phase: 0 };
+  if (!p) return { stage: 'unknown', page: 0, pages: 0, position: 0, phase: 0 };
+  const out = { stage: p.stage, page: p.page || 0, pages: p.pages || 0, position: p.position || 0, phase: p.phase || 0 };
+  if (p.stage === 'queued' && out.position > 0) { out.queueLength = queue.length; out.etaSec = estimateWaitSec(out.position); }
+  return out;
 }
 setInterval(() => { const cut = Date.now() - 15 * 60 * 1000; for (const [k, v] of progressStore) if (v.t < cut) progressStore.delete(k); }, 5 * 60 * 1000).unref();
 
@@ -239,6 +255,7 @@ function finishJob(job, res) {
   if (qi !== -1) { // client left while waiting: nothing was started
     queue.splice(qi, 1);
     clearTimeout(job.waitTimer);
+    queue.forEach((j, i) => setProgressFor(j.progressId, { stage: 'queued', position: i + 1 })); // those behind move up
     return;
   }
   if (!active.has(job)) return;
@@ -252,6 +269,7 @@ function finishJob(job, res) {
   sampleJob(job);
   active.delete(job);
   const status = finished ? `http_${res.statusCode}` : 'aborted_by_client';
+  if (finished && res.statusCode < 400) avgJobMs = Math.round(Math.min(120000, Math.max(2000, 0.7 * avgJobMs + 0.3 * (Date.now() - job.startedAt))));
   const { bytes } = uploadedBytesAndPaths(job.req);
   log('job_end', job, `status=${status} durationMs=${Date.now() - job.startedAt} sizeMB=${mb(bytes)} peakChildMB=${job.peakChildMB} peakCgroupMB=${job.peakCgroupMB}`);
   pump();
@@ -287,6 +305,7 @@ function enter(req, res, next) {
     const i = queue.indexOf(job);
     if (i === -1) return;
     queue.splice(i, 1);
+    queue.forEach((j, k) => setProgressFor(j.progressId, { stage: 'queued', position: k + 1 }));
     log('job_wait_timeout', job);
     cleanupUploads(req);
     if (!res.headersSent) {
@@ -297,7 +316,7 @@ function enter(req, res, next) {
 }
 
 function stats() {
-  return { active: active.size, queued: queue.length, maxActive: MAX_ACTIVE, maxQueue: MAX_QUEUE };
+  return { active: active.size, queued: queue.length, maxActive: MAX_ACTIVE, maxQueue: MAX_QUEUE, avgJobSec: Math.round(avgJobMs / 1000) };
 }
 
 function killAll() {

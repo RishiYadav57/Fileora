@@ -51,4 +51,5 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# V8 heap limit well below the container's 512 MB so LibreOffice / Python children keep room (override with NODE_MAX_OLD_SPACE_MB)
+CMD ["sh", "-c", "exec node --max-old-space-size=${NODE_MAX_OLD_SPACE_MB:-192} server.js"]

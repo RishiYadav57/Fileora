@@ -157,7 +157,7 @@
             <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Upload &amp; Streaming Security</h3>
           </div>
           <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-10">
-            Files are transmitted exclusively over encrypted HTTPS (TLS). As bytes arrive at the Node.js backend, our gateway verifies file magic bytes, MIME signatures, and size constraints (10 MB individual file limit, 20 MB batch limit). If an upload exceeds limits or presents malformed structures, the connection is terminated immediately and memory is freed.
+            Files are transmitted exclusively over encrypted HTTPS (TLS). As bytes arrive at the Node.js backend, our gateway verifies file magic bytes, MIME signatures, and size constraints (3 MB individual file limit, 5 MB batch limit). If an upload exceeds limits or presents malformed structures, the connection is terminated immediately and memory is freed.
           </p>
         </div>
 

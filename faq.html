@@ -149,8 +149,8 @@
       <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
         <p>To preserve server performance and ensure fair access for all users, our backend strictly enforces:</p>
         <ul class="list-disc pl-5 space-y-1">
-          <li><strong>Single File Size:</strong> Maximum <strong>10 MB</strong> per file.</li>
-          <li><strong>Batch Size:</strong> Maximum <strong>20 MB</strong> aggregate across multi-file jobs (each file still 10 MB or smaller).</li>
+          <li><strong>Single File Size:</strong> Maximum <strong>3 MB</strong> per file.</li>
+          <li><strong>Batch Size:</strong> Maximum <strong>5 MB</strong> aggregate across multi-file jobs (each file still 3 MB or smaller).</li>
           <li><strong>File Count:</strong> Maximum <strong>3 files</strong> in a single batch upload.</li>
           <li><strong>Output Size:</strong> Maximum <strong>100 MiB</strong> for any converted output file.</li>
           <li><strong>Concurrency:</strong> Maximum <strong>2 active conversions</strong> concurrently per IP address.</li>
@@ -276,7 +276,7 @@
       <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
         <p>If an error occurs or layout differs from expectations:</p>
         <ul class="list-disc pl-5 space-y-1">
-          <li>Ensure the file is not password-encrypted, corrupted, or larger than 10 MB.</li>
+          <li>Ensure the file is not password-encrypted, corrupted, or larger than 3 MB.</li>
           <li>For spreadsheets, verify if extremely wide sheets have unusual print-area settings.</li>
           <li>For Word conversions, non-standard embedded fonts may be replaced with open-source alternatives.</li>
           <li>You can report engine bugs via our <a href="/contact" class="text-blue-600 dark:text-blue-400 underline">Contact Page</a> or by emailing <a href="mailto:pdfconverterfreebusiness@gmail.com" class="text-blue-600 dark:text-blue-400 underline">pdfconverterfreebusiness@gmail.com</a>.</li>

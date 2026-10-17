@@ -8,12 +8,17 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-// 1. Centralized Policy Constants (Binary MiB)
+// Human text for a byte limit: 3000000 -> "3 MB"
+const mbText = (bytes) => `${bytes / 1000000} MB`;
+
+// 1. Centralized Policy Constants (decimal MB for uploads)
 const LIMITS = {
-  MAX_FILE_SIZE_BYTES: 10 * 1000 * 1000,       // 10 MB (decimal) = 10,000,000 bytes per file, also inside batches
-  MAX_BATCH_SIZE_BYTES: 20 * 1000 * 1000,      // 20 MB (decimal) = 20,000,000 bytes combined per batch
+  MAX_FILE_SIZE_BYTES: 3 * 1000 * 1000,        // 3 MB (decimal) = 3,000,000 bytes per file, also inside batches
+  MAX_BATCH_SIZE_BYTES: 5 * 1000 * 1000,       // 5 MB (decimal) = 5,000,000 bytes combined per batch
+  MAX_OUTPUT_UPLOAD_BYTES: 5 * 1000 * 1000,    // a finished result handed back by the page for temporary storage (/api/jobs/upload)
+  MULTIPART_FRAMING_BYTES: 100 * 1000,         // boundaries + small form fields allowed on top of the file bytes (declared Content-Length check)
   MAX_FILES_PER_BATCH: 3,                      // Up to 3 files per batch
-  MAX_CONCURRENT_PER_IP: 2,                    // Max 2 active conversions per IP
+  MAX_CONCURRENT_PER_IP: 1,                    // One heavy conversion per visitor at a time (a second one is answered with 429 while the first is running)
   MAX_OUTPUT_SIZE_BYTES: 100 * 1024 * 1024,    // 100 MiB max generated output
   RATE_LIMIT_WINDOW_MS: 60 * 1000,             // 1 minute window
   MAX_CONVERSIONS_PER_MIN: 25,                 // 25 conversion requests/min per IP
@@ -74,6 +79,26 @@ function concurrencyLimiter(req, res, next) {
 }
 
 function heavyGate(req, res, next) { require('./jobgate').enter(req, res, next); }
+
+// For routes that only move a finished file (no conversion): they must not wait in the conversion queue behind someone else's
+// heavy job, but are still bounded per visitor and overall. Leftover uploads are removed when the request ends badly.
+const lightByIp = new Map();
+let lightTotal = 0;
+function lightLimiter(req, res, next) {
+  const ip = getClientIp(req);
+  if (lightTotal >= 6 || (lightByIp.get(ip) || 0) >= 2) {
+    return res.status(429).json({ error: 'CONCURRENCY_LIMIT_EXCEEDED', message: 'Too many uploads at the same time. Please wait a moment and try again.' });
+  }
+  lightTotal++;
+  lightByIp.set(ip, (lightByIp.get(ip) || 0) + 1);
+  res.once('close', () => {
+    lightTotal = Math.max(0, lightTotal - 1);
+    const n = (lightByIp.get(ip) || 1) - 1;
+    if (n <= 0) lightByIp.delete(ip); else lightByIp.set(ip, n);
+    if (!res.writableFinished || res.statusCode >= 400) require('./jobgate').cleanupUploads(req);
+  });
+  next();
+}
 
 // 3. Sliding-Window Rate Limiter
 const rateLimitBuckets = new Map();
@@ -143,7 +168,9 @@ const singleUpload = multer({
   storage: secureMulterStorage,
   limits: {
     fileSize: LIMITS.MAX_FILE_SIZE_BYTES + 1, // +1: multer rejects at >= limit
-    files: 1
+    files: 1,
+    fields: 20,
+    fieldSize: 100 * 1000
   }
 }).single('file');
 
@@ -151,7 +178,9 @@ const arrayUpload = multer({
   storage: secureMulterStorage,
   limits: {
     fileSize: LIMITS.MAX_FILE_SIZE_BYTES + 1, // +1: multer rejects at >= limit
-    files: LIMITS.MAX_FILES_PER_BATCH      // Up to 3 files
+    files: LIMITS.MAX_FILES_PER_BATCH,     // Up to 3 files
+    fields: 20,
+    fieldSize: 100 * 1000
   }
 }).array('files', LIMITS.MAX_FILES_PER_BATCH);
 
@@ -177,7 +206,7 @@ function validateBatchSize(req, res, next) {
     files.forEach(f => safeUnlink(f.path));
     return res.status(413).json({
       error: 'BATCH_TOO_LARGE',
-      message: 'Maximum combined batch size is 20 MB.'
+      message: `Maximum combined batch size is ${mbText(LIMITS.MAX_BATCH_SIZE_BYTES)}.`
     });
   }
 
@@ -283,15 +312,18 @@ function safeUnlink(filePath) {
 function rejectOversizedRequest(req, res, next) {
   if (req.method === 'POST' && /multipart\/form-data/i.test(req.headers['content-type'] || '')) {
     const declared = parseInt(req.headers['content-length'] || '0', 10);
-    const isBatch = /\/pdf\/merge/.test(req.originalUrl || req.url || '');
-    const cap = (isBatch ? LIMITS.MAX_BATCH_SIZE_BYTES : LIMITS.MAX_FILE_SIZE_BYTES) + 1000 * 1000; // + multipart framing
+    const url = req.originalUrl || req.url || '';
+    const isBatch = /\/pdf\/merge/.test(url);
+    const isOutput = /\/api\/jobs\/upload/.test(url);
+    const limit = isBatch ? LIMITS.MAX_BATCH_SIZE_BYTES : (isOutput ? LIMITS.MAX_OUTPUT_UPLOAD_BYTES : LIMITS.MAX_FILE_SIZE_BYTES);
+    const cap = limit + LIMITS.MULTIPART_FRAMING_BYTES;
     if (declared > cap) {
       const reply = () => { if (!res.headersSent) res.status(413).json(isBatch
-        ? { error: 'BATCH_TOO_LARGE', message: 'Maximum combined batch size is 20 MB.' }
-        : { error: 'FILE_TOO_LARGE', message: 'Maximum file size is 10 MB.' }); };
+        ? { error: 'BATCH_TOO_LARGE', message: `Maximum combined batch size is ${mbText(LIMITS.MAX_BATCH_SIZE_BYTES)}.` }
+        : { error: 'FILE_TOO_LARGE', message: `Maximum file size is ${mbText(isOutput ? LIMITS.MAX_OUTPUT_UPLOAD_BYTES : LIMITS.MAX_FILE_SIZE_BYTES)}.` }); };
       // Discard the body without storing it, then answer, so the browser gets the message instead of a reset connection.
       // Beyond 200 MB, answer at once and let the connection close.
-      if (declared > 200 * 1000 * 1000) { res.setHeader('Connection', 'close'); return reply(); }
+      if (declared > 100 * 1000 * 1000) { res.setHeader('Connection', 'close'); return reply(); }
       req.on('end', reply);
       req.on('error', () => {});
       return req.resume();
@@ -305,7 +337,7 @@ function handleMulterError(err, req, res, next) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         error: 'FILE_TOO_LARGE',
-        message: /\/pdf\/merge/.test(req.path || req.originalUrl || '') ? 'Each file must be 10 MB or smaller.' : 'Maximum file size is 10 MB.'
+        message: /\/pdf\/merge/.test(req.path || req.originalUrl || '') ? `Each file must be ${mbText(LIMITS.MAX_FILE_SIZE_BYTES)} or smaller.` : (/\/api\/jobs\/upload/.test(req.originalUrl || '') ? `Maximum file size is ${mbText(LIMITS.MAX_OUTPUT_UPLOAD_BYTES)}.` : `Maximum file size is ${mbText(LIMITS.MAX_FILE_SIZE_BYTES)}.`)
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
@@ -330,6 +362,7 @@ module.exports = {
   arrayUpload,
   validateBatchSize,
   concurrencyLimiter,
+  lightLimiter,
   heavyGate,
   rateLimiter,
   verifyFileSignature,
@@ -337,5 +370,6 @@ module.exports = {
   handleMulterError,
   rejectOversizedRequest,
   safeUnlink,
-  getClientIp
+  getClientIp,
+  mbText
 };
