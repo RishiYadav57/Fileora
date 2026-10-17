@@ -255,6 +255,16 @@
   </style>
   <script src="/assets/config.js"></script>
   <script src="/assets/warmup.js" defer></script>
+  <style>
+    /* phone navigation drawer animation (the drawer exists only below the lg breakpoint) */
+    #mobile-drawer { opacity: 0; transition: opacity .25s ease; }
+    #mobile-drawer.drawer-open { opacity: 1; }
+    #mobile-drawer-panel { transform: translateX(-100%); transition: transform .28s cubic-bezier(.22,.8,.3,1); will-change: transform; }
+    #mobile-drawer.drawer-open #mobile-drawer-panel { transform: translateX(0); }
+    html.drawer-lock, html.drawer-lock body { overflow: hidden; }
+    @media (prefers-reduced-motion: reduce) { #mobile-drawer, #mobile-drawer-panel { transition: none; } }
+    @media (min-width: 1024px) { #mobile-drawer { display: none !important; } html.drawer-lock, html.drawer-lock body { overflow: auto; } }
+  </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white transition-colors duration-200 overflow-x-hidden">
 
@@ -302,8 +312,8 @@
   </header>
 
   <!-- Mobile Slide-Over Navigation Drawer -->
-  <div id="mobile-drawer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden transition-opacity duration-200">
-    <div class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 shadow-2xl flex flex-col justify-between overflow-y-auto">
+  <div id="mobile-drawer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden" onclick="if (event.target === this) toggleMobileDrawer()">
+    <div id="mobile-drawer-panel" class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 shadow-2xl flex flex-col justify-between overflow-y-auto overflow-x-hidden overscroll-contain">
       <div>
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
           <div class="flex items-center gap-2.5">
@@ -1317,8 +1327,7 @@
     }
 
     function openCategoryInMobileDrawer(catId) {
-      const drawer = document.getElementById("mobile-drawer");
-      if (drawer) drawer.classList.remove("hidden");
+      openMobileDrawer();
       const targetSec = document.getElementById(`drawer-cat-${catId}`);
       if (targetSec) {
         targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1357,9 +1366,56 @@
       `).join('');
     }
 
-    function toggleMobileDrawer() {
-      document.getElementById("mobile-drawer").classList.toggle("hidden");
+    // Phone navigation drawer: slides in from the left over a fading overlay; closes by the X button, a tap on the dimmed area, a swipe to
+    // the left, Escape, or when the window grows to tablet/desktop width. The page behind does not scroll while it is open.
+    let drawerCloseTimer = null;
+    function openMobileDrawer() {
+      const d = document.getElementById("mobile-drawer");
+      if (!d || d.classList.contains("drawer-open")) return;
+      clearTimeout(drawerCloseTimer);
+      d.classList.remove("hidden");
+      void d.offsetWidth;                       // let the browser paint the closed state so the transition runs
+      d.classList.add("drawer-open");
+      document.documentElement.classList.add("drawer-lock");
     }
+    function closeMobileDrawer() {
+      const d = document.getElementById("mobile-drawer");
+      if (!d || !d.classList.contains("drawer-open")) return;
+      const panel = document.getElementById("mobile-drawer-panel");
+      if (panel) panel.style.transform = "";
+      d.classList.remove("drawer-open");
+      document.documentElement.classList.remove("drawer-lock");
+      drawerCloseTimer = setTimeout(() => d.classList.add("hidden"), 300);
+    }
+    function toggleMobileDrawer() {
+      const d = document.getElementById("mobile-drawer");
+      if (d && d.classList.contains("drawer-open")) closeMobileDrawer(); else openMobileDrawer();
+    }
+    (function () {
+      const d = document.getElementById("mobile-drawer"), panel = document.getElementById("mobile-drawer-panel");
+      if (!d || !panel) return;
+      let x0 = null, y0 = 0, dx = 0, horizontal = false;
+      panel.addEventListener("touchstart", (e) => { const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; horizontal = false; }, { passive: true });
+      panel.addEventListener("touchmove", (e) => {
+        if (x0 === null) return;
+        const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+        if (!horizontal && Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my) * 1.5) horizontal = true;
+        if (!horizontal) return;                       // a mostly vertical drag is the menu scrolling
+        dx = Math.min(0, mx);                           // only leftwards: the panel follows the finger
+        panel.style.transition = "none";
+        panel.style.transform = `translateX(${dx}px)`;
+      }, { passive: true });
+      const end = () => {
+        if (x0 === null) return;
+        x0 = null;
+        panel.style.transition = "";
+        if (horizontal && dx < -Math.min(80, panel.offsetWidth * 0.25)) closeMobileDrawer(); else panel.style.transform = "";
+      };
+      panel.addEventListener("touchend", end);
+      panel.addEventListener("touchcancel", end);
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMobileDrawer(); });
+      window.addEventListener("resize", () => { if (window.innerWidth >= 1024) { closeMobileDrawer(); } });
+    })();
 
     function renderFooter() {
       const footer = document.getElementById("footer-categories");
