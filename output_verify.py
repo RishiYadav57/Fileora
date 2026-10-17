@@ -147,6 +147,22 @@ def sniff(path):
     return None
 
 
+def scan_page_count(path):
+    """Pages that are scans: (almost) no text and a picture over at least a quarter of the page (the converter's own rule)."""
+    import fitz
+    doc = fitz.open(path)
+    try:
+        n = 0
+        for p in doc:
+            area = p.rect.width * p.rect.height
+            big = area > 0 and any((i['bbox'][2] - i['bbox'][0]) * (i['bbox'][3] - i['bbox'][1]) >= 0.25 * area for i in p.get_image_info())
+            if big and len(p.get_text().strip()) < 10:
+                n += 1
+        return n
+    finally:
+        doc.close()
+
+
 def pdf_pages_text(path):
     import fitz
     doc = fitz.open(path)
@@ -197,6 +213,17 @@ def verify(kind, src, out):
         pages, src_text = pdf_pages_text(src)
         m = check_text(kind, src_text, docx_text(out), min_cov=0.8, min_ratio=0.6)
         m['pages'] = pages
+        scans = scan_page_count(src)
+        if scans:
+            # scanned pages have no text to compare: they must be there as pictures, and an all-scanned file as one section per page
+            with zipfile.ZipFile(out) as z:
+                xml = z.read('word/document.xml').decode('utf8', 'replace')
+            pics = xml.count('<w:drawing')
+            if pics < scans:
+                raise IncompleteOutput(f'{scans} scanned pages but only {pics} pictures in the Word file')
+            if scans == pages and xml.count('<w:sectPr') != pages:
+                raise IncompleteOutput(f'{pages} scanned pages but {xml.count("<w:sectPr")} sections in the Word file')
+            m.update(scanned_pages=scans, pictures=pics)
         return m
 
     if kind == 'pdf2pptx':
@@ -206,6 +233,12 @@ def verify(kind, src, out):
             raise IncompleteOutput(f'{len(slides)} slides were produced for {pages} PDF pages')
         m = check_text(kind, src_text, pptx_text(out), min_cov=0.75, min_ratio=0.5)
         m.update(pages=pages, slides=len(slides))
+        scans = scan_page_count(src)
+        if scans:
+            pics = sum(x.count('<p:pic>') + x.count('<p:pic ') for x in slides)
+            if pics < scans:
+                raise IncompleteOutput(f'{scans} scanned pages but only {pics} pictures in the presentation')
+            m.update(scanned_pages=scans, pictures=pics)
         return m
 
     if kind == 'pdf2xlsx':

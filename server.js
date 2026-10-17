@@ -820,7 +820,9 @@ function describeFailure(err, fallbackMessage) {
   const txt = `${(err && err.stderr) || ''} ${(err && err.message) || ''}`;
   if (err && err.code === 'ABORTED') return null;
   if (/SCANNED_PDF_UNSUPPORTED/.test(txt)) {
-    return { status: 422, error: 'SCANNED_PDF_UNSUPPORTED', message: 'This PDF contains scanned pages (pictures of text). Converting scanned PDFs is temporarily unavailable. Please use a PDF with selectable text.' };
+    // the converter says which pages and what to do instead (Excel); otherwise the general text
+    const own = /SCANNED_PDF_UNSUPPORTED:\s*([^\r\n]+)/.exec(txt);
+    return { status: 422, error: 'SCANNED_PDF_UNSUPPORTED', message: own ? own[1].trim().slice(0, 400) : 'This PDF contains scanned pages (pictures of text). Converting scanned PDFs is temporarily unavailable. Please use a PDF with selectable text.' };
   }
   const complex = /TOO_COMPLEX:\s*([^\r\n]+)/.exec(txt);
   if (complex) return { status: 422, error: 'TOO_COMPLEX', message: complex[1].trim().slice(0, 300) };

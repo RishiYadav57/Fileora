@@ -2046,10 +2046,23 @@ except ValueError:
     MAX_PDF_IMAGES = 12
 
 
-def _precheck_pdf(path, scan_fraction=0.3):
-    """Refuses, before any heavy work and in one pass over the file: documents that are too long or hold too many pictures (the cost
-    grows with the page count and, much faster, with the pictures: bench 8 pages with 3 pictures 6 s, 31 pages with 11 pictures 19 s),
-    and mostly-scanned documents while OCR is off."""
+def _scan_pages(path):
+    """0-based indexes of the pages that are scans (see _scan_like_page). Empty when OCR is on (those pages are read, not pictured)."""
+    if OCR_ENABLED:
+        return []
+    doc = fitz.open(path)
+    try:
+        return [p.number for p in doc if _scan_like_page(p)]
+    finally:
+        doc.close()
+
+
+def _precheck_pdf(path, scans='pictures'):
+    """Refuses, before any heavy work and in one pass over the file, documents that are too long or hold too many pictures (the cost
+    grows with the page count and, much faster, with the pictures: bench 8 pages with 3 pictures 6 s, 31 pages with 11 pictures 19 s).
+    scans='pictures' (Word, PowerPoint): scanned pages are kept as pictures at their place, so they are accepted.
+    scans='refuse' (Excel): a picture cannot become spreadsheet cells, and dropping those pages would lose data, so any scanned page
+    is refused with a message that says which pages."""
     doc = fitz.open(path)
     try:
         n = len(doc)
@@ -2057,18 +2070,157 @@ def _precheck_pdf(path, scan_fraction=0.3):
             raise ValueError(f"TOO_COMPLEX: This document has {n} pages. The free server converts up to {MAX_PDF_PAGES} pages at a time. "
                              f"Please split it into smaller parts and convert them one at a time.")
         images = set()
-        scans = 0
+        scanned = []
         for p in doc:
-            images.update(i[0] for i in p.get_images(full=False))
             if not OCR_ENABLED and _scan_like_page(p):
-                scans += 1
+                if scans == 'refuse':
+                    scanned.append(p.number + 1)
+                continue          # a scanned page is placed as one picture without being analysed: it does not count towards the picture limit
+            images.update(i[0] for i in p.get_images(full=False))
         if len(images) > MAX_PDF_IMAGES:
             raise ValueError(f"TOO_COMPLEX: This document contains {len(images)} pictures. The free server converts documents with up to "
                              f"{MAX_PDF_IMAGES} pictures. Please split it into smaller parts and convert them one at a time.")
-        if n and scans / float(n) >= scan_fraction:
-            raise ScannedPdfUnsupported(SCANNED_PDF_MESSAGE)
+        if scanned:
+            shown = ', '.join(str(x) for x in scanned[:8]) + (' ...' if len(scanned) > 8 else '')
+            raise ScannedPdfUnsupported(
+                f"SCANNED_PDF_UNSUPPORTED: Page(s) {shown} of this PDF are scanned pictures, which cannot be turned into Excel cells without "
+                f"text recognition (temporarily unavailable). Use a PDF with selectable text, or convert it to Word or PowerPoint, "
+                f"where scanned pages are kept as pictures.")
     finally:
         doc.close()
+
+
+def _page_jpeg(page, max_side_px=2000, quality=80):
+    """One page as a JPEG (about 170 dpi for A4): readable text without holding a large bitmap. Pages are rendered one at a time."""
+    long_pt = max(page.rect.width, page.rect.height)
+    dpi = max(72, min(200, int(max_side_px * 72.0 / long_pt)))
+    pix = page.get_pixmap(dpi=dpi, alpha=False)
+    try:
+        return pix.tobytes('jpeg', jpg_quality=quality)
+    finally:
+        pix = None
+
+
+def _docx_with_scan_pages(input_pdf, text_docx, scan_idx, output_path):
+    """Word file with the pages in their original order: text pages stay editable (text_docx, one section per page as pdf2docx makes
+    them, or None when every page is a scan) and every scanned page becomes a section of its own with the page picture filling it, in the
+    page's own size and orientation. Sections are rebuilt in place, nothing is appended at the end."""
+    import io
+    from copy import deepcopy
+    from docx import Document
+    from docx.oxml import parse_xml
+    from docx.oxml.ns import qn, nsdecls
+    from docx.shared import Pt
+
+    src = fitz.open(input_pdf)
+    try:
+        n_pages = len(src)
+        scan_set = set(scan_idx)
+        doc = Document(text_docx) if text_docx else Document()
+        body = doc.element.body
+        body_sect = body.find(qn('w:sectPr'))
+
+        # 1. the text part, cut into one block per section: (elements, section properties still to be attached or None, starts a page).
+        #    pdf2docx writes one nextPage section per page; a page with columns (text beside a picture) adds continuous / nextColumn
+        #    sections inside it, so blocks are grouped into pages by "starts a new page", not counted one per page.
+        def starts_page(sect):
+            t = sect.find(qn('w:type')) if sect is not None else None
+            return t is None or t.get(qn('w:val')) in (None, 'nextPage', 'oddPage', 'evenPage')
+        blocks, cur = [], []
+        for el in list(body):
+            if el is body_sect:
+                break
+            cur.append(el)
+            ppr = el.find(qn('w:pPr')) if el.tag == qn('w:p') else None
+            sp = ppr.find(qn('w:sectPr')) if ppr is not None else None
+            if sp is not None:
+                blocks.append((cur, None, starts_page(sp)))
+                cur = []
+        if cur or not blocks:
+            blocks.append((cur, deepcopy(body_sect) if body_sect is not None else None, starts_page(body_sect)))
+        if text_docx is None:
+            blocks = []
+        pages_of_blocks = []
+        for blk in blocks:
+            if blk[2] or not pages_of_blocks:
+                pages_of_blocks.append([])
+            pages_of_blocks[-1].append(blk[:2])
+        text_pages = [i for i in range(n_pages) if i not in scan_set]
+        if text_docx is not None and len(pages_of_blocks) != len(text_pages):
+            raise RuntimeError(f"text part has {len(pages_of_blocks)} pages for {len(text_pages)} text pages")
+
+        def close_with(elements, sect):
+            """Make the section that `elements` ends carry its own properties (it no longer ends at the body)."""
+            if sect is None:
+                return
+            last = elements[-1] if elements else None
+            if last is None or last.tag != qn('w:p'):
+                last = parse_xml(f'<w:p {nsdecls("w")}/>')
+                elements.append(last)
+            ppr = last.find(qn('w:pPr'))
+            if ppr is None:
+                ppr = parse_xml(f'<w:pPr {nsdecls("w")}/>')
+                last.insert(0, ppr)
+            ppr.append(sect)
+
+        # 2. rebuild in page order
+        out, ti, final_sect = [], 0, None
+        for i in range(n_pages):
+            last_page = (i == n_pages - 1)
+            if i not in scan_set:
+                group = pages_of_blocks[ti]
+                ti += 1
+                for elements, sect in group:
+                    out.extend(elements)
+                    if sect is not None:       # the text part's last section (it was closed by the body sectPr)
+                        if last_page:
+                            final_sect = sect
+                        else:
+                            close_with(out, sect)
+                continue
+            page = src[i]
+            w_pt, h_pt, _ = get_word_safe_dimensions(page.rect.width, page.rect.height, 1548.0)
+            tw, th = int(w_pt * 20), int(h_pt * 20)
+            sect = parse_xml(f'<w:sectPr {nsdecls("w")}><w:pgSz w:w="{tw}" w:h="{th}"{" w:orient=\"landscape\"" if tw > th else ""}/>'
+                             f'<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr>')
+            para = doc.add_paragraph()
+            pf = para.paragraph_format
+            pf.space_before = pf.space_after = Pt(0)
+            pf.line_spacing = 1.0
+            run = para.add_run()
+            run.font.size = Pt(1)
+            run.add_picture(io.BytesIO(_page_jpeg(page)), width=Pt(w_pt), height=Pt(h_pt))
+            # anchored to the page corner (not inline): the picture covers the page exactly whatever margins a viewer applies, and the
+            # paragraph that holds it stays one tiny line, so it can never push a blank page after it
+            inline = run._r.find('.//' + qn('wp:inline'))
+            anchor = parse_xml(
+                f'<wp:anchor {nsdecls("wp", "a", "pic", "r")} distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251658240" '
+                f'behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/>'
+                f'<wp:positionH relativeFrom="page"><wp:posOffset>0</wp:posOffset></wp:positionH>'
+                f'<wp:positionV relativeFrom="page"><wp:posOffset>0</wp:posOffset></wp:positionV>'
+                f'<wp:extent cx="{inline.find(qn("wp:extent")).get("cx")}" cy="{inline.find(qn("wp:extent")).get("cy")}"/>'
+                f'<wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
+                f'<wp:docPr id="{inline.find(qn("wp:docPr")).get("id")}" name="Scanned page {i + 1}"/><wp:cNvGraphicFramePr/></wp:anchor>')
+            anchor.append(inline.find(qn('a:graphic')))
+            inline.getparent().replace(inline, anchor)
+            para_el = para._p
+            body.remove(para_el)
+            out.append(para_el)
+            if last_page:
+                final_sect = sect
+            else:
+                close_with(out, sect)
+            _progress(i + 1, n_pages)
+
+        for el in list(body):
+            body.remove(el)
+        for el in out:
+            body.append(el)
+        if final_sect is not None:
+            body.append(final_sect)
+        doc.save(output_path)
+    finally:
+        src.close()
 
 
 def pdf_to_docx(input_path, output_path):
@@ -2080,6 +2232,28 @@ def pdf_to_docx(input_path, output_path):
     4. Guarantees 100% editable output with zero full-page screenshot substitutions.
     """
     _precheck_pdf(input_path)
+    scan_idx = _scan_pages(input_path)
+    if scan_idx:
+        # OCR is off: scanned pages are kept as page pictures at their own place, every other page is converted as usual
+        doc_all = fitz.open(input_path)
+        try:
+            total = len(doc_all)
+            text_idx = [i for i in range(total) if i not in set(scan_idx)]
+            text_docx = None
+            with tempfile.TemporaryDirectory(prefix='pic_docx_', ignore_cleanup_errors=True) as td:
+                if text_idx:
+                    part_pdf = os.path.join(td, 'text_pages.pdf')
+                    part = fitz.open()
+                    for i in text_idx:
+                        part.insert_pdf(doc_all, from_page=i, to_page=i)
+                    part.save(part_pdf)
+                    part.close()
+                    text_docx = os.path.join(td, 'text_pages.docx')
+                    pdf_to_docx(part_pdf, text_docx)
+                _docx_with_scan_pages(input_path, text_docx, scan_idx, output_path)
+        finally:
+            doc_all.close()
+        return output_path
     doc_check = fitz.open(input_path)
     total_pages = len(doc_check)
     if total_pages == 0:
@@ -2989,6 +3163,7 @@ def pdf_to_pptx(input_path, output_path, dpi=240):
         raise ValueError("PDF has 0 pages.")
     
     _precheck_pdf(input_path)
+    scan_set = set(_scan_pages(input_path))
     prefetch_ocr(input_path, [p.number for p in doc if _page_needs_ocr(p)], 'eng', tessdata_dir)
 
     prs = Presentation()
@@ -3003,6 +3178,15 @@ def pdf_to_pptx(input_path, output_path, dpi=240):
             pw, ph = page.rect.width, page.rect.height
             page_area = pw * ph
             slide = prs.slides.add_slide(blank_layout)
+
+            if idx in scan_set:
+                # scanned page (OCR off): the page itself is the slide, fitted inside the slide without stretching
+                import io as _io
+                sw, sh = prs.slide_width, prs.slide_height
+                scale = min(sw / Pt(pw), sh / Pt(ph))
+                pic_w, pic_h = int(Pt(pw) * scale), int(Pt(ph) * scale)
+                slide.shapes.add_picture(_io.BytesIO(_page_jpeg(page)), int((sw - pic_w) / 2), int((sh - pic_h) / 2), width=pic_w, height=pic_h)
+                continue
 
             raw_text = page.get_text().strip()
             is_scanned = _page_needs_ocr(page, raw_text)
@@ -4707,7 +4891,7 @@ def pdf_to_xlsx(input_path, output_path, lang='eng'):
     if not os.path.exists(tessdata_dir):
         tessdata_dir = os.path.join(os.getcwd(), 'tessdata')
 
-    _precheck_pdf(input_path)
+    _precheck_pdf(input_path, scans='refuse')
     doc_pdf = fitz.open(input_path)
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
