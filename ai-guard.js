@@ -109,7 +109,7 @@ function aiGuard(op, getIp) {
         error: reason,
         message: reason === 'AI_RUN_TOO_LONG'
           ? 'This document needs more AI requests than one use allows. Please try a shorter document.'
-          : `The AI tools can be used once per day from each connection, and today's use has already been taken. Please try again in ${describeWait(wait)}.`,
+          : `You have reached today's limit for this feature. Please try again in ${describeWait(wait)}.`,
         retryAfterSec: Math.ceil(wait / 1000)
       });
     }

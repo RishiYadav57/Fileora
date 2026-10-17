@@ -4785,7 +4785,7 @@
         const friendly = /SOI not found|not a valid (jpeg|jpg|png)|Unknown file format|Failed to parse|Invalid (jpeg|jpg|png)|incorrect header check/i.test(raw)
           ? "This image could not be read. Please try a different JPG or PNG file."
           : raw;
-        alert("Notice: " + (friendly || "Something went wrong. Please try again."));
+        showUploadNotice([friendly || "Something went wrong. Please try again."]);   // shown in the page box, not a popup
       } finally {
         if (thisExecId === currentExecutionId) {
           executionLive = false;
