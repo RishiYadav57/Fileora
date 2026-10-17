@@ -349,11 +349,11 @@
       <!-- Main Hero Heading -->
       <div class="mb-3 sm:mb-4 reveal-on-scroll">
         <h1 id="hero-main-h1" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-          <span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span>
-          <span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span>
+          <span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All your file tools in one place</span>
+          <span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert Files. Get More Done.</span>
         </h1>
         <p id="hero-main-sub" class="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed">
-          Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.
+          Convert documents, manage PDFs, and compress images online.
         </p>
       </div>
 
@@ -1484,10 +1484,10 @@
       const heroH1 = document.getElementById("hero-main-h1");
       const heroSub = document.getElementById("hero-main-sub");
       if (isHome) {
-        if (heroH1) heroH1.innerHTML = `<span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span><span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span>`;
+        if (heroH1) heroH1.innerHTML = `<span class="block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All your file tools in one place</span><span class="block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert Files. Get More Done.</span>`;
         if (heroSub) {
           heroSub.className = "text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed";
-          heroSub.textContent = `Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.`;
+          heroSub.textContent = `Convert documents, manage PDFs, and compress images online.`;
         }
       } else if (seo) {
         if (heroH1) heroH1.innerHTML = seo.h1Html || escapeHtml(seo.h1);
