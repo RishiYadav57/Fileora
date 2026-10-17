@@ -2181,7 +2181,8 @@ def _docx_with_scan_pages(input_pdf, text_docx, scan_idx, output_path):
             page = src[i]
             w_pt, h_pt, _ = get_word_safe_dimensions(page.rect.width, page.rect.height, 1548.0)
             tw, th = int(w_pt * 20), int(h_pt * 20)
-            sect = parse_xml(f'<w:sectPr {nsdecls("w")}><w:pgSz w:w="{tw}" w:h="{th}"{" w:orient=\"landscape\"" if tw > th else ""}/>'
+            orient = ' w:orient="landscape"' if tw > th else ''
+            sect = parse_xml(f'<w:sectPr {nsdecls("w")}><w:pgSz w:w="{tw}" w:h="{th}"{orient}/>'
                              f'<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr>')
             para = doc.add_paragraph()
             pf = para.paragraph_format
@@ -2221,6 +2222,54 @@ def _docx_with_scan_pages(input_pdf, text_docx, scan_idx, output_path):
         doc.save(output_path)
     finally:
         src.close()
+
+
+def _fix_column_sections(docx_path):
+    """pdf2docx puts text and the picture beside it into two sections, the second starting with a "next column" break. Word follows that, but
+    LibreOffice starts the second section on a new page, so the picture ends up away from its text. Both parts become ONE continuous
+    multi-column section with an ordinary column break between them, which both applications place side by side. Returns the number of joins."""
+    from docx import Document
+    from docx.oxml import parse_xml
+    from docx.oxml.ns import qn, nsdecls
+    doc = Document(docx_path)
+    body = doc.element.body
+    joins = 0
+    for p in list(body.iter(qn('w:p'))):
+        ppr = p.find(qn('w:pPr'))
+        sp = ppr.find(qn('w:sectPr')) if ppr is not None else None
+        t = sp.find(qn('w:type')) if sp is not None else None
+        if t is None or t.get(qn('w:val')) != 'nextColumn':
+            continue
+        # the section before this one: the closest earlier paragraph that carries a sectPr, in the same parent
+        prev = p.getprevious()
+        first = None                       # first paragraph of the "next column" section
+        node = prev
+        while node is not None:
+            nppr = node.find(qn('w:pPr')) if node.tag == qn('w:p') else None
+            if nppr is not None and nppr.find(qn('w:sectPr')) is not None:
+                break
+            first = node
+            node = node.getprevious()
+        if node is None:
+            continue                       # no earlier section (should not happen): leave as it is
+        node_ppr = node.find(qn('w:pPr'))
+        prev_sect = node_ppr.find(qn('w:sectPr'))
+        if prev_sect.find(qn('w:cols')) is None or int(prev_sect.find(qn('w:cols')).get(qn('w:num'), '1')) < 2:
+            continue
+        # the section that follows the previous closer starts at node.getnext(); that is where the column break goes
+        start = node.getnext()
+        if start is None:
+            continue
+        node_ppr.remove(prev_sect)         # the two parts are now one section, closed by this paragraph's sectPr
+        t.set(qn('w:val'), 'continuous')
+        br = parse_xml(f'<w:r {nsdecls("w")}><w:br w:type="column"/></w:r>')
+        if start.tag == qn('w:p'):
+            ppr0 = start.find(qn('w:pPr'))
+            start.insert(1 if ppr0 is not None else 0, br)
+        joins += 1
+    if joins:
+        doc.save(docx_path)
+    return joins
 
 
 def pdf_to_docx(input_path, output_path):
@@ -5151,6 +5200,11 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
+    if cmd == 'pdf2docx':
+        try:
+            _fix_column_sections(out_file)     # text beside a picture stays side by side in LibreOffice as well as Word
+        except Exception as e:
+            print(f"WARN: column layout fix skipped: {e}", file=sys.stderr)
     _finish(cmd)
     print("SUCCESS")
     sys.exit(0)

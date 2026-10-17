@@ -783,7 +783,8 @@ async function downloadAndClean(res, filePath, downloadName, alsoDelete) {
         downloadUrl: job.downloadUrl,
         apiUrl: job.apiUrl,
         filename: job.filename,
-        size: job.size
+        size: job.size,
+        ...(res.locals.scanNotice ? { notice: 'scanned-pages' } : {})   // scanned pages were kept as pictures (not editable text)
       });
     } catch (storageErr) {
       if (process.env.REQUIRE_CLOUD_STORAGE === 'true' || r2Storage.isR2Configured) {
@@ -1897,7 +1898,8 @@ app.post('/api/convert/to-docx', security.concurrencyLimiter, gatedUpload.single
   const originalName = req.file.originalname;
   const out = newOutPath('converted', 'docx');
   try {
-    await runRealTool('pdf2docx', input, out);
+    const done = await runRealTool('pdf2docx', input, out);
+    res.locals.scanNotice = /'scanned_pages': \d+/.test(done.stdout);
     return downloadAndClean(res, out, `${path.parse(originalName).name}.docx`, [input]);
   } catch (err) {
     failConversion(res, err, [input, out], 'Conversion to Word failed. If the PDF is password-protected, unlock it first.');
@@ -1912,7 +1914,8 @@ app.post('/api/convert/to-pptx', security.concurrencyLimiter, gatedUpload.single
   const originalName = req.file.originalname;
   const output = newOutPath('slides', 'pptx');
   try {
-    await runRealTool('pdf2pptx', input, output);
+    const done = await runRealTool('pdf2pptx', input, output);
+    res.locals.scanNotice = /'scanned_pages': \d+/.test(done.stdout);
     return downloadAndClean(res, output, `${path.parse(originalName).name}.pptx`, [input]);
   } catch (err) {
     failConversion(res, err, [input, output], 'Could not convert this PDF to PowerPoint. If it is password-protected, unlock it first.');
@@ -1926,7 +1929,8 @@ app.post('/api/convert/word-to-pptx', requireTool('word-to-pptx'), security.conc
   const originalName = req.file.originalname;
   const out = newOutPath('converted', 'pptx');
   try {
-    await runRealTool('docx2pptx', input, out);
+    const done = await runRealTool('docx2pptx', input, out);
+    res.locals.scanNotice = /'scanned_pages': \d+/.test(done.stdout);
     return downloadAndClean(res, out, `${path.parse(originalName).name}.pptx`, [input]);
   } catch (err) {
     failConversion(res, err, [input, out], 'Word to PowerPoint conversion failed. Please ensure the document is a valid .docx file.');
