@@ -8,6 +8,7 @@ const os = require('os');
 const fs = require('fs');
 const { PDFDocument, StandardFonts, degrees, rgb, ParseSpeeds } = require('pdf-lib');
 const complexity = require('./complexity');
+const { aiGuard } = require('./ai-guard');
 const SEO_DATA = require('./seo-data.js');
 const { renderToolHtml } = require('./seo-render.js');
 
@@ -1308,7 +1309,7 @@ function generateLocalSummary(cleanText, docName, length, pageCount) {
   return md.trim() + '\n';
 }
 
-app.post('/api/summarize', async (req, res) => {
+app.post('/api/summarize', aiGuard('summarize', security.getClientIp), async (req, res) => {
   try {
     const { text, filename, length, language, pageCount } = req.body;
     const images = (Array.isArray(req.body.images) ? req.body.images : [])
@@ -1316,6 +1317,7 @@ app.post('/api/summarize', async (req, res) => {
       .slice(0, 12)
       .map((i) => i.replace(/^data:image\/\w+;base64,/, ''));
     const rawText = typeof text === 'string' ? text.trim() : '';
+    if (rawText.length > 450000) return res.status(413).json({ error: 'FILE_TOO_LARGE', message: 'Maximum file size is 3 MB.' });
     const cleanText = cleanDocumentText(rawText);
 
     if (cleanText.length < 30 && !images.length) {
@@ -1661,12 +1663,13 @@ const LANGS = {
 };
 const RTL_LANGS = ['ar', 'ur'];
 
-app.post('/api/translate', async (req, res) => {
+app.post('/api/translate', aiGuard('translate', security.getClientIp), async (req, res) => {
   try {
     const { text, targetLang } = req.body;
     const langName = LANGS[targetLang];
     if (!langName) return res.status(400).json({ error: 'Unsupported target language.' });
     if (typeof text !== 'string' || text.trim().length < 2) return res.status(400).json({ error: 'No text to translate.' });
+    if (text.length > 8000) return res.status(413).json({ error: 'FILE_TOO_LARGE', message: 'That text is too long for one request.' });
 
     const apiKey = requireGeminiKey(res);
     if (!apiKey) return;
@@ -1735,12 +1738,13 @@ ${paragraphs}
 // =====================================================================
 // PDF TO EXCEL (Gemini finds the tables, ExcelJS builds the workbook)
 // =====================================================================
-app.post('/api/ai/tables', async (req, res) => {
+app.post('/api/ai/tables', aiGuard('tables', security.getClientIp), async (req, res) => {
   try {
     const { text } = req.body;
     if (typeof text !== 'string' || text.trim().length < 20) {
       return res.status(400).json({ error: 'Not enough text to look for tables.' });
     }
+    if (text.length > 16000) return res.status(413).json({ error: 'FILE_TOO_LARGE', message: 'That text is too long for one request.' });
     const apiKey = requireGeminiKey(res);
     if (!apiKey) return;
 

@@ -901,6 +901,7 @@ module.exports = {
   LOCAL_TEMP_RETENTION_MINUTES,
   CLEANUP_BATCH_SIZE,
   CLEANUP_ADMIN_SECRET,
+  executeD1Query,
   saveConvertedJob,
   recordFailedJob,
   getAuthorizedJob,

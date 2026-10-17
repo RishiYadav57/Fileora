@@ -17,6 +17,7 @@
 !/storage.js
 !/mailer.js
 !/jobgate.js
+!/ai-guard.js
 !/complexity.js
 !/output_verify.py
 !/converter-engine.js

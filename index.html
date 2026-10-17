@@ -3010,6 +3010,13 @@
       }
       if (!ok.length) { showUploadNotice(notices); return; }
 
+      // The AI tools read one document each; ZIP archives are never accepted there
+      if (["ai-summarizer", "translate-pdf"].includes(currentToolId)) {
+        const zips = ok.filter(f => /\.zip$/i.test(f.name) || /zip/i.test(f.type || ""));
+        if (zips.length) { notices.push("ZIP files are not accepted by the AI tools. Please choose a single document."); ok = ok.filter(f => !zips.includes(f)); }
+        if (!ok.length) { showUploadNotice(notices); return; }
+      }
+
       // 1. Validate individual file size <= 3 MB
       const oversized = ok.filter(f => f.size > MAX_FILE_SIZE);
       if (oversized.length > 0) {
@@ -3338,15 +3345,25 @@
       return res;
     }
 
+    // The AI tools (Gemini) are limited to one document per connection per day. All requests of one document run carry the same id.
+    let aiRun = { exec: -1, id: "" };
+    function aiRunId() {
+      if (aiRun.exec !== currentExecutionId) aiRun = { exec: currentExecutionId, id: newProgressId() };
+      return aiRun.id;
+    }
     async function postJson(endpoint, body, asBlob) {
+      const headers = { "Content-Type": "application/json" };
+      if (/^\/api\/(summarize|translate|ai\/tables)$/.test(endpoint)) headers["X-Ai-Run"] = aiRunId();
       const res = await serverFetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body)
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "The server reported an issue.");
+        const err = new Error(j.message || j.error || "The server reported an issue.");
+        err.httpStatus = res.status;
+        throw err;
       }
       return asBlob ? res.blob() : res.json();
     }
