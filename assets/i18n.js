@@ -129,7 +129,7 @@
     var w = buildWidget();
     var search = document.getElementById('tool-search-input');
     if (search) {                                           // index.html: beside the search field (desktop); far right of the header row (phones)
-      var box = search.closest('.relative');
+      var box = document.getElementById('tool-search-box') || search.closest('.relative.hidden');   // the whole search pill, never an element inside it
       box.parentNode.insertBefore(w, box.nextSibling);          // right after the search field
       return;
     }
