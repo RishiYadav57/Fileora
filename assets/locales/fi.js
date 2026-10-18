@@ -30,7 +30,7 @@ FileCornerI18n.register("fi", {
  "fb.title": "Miten muunnos sujui?",
  "fb.rating": "Arviosi",
  "fb.name": "Nimi (valinnainen)",
- "fb.country": "Maa (valinnainen)",
+ "fb.country": "Maa",
  "fb.countryPh": "Aloita maan kirjoittaminen",
  "fb.category": "Mikä kuvaa sitä parhaiten?",
  "fb.c.perfect": "Täydellinen muunnos",

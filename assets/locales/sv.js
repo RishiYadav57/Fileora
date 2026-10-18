@@ -30,7 +30,7 @@ FileCornerI18n.register("sv", {
  "fb.title": "Hur gick konverteringen?",
  "fb.rating": "Ditt betyg",
  "fb.name": "Namn (valfritt)",
- "fb.country": "Land (valfritt)",
+ "fb.country": "Land",
  "fb.countryPh": "Börja skriva ett land",
  "fb.category": "Vad beskriver det bäst?",
  "fb.c.perfect": "Perfekt konvertering",

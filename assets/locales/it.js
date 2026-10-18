@@ -30,7 +30,7 @@ FileCornerI18n.register("it", {
  "fb.title": "Com’è andata la conversione?",
  "fb.rating": "La tua valutazione",
  "fb.name": "Nome (facoltativo)",
- "fb.country": "Paese (facoltativo)",
+ "fb.country": "Paese",
  "fb.countryPh": "Inizia a scrivere un paese",
  "fb.category": "Cosa la descrive meglio?",
  "fb.c.perfect": "Conversione perfetta",

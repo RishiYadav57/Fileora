@@ -30,7 +30,7 @@ FileCornerI18n.register("lt", {
  "fb.title": "Kaip sekėsi konvertuoti?",
  "fb.rating": "Jūsų įvertinimas",
  "fb.name": "Vardas (neprivaloma)",
- "fb.country": "Šalis (neprivaloma)",
+ "fb.country": "Šalis",
  "fb.countryPh": "Pradėkite rašyti šalį",
  "fb.category": "Kas tai geriausiai apibūdina?",
  "fb.c.perfect": "Puikus konvertavimas",

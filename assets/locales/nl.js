@@ -30,7 +30,7 @@ FileCornerI18n.register("nl", {
  "fb.title": "Hoe was je conversie?",
  "fb.rating": "Je beoordeling",
  "fb.name": "Naam (optioneel)",
- "fb.country": "Land (optioneel)",
+ "fb.country": "Land",
  "fb.countryPh": "Begin met typen van een land",
  "fb.category": "Wat past het best?",
  "fb.c.perfect": "Perfecte conversie",

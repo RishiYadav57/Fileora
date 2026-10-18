@@ -30,7 +30,7 @@ FileCornerI18n.register("ga", {
  "fb.title": "Conas a chuaigh do thiontú?",
  "fb.rating": "Do rátáil",
  "fb.name": "Ainm (roghnach)",
- "fb.country": "Tír (roghnach)",
+ "fb.country": "Tír",
  "fb.countryPh": "Tosaigh ag clóscríobh tíre",
  "fb.category": "Cad is fearr a chuireann síos air?",
  "fb.c.perfect": "Tiontú foirfe",

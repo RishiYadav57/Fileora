@@ -30,7 +30,7 @@ FileCornerI18n.register("lv", {
  "fb.title": "Kā noritēja konvertēšana?",
  "fb.rating": "Jūsu vērtējums",
  "fb.name": "Vārds (neobligāti)",
- "fb.country": "Valsts (neobligāti)",
+ "fb.country": "Valsts",
  "fb.countryPh": "Sāciet rakstīt valsti",
  "fb.category": "Kas to vislabāk raksturo?",
  "fb.c.perfect": "Lieliska konvertēšana",

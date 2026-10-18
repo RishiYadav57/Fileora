@@ -30,7 +30,7 @@ FileCornerI18n.register("tr", {
  "fb.title": "Dönüştürme nasıldı?",
  "fb.rating": "Puanınız",
  "fb.name": "Ad (isteğe bağlı)",
- "fb.country": "Ülke (isteğe bağlı)",
+ "fb.country": "Ülke",
  "fb.countryPh": "Bir ülke yazmaya başlayın",
  "fb.category": "En iyi hangisi tanımlıyor?",
  "fb.c.perfect": "Mükemmel dönüştürme",

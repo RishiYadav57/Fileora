@@ -30,7 +30,7 @@ FileCornerI18n.register("sk", {
  "fb.title": "Ako dopadol prevod?",
  "fb.rating": "Vaše hodnotenie",
  "fb.name": "Meno (nepovinné)",
- "fb.country": "Krajina (nepovinné)",
+ "fb.country": "Krajina",
  "fb.countryPh": "Začnite písať krajinu",
  "fb.category": "Čo to najlepšie vystihuje?",
  "fb.c.perfect": "Perfektný prevod",

@@ -30,7 +30,7 @@ FileCornerI18n.register("ro", {
  "fb.title": "Cum a fost conversia?",
  "fb.rating": "Evaluarea ta",
  "fb.name": "Nume (opțional)",
- "fb.country": "Țara (opțional)",
+ "fb.country": "Țara",
  "fb.countryPh": "Începe să scrii o țară",
  "fb.category": "Ce descrie cel mai bine?",
  "fb.c.perfect": "Conversie perfectă",

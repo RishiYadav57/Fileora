@@ -46,10 +46,11 @@ function validate(body) {
   const name = clean(b.name, 100000);
   if (name.length > LIMITS.name) return { error: 'NAME_TOO_LONG', message: `Please keep the name under ${LIMITS.name} characters.` };
   const country = String(b.country || '').toUpperCase();
-  if (country && !COUNTRIES.has(country)) return { error: 'INVALID_COUNTRY', message: 'Please choose a country from the list, or leave it empty.' };
+  if (!country) return { error: 'COUNTRY_REQUIRED', message: 'Please select your country.' };
+  if (!COUNTRIES.has(country)) return { error: 'INVALID_COUNTRY', message: 'Please select a country from the list.' };
   const tool = b.tool && TOOL_ID.test(String(b.tool)) ? String(b.tool) : null;
   const jobId = b.jobId && JOB_ID.test(String(b.jobId)) ? String(b.jobId) : null;
-  return { data: { rating, category, name: name || null, country: country || null, comment: comment || null, tool, jobId } };
+  return { data: { rating, category, name: name || null, country, comment: comment || null, tool, jobId } };
 }
 
 function limited(ip) {
@@ -105,10 +106,11 @@ function handler(mailer) {
       return res.status(503).json({ error: 'FEEDBACK_UNAVAILABLE', message: 'Feedback could not be saved right now. Please try again later.' });
     }
     if (d.jobId) { seenJobs.add(d.jobId); if (seenJobs.size > 5000) seenJobs.delete(seenJobs.values().next().value); }
-    res.json({ success: true });                                  // the review is saved; the e-mail below does not affect this answer
+    // The review is saved. The notification e-mail is queued separately: it is NOT reported as sent, and its outcome never changes this answer.
+    res.json({ success: true, saved: true, notification: 'queued' });
     mailer.sendFeedbackEmail({ ...rec, categoryLabel: CATEGORIES[d.category] })
-      .then(() => db().executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [rec.id]).catch(() => {}))
-      .catch((e) => console.error('[feedback] notification e-mail not sent (review is saved):', String(e && e.message || e).slice(0, 160)));
+      .then((r) => { console.log(`[feedback] notification e-mail accepted by ${r.provider} for review ${rec.id}`); return db().executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [rec.id]).catch(() => {}); })
+      .catch((e) => console.error(`[feedback] notification e-mail NOT sent for saved review ${rec.id}: ${String(e && e.message || e).replace(/re_[A-Za-z0-9_]+/g, '[key]').slice(0, 200)}`));
   };
 }
 

@@ -30,7 +30,7 @@ FileCornerI18n.register("pl", {
  "fb.title": "Jak poszła konwersja?",
  "fb.rating": "Twoja ocena",
  "fb.name": "Imię (opcjonalnie)",
- "fb.country": "Kraj (opcjonalnie)",
+ "fb.country": "Kraj",
  "fb.countryPh": "Zacznij wpisywać kraj",
  "fb.category": "Co najlepiej to opisuje?",
  "fb.c.perfect": "Idealna konwersja",

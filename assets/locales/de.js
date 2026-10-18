@@ -30,7 +30,7 @@ FileCornerI18n.register("de", {
  "fb.title": "Wie war Ihre Umwandlung?",
  "fb.rating": "Ihre Bewertung",
  "fb.name": "Name (optional)",
- "fb.country": "Land (optional)",
+ "fb.country": "Land",
  "fb.countryPh": "Land eingeben",
  "fb.category": "Was passt am besten?",
  "fb.c.perfect": "Perfekte Umwandlung",

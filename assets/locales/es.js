@@ -30,8 +30,8 @@ FileCornerI18n.register("es", {
  "fb.title": "¿Cómo fue tu conversión?",
  "fb.rating": "Tu valoración",
  "fb.name": "Nombre (opcional)",
- "fb.country": "País (opcional)",
- "fb.countryPh": "Empieza a escribir un país",
+ "fb.country": "País",
+ "fb.countryPh": "Selecciona tu país",
  "fb.category": "¿Qué lo describe mejor?",
  "fb.c.perfect": "Conversión perfecta",
  "fb.c.format": "Problema de formato",
@@ -66,5 +66,11 @@ FileCornerI18n.register("es", {
  "hero.dsub": "Convierte documentos, organiza PDF, comprime imágenes y resume archivos con IA en un espacio de trabajo fácil de usar.",
  "hero.badge": "Tu espacio de archivos en línea",
  "hero.title": "Todo lo que necesitas para tus archivos.",
- "hero.subM": "Convierte documentos, organiza PDF y comprime imágenes."
+ "hero.subM": "Convierte documentos, organiza PDF y comprime imágenes.",
+ "fb.heading": "¿Te gusta FileCorner? Comparte tu opinión",
+ "fb.intro": "Tus comentarios nos ayudan a mejorar la calidad de las conversiones, corregir problemas de formato y hacer FileCorner más útil para todos. Cuéntanos qué funcionó bien o qué podemos mejorar.",
+ "dl.downloadFiles": "Descargar archivos",
+ "dl.fileReady": "{n} archivo listo",
+ "dl.filesReady": "{n} archivos listos",
+ "dl.allCompleted": "Todas las conversiones completadas"
 });

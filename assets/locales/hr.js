@@ -30,7 +30,7 @@ FileCornerI18n.register("hr", {
  "fb.title": "Kako je prošla pretvorba?",
  "fb.rating": "Vaša ocjena",
  "fb.name": "Ime (neobavezno)",
- "fb.country": "Država (neobavezno)",
+ "fb.country": "Država",
  "fb.countryPh": "Počnite upisivati državu",
  "fb.category": "Što to najbolje opisuje?",
  "fb.c.perfect": "Savršena pretvorba",

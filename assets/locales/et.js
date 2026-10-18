@@ -30,7 +30,7 @@ FileCornerI18n.register("et", {
  "fb.title": "Kuidas teisendus läks?",
  "fb.rating": "Teie hinnang",
  "fb.name": "Nimi (valikuline)",
- "fb.country": "Riik (valikuline)",
+ "fb.country": "Riik",
  "fb.countryPh": "Hakake riiki kirjutama",
  "fb.category": "Mis seda kõige paremini kirjeldab?",
  "fb.c.perfect": "Täiuslik teisendus",

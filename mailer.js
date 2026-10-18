@@ -311,7 +311,7 @@ async function sendContactEmail(submissionData) {
  * subject. No file names, contents or attachments are included. Throws when delivery fails (the caller keeps the saved review).
  */
 async function sendFeedbackEmail(r) {
-  const transporter = getTransporter();
+  const transporter = process.env.RESEND_API_KEY ? null : getTransporter();
   const smtpUser = process.env.SMTP_USER || 'pdfconverterfreebusiness@gmail.com';
   const recipient = process.env.FEEDBACK_TO || process.env.CONTACT_TO || 'pdfconverterfreebusiness@gmail.com';
   const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
@@ -328,13 +328,26 @@ async function sendFeedbackEmail(r) {
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px"><h2 style="margin:0 0 12px">New FileCorner user review</h2>` +
     `<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 10px;background:#f1f5f9;font-weight:bold;width:110px">${escapeHtml(k)}</td><td style="padding:6px 10px;border-bottom:1px solid #e2e8f0">${escapeHtml(v)}</td></tr>`).join('')}</table>` +
     `<h3 style="margin:16px 0 6px">Comment</h3><div style="white-space:pre-wrap;padding:10px;border:1px solid #e2e8f0;border-radius:8px">${escapeHtml(comment)}</div></div>`;
-  const info = await transporter.sendMail({
-    from: `"FileCorner Reviews" <${smtpUser}>`,
-    to: recipient,
-    subject: sanitizeHeader(`New FileCorner User Review — ${r.rating}/5 Stars`),
-    text, html
-  });
-  return { messageId: info.messageId };
+  const subject = sanitizeHeader(`New FileCorner User Review — ${r.rating}/5 Stars`);
+  // 1) Resend over HTTPS (RESEND_API_KEY): works on hosts that block outbound SMTP, which free Render web services do.
+  if (process.env.RESEND_API_KEY) {
+    const from = process.env.FEEDBACK_FROM || 'FileCorner Reviews <onboarding@resend.dev>';
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const resp = await fetch(`${(process.env.RESEND_API_BASE || 'https://api.resend.com').replace(/\/+$/, '')}/emails`, {
+        method: 'POST', signal: ctl.signal,
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: [recipient], subject, text, html })
+      });
+      const body = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(`Resend refused the message (HTTP ${resp.status}${body && body.name ? ' ' + body.name : ''}${body && body.message ? ': ' + String(body.message).slice(0, 120) : ''})`);
+      return { provider: 'resend', messageId: body.id };
+    } finally { clearTimeout(timer); }
+  }
+  // 2) Gmail SMTP (SMTP_USER / SMTP_PASS): needs outbound SMTP, which is not available on every host.
+  const info = await transporter.sendMail({ from: `"FileCorner Reviews" <${smtpUser}>`, to: recipient, subject, text, html });
+  return { provider: 'smtp', messageId: info.messageId };
 }
 
 module.exports = {

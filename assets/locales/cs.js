@@ -30,7 +30,7 @@ FileCornerI18n.register("cs", {
  "fb.title": "Jak se převod povedl?",
  "fb.rating": "Vaše hodnocení",
  "fb.name": "Jméno (volitelné)",
- "fb.country": "Země (volitelné)",
+ "fb.country": "Země",
  "fb.countryPh": "Začněte psát zemi",
  "fb.category": "Co to nejlépe vystihuje?",
  "fb.c.perfect": "Perfektní převod",

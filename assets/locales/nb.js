@@ -30,7 +30,7 @@ FileCornerI18n.register("nb", {
  "fb.title": "Hvordan gikk konverteringen?",
  "fb.rating": "Vurderingen din",
  "fb.name": "Navn (valgfritt)",
- "fb.country": "Land (valgfritt)",
+ "fb.country": "Land",
  "fb.countryPh": "Begynn å skrive et land",
  "fb.category": "Hva beskriver det best?",
  "fb.c.perfect": "Perfekt konvertering",

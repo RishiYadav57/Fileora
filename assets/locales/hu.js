@@ -30,7 +30,7 @@ FileCornerI18n.register("hu", {
  "fb.title": "Milyen volt a konvertálás?",
  "fb.rating": "Az Ön értékelése",
  "fb.name": "Név (nem kötelező)",
- "fb.country": "Ország (nem kötelező)",
+ "fb.country": "Ország",
  "fb.countryPh": "Kezdjen el országot írni",
  "fb.category": "Mi írja le legjobban?",
  "fb.c.perfect": "Tökéletes konvertálás",

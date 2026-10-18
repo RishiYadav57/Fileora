@@ -69,6 +69,7 @@
         h.setAttribute('dir', RTL[code] ? 'rtl' : 'ltr');
         apply();
         updateWidget();
+        document.documentElement.classList.remove('fc-i18n-pending');
         try { document.dispatchEvent(new CustomEvent('fc:lang', { detail: { lang: code } })); } catch (e) { /* old browser */ }
       });
     });
@@ -126,9 +127,13 @@
     var search = document.getElementById('tool-search-input');
     if (search) {                                           // index.html: beside the search field (desktop); far right of the header row (phones)
       var box = search.closest('.relative');
-      box.parentNode.insertBefore(w, box);
+      box.parentNode.insertBefore(w, box.nextSibling);          // right after the search field
       return;
     }
+    // pages with a Home button inside a right-hand control group: the selector goes right next to it
+    var homeLink = (document.querySelector('header [data-i18n="nav.home"]') || {}).parentNode;
+    homeLink = homeLink && homeLink.closest ? homeLink.closest('a') : null;
+    if (homeLink && homeLink.parentNode && !/justify-between/.test(homeLink.parentNode.className)) { homeLink.parentNode.insertBefore(w, homeLink.nextSibling); return; }
     var row = document.querySelector('header .justify-between') || document.querySelector('header > div > div') || document.querySelector('header');
     if (row) row.appendChild(w);                            // other pages: the far right of the header row
   }
@@ -154,9 +159,9 @@
   var css = document.createElement('style');
   css.textContent =
     '.fc-lang{position:relative;display:inline-flex;flex-shrink:0}' +
-    '.fc-lang-btn{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 9px;border-radius:12px;border:1px solid rgb(226 232 240);background:#fff;color:#334155;font:600 11px/1 inherit;cursor:pointer}' +
+    '.fc-lang-btn{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 6px;border-radius:10px;border:1px solid rgb(226 232 240);background:#fff;color:#334155;font:600 11px/1 inherit;cursor:pointer}' +
     '.fc-lang-btn:hover{background:#f1f5f9}.fc-lang-btn:focus-visible{outline:2px solid #2563eb;outline-offset:2px}' +
-    '.fc-lang-code{display:none}@media (min-width:1400px){.fc-lang-code{display:inline}}.fc-lang-btn{padding:0 8px}' +
+    '.fc-lang-code{display:none;font-size:11px}@media (min-width:640px){.fc-lang-code{display:inline}}.fc-lang-btn svg{width:16px;height:16px}.fc-lang-btn{gap:3px}' +
     '.fc-lang-list{position:absolute;right:0;top:calc(100% + 6px);z-index:80;margin:0;padding:6px;list-style:none;width:210px;max-height:min(70vh,420px);overflow-y:auto;background:#fff;border:1px solid rgb(226 232 240);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18)}' +
     '.fc-lang-list[hidden]{display:none}' +
     '.fc-lang-list li{padding:8px 10px;border-radius:9px;font-size:13px;color:#1e293b;cursor:pointer;outline:none}' +
@@ -201,5 +206,6 @@
     setLanguage(known(saved) ? saved : 'en', false);
     suggest();
   }
+  setTimeout(function () { document.documentElement.classList.remove('fc-i18n-pending'); }, 1500);   // never leave a page hidden
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
