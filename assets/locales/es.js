@@ -82,5 +82,7 @@ FileCornerI18n.register("es", {
  "consent.text": "Nos gustaría usar Google Analytics para medir cómo se usa el sitio. Puede establecer cookies y envía datos de uso a Google. No se carga nada si no aceptas, y puedes cambiar de opinión en cualquier momento.",
  "consent.accept": "Aceptar",
  "consent.decline": "Rechazar",
- "consent.policy": "Política de cookies"
+ "consent.policy": "Política de cookies",
+ "lang.search": "Buscar idioma",
+ "lang.none": "No se encontró ningún idioma"
 });

@@ -82,5 +82,7 @@ FileCornerI18n.register("ar", {
  "consent.text": "نود استخدام Google Analytics لقياس كيفية استخدام الموقع. قد يضع ملفات تعريف ارتباط ويرسل بيانات الاستخدام إلى Google. لا يتم تحميل شيء ما لم توافق، ويمكنك تغيير رأيك في أي وقت.",
  "consent.accept": "قبول",
  "consent.decline": "رفض",
- "consent.policy": "سياسة ملفات تعريف الارتباط"
+ "consent.policy": "سياسة ملفات تعريف الارتباط",
+ "lang.search": "ابحث عن لغة",
+ "lang.none": "لم يتم العثور على لغة"
 });

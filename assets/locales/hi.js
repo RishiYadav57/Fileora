@@ -82,5 +82,7 @@ FileCornerI18n.register("hi", {
  "consent.text": "हम साइट के उपयोग को मापने के लिए Google Analytics का उपयोग करना चाहते हैं। यह कुकीज़ सेट कर सकता है और उपयोग का डेटा Google को भेजता है। आपके स्वीकार करने तक कुछ भी लोड नहीं होता, और आप कभी भी अपना निर्णय बदल सकते हैं।",
  "consent.accept": "स्वीकार करें",
  "consent.decline": "अस्वीकार करें",
- "consent.policy": "कुकी नीति"
+ "consent.policy": "कुकी नीति",
+ "lang.search": "भाषा खोजें",
+ "lang.none": "कोई भाषा नहीं मिली"
 });

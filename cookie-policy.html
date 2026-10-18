@@ -74,6 +74,7 @@
   <script src="/assets/config.js"></script>
   <script src="/assets/warmup.js" defer></script>
   <script>(function(){try{var l=localStorage.getItem("fc_lang");if(l&&l!=="en"&&/^[a-z]{2}$/.test(l)){var h=document.documentElement;h.setAttribute("lang",l);h.setAttribute("dir",l==="ar"?"rtl":"ltr");h.classList.add("fc-i18n-pending");setTimeout(function(){h.classList.remove("fc-i18n-pending")},2500);var st=document.createElement("style");st.textContent="html.fc-i18n-pending body{visibility:hidden}";document.head.appendChild(st);["en",l].forEach(function(c){var k=document.createElement("link");k.rel="preload";k.as="script";k.href="/assets/locales/"+c+".js";document.head.appendChild(k);});}}catch(e){}})();</script>
+  <script src="/assets/lang-meta.js" defer></script>
   <script src="/assets/i18n.js" defer></script>
   <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
   <script src="/assets/consent.js" defer></script>
@@ -183,6 +184,20 @@
               <td class="py-2.5 px-4">HTML5 localStorage</td>
               <td class="py-2.5 px-4">Stores your display preference (<code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">light</code> or <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">dark</code>) so the website renders with your preferred theme on return visits.</td>
               <td class="py-2.5 px-4">Persistent until cleared by user</td>
+              <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">No (client-only)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400">fc_lang</td>
+              <td class="py-2.5 px-4">HTML5 localStorage</td>
+              <td class="py-2.5 px-4">Remembers the interface language you chose.</td>
+              <td class="py-2.5 px-4">Persistent until cleared by user</td>
+              <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">No (client-only)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400">fc_region</td>
+              <td class="py-2.5 px-4">HTML5 localStorage</td>
+              <td class="py-2.5 px-4">Remembers your two-letter country code for 7 days, only to put the languages that fit your country first in the language list. It never changes your language by itself.</td>
+              <td class="py-2.5 px-4">7 days, then looked up again</td>
               <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">No (client-only)</td>
             </tr>
             <tr>

@@ -6,6 +6,9 @@
  * - Code: FileCornerI18n.t('key', 'English default', { n: 3 })  ->  "{n}" placeholders are filled in.
  * - The chosen language is kept in localStorage ("fc_lang"). The browser language is only SUGGESTED (a dismissible bar), never applied.
  * - <html lang> and <html dir> follow the language (Arabic is right-to-left).
+ * - The selector lists every supported language. A search box at the top filters them by native name, English name or alias (assets/lang-meta.js);
+ *   without a search the list is English first, then the languages that fit the visitor's country, then the rest. This only orders the list.
+ *   The country comes from Cloudflare's /cdn-cgi/trace (the "loc" line only), else the time zone / browser language; it is cached in localStorage (fc_region, 7 days).
  * Uploaded documents are never translated; only the interface is.
  */
 (function () {
@@ -76,27 +79,27 @@
   }
 
   // ---- the selector (globe button + list of native names) ------------------------------------------------------
-  var widget, button, list, label;
+  var widget, button, list, opts, search, empty, label;
+  var META = function () { return window.FileCornerLangMeta || null; };
+  var country = '';
   function nameOf(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return LANGS[i][1]; return code; }
   function updateWidget() {
     if (!widget) return;
     label.textContent = current.toUpperCase();
     button.setAttribute('aria-label', t('lang.choose', 'Choose language') + ': ' + nameOf(current));
-    Array.prototype.forEach.call(list.children, function (li) { li.setAttribute('aria-selected', li.getAttribute('data-code') === current ? 'true' : 'false'); });
+    Array.prototype.forEach.call(opts.children, function (li) { li.setAttribute('aria-selected', li.getAttribute('data-code') === current ? 'true' : 'false'); });
   }
-  function closeList() { if (list) { list.classList.remove('open'); button.setAttribute('aria-expanded', 'false'); } }
-  function buildWidget() {
-    widget = document.createElement('div');
-    widget.id = 'lang-switch';
-    widget.className = 'fc-lang';
-    widget.innerHTML =
-      '<button type="button" class="fc-lang-btn" aria-haspopup="listbox" aria-expanded="false">' +
-      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 4 5.7 4 9s-1.4 6.4-4 9c-2.6-2.6-4-5.7-4-9s1.4-6.4 4-9z"/></svg>' +
-      '<span class="fc-lang-code"></span><svg class="fc-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.2 6 8l4-3.8"/></svg></button><ul class="fc-lang-list" role="listbox"></ul>';
-    button = widget.querySelector('button');
-    label = widget.querySelector('.fc-lang-code');
-    list = widget.querySelector('ul');
-    LANGS.forEach(function (l) {
+  // Fills the options: the country-aware order when the search is empty, otherwise every supported language that matches the typed text
+  function renderOptions(query) {
+    var M = META(), langs = LANGS, hits = M && query && query.trim() ? M.search(query, LANGS) : null;
+    if (!hits && M) langs = M.order(LANGS, country, navigator.languages || [navigator.language]).all;
+    else if (hits) langs = hits;
+    else if (query && query.trim()) {          // no metadata file: plain filter on the names shown
+      var q = query.trim().toLowerCase();
+      langs = LANGS.filter(function (l) { return l[1].toLowerCase().indexOf(q) >= 0 || l[0] === q; });
+    }
+    opts.innerHTML = '';
+    langs.forEach(function (l) {
       var li = document.createElement('li');
       li.setAttribute('role', 'option'); li.setAttribute('data-code', l[0]); li.setAttribute('tabindex', '-1');
       li.setAttribute('lang', l[0]); li.textContent = l[1];
@@ -104,10 +107,40 @@
       li.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click(); }
         else if (e.key === 'ArrowDown' && li.nextSibling) { e.preventDefault(); li.nextSibling.focus(); }
-        else if (e.key === 'ArrowUp' && li.previousSibling) { e.preventDefault(); li.previousSibling.focus(); }
-        else if (e.key === 'Escape') { closeList(); button.focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); (li.previousSibling || search).focus(); }
+        else if (e.key === 'Escape') { e.stopPropagation(); closeList(); button.focus(); }
+        else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { search.focus(); }   // typing starts a search
       });
-      list.appendChild(li);
+      opts.appendChild(li);
+    });
+    empty.hidden = langs.length > 0;
+    empty.textContent = t('lang.none', 'No language found');
+    updateWidget();
+  }
+  function closeList() { if (list) { list.classList.remove('open'); button.setAttribute('aria-expanded', 'false'); if (search && search.value) { search.value = ''; renderOptions(''); } } }
+  function buildWidget() {
+    widget = document.createElement('div');
+    widget.id = 'lang-switch';
+    widget.className = 'fc-lang';
+    widget.innerHTML =
+      '<button type="button" class="fc-lang-btn" aria-haspopup="listbox" aria-expanded="false">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 4 5.7 4 9s-1.4 6.4-4 9c-2.6-2.6-4-5.7-4-9s1.4-6.4 4-9z"/></svg>' +
+      '<span class="fc-lang-code"></span><svg class="fc-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.2 6 8l4-3.8"/></svg></button><div class="fc-lang-list"><div class="fc-lang-find"><input type="search" class="fc-lang-search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></div><ul class="fc-lang-opts" role="listbox"></ul><div class="fc-lang-none" role="status" hidden></div></div>';
+    button = widget.querySelector('button');
+    label = widget.querySelector('.fc-lang-code');
+    list = widget.querySelector('.fc-lang-list');
+    opts = widget.querySelector('.fc-lang-opts');
+    search = widget.querySelector('.fc-lang-search');
+    empty = widget.querySelector('.fc-lang-none');
+    search.setAttribute('placeholder', t('lang.search', 'Search language'));
+    search.setAttribute('aria-label', t('lang.search', 'Search language'));
+    opts.setAttribute('aria-label', t('lang.choose', 'Choose language'));
+    renderOptions('');
+    search.addEventListener('input', function () { renderOptions(search.value); });
+    search.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' && opts.firstChild) { e.preventDefault(); opts.firstChild.focus(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (opts.firstChild) opts.firstChild.click(); }
+      else if (e.key === 'Escape') { e.stopPropagation(); if (search.value) { search.value = ''; renderOptions(''); } else { closeList(); button.focus(); } }
     });
     button.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -116,17 +149,44 @@
       button.setAttribute('aria-expanded', String(open));
       if (open) {
         // focus the current language once the list is visible (a hidden list cannot take focus); preventScroll: the page itself must not move
-        requestAnimationFrame(function () { var sel = list.querySelector('[aria-selected="true"]') || list.firstChild; sel.focus({ preventScroll: true }); list.scrollTop = Math.max(0, sel.offsetTop - 60); });
+        requestAnimationFrame(function () {
+          var sel = opts.querySelector('[aria-selected="true"]') || opts.firstChild;
+          if (window.matchMedia && window.matchMedia('(pointer:coarse)').matches) { if (sel) sel.focus({ preventScroll: true }); }   // on touch screens focusing the search box would open the keyboard at once
+          else search.focus({ preventScroll: true });
+          if (sel) opts.scrollTop = Math.max(0, sel.offsetTop - 60);
+        });
       }
     });
     document.addEventListener('click', function (e) { if (widget && !widget.contains(e.target)) closeList(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeList(); });
+    document.addEventListener('fc:lang', function () { if (search) { search.setAttribute('placeholder', t('lang.search', 'Search language')); search.setAttribute('aria-label', t('lang.search', 'Search language')); empty.textContent = t('lang.none', 'No language found'); } });
     return widget;
+  }
+
+  // Country, only to order the list. Order of trust: a cached answer, Cloudflare's /cdn-cgi/trace on this site (we read the "loc" line only),
+  // then the browser's time zone, then the region in the browser language (de-CH). No third-party service; nothing is sent anywhere.
+  var REGION_KEY = 'fc_region', REGION_TTL = 7 * 24 * 3600 * 1000;
+  function detectCountry() {
+    var M = META(); if (!M) return;
+    var cached = null; try { cached = JSON.parse(safeGet(REGION_KEY) || 'null'); } catch (e) { cached = null; }
+    if (cached && cached.c && Date.now() - cached.t < REGION_TTL) { country = cached.c; renderOptions(search ? search.value : ''); return; }
+    var fallback = function () {
+      var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { /* no Intl */ }
+      return M.countryFromTimeZone(tz) || M.countryFromLanguages(navigator.languages || [navigator.language]);
+    };
+    var done = function (c, store) { country = c || ''; if (c && store) safeSet(REGION_KEY, JSON.stringify({ c: c, t: Date.now() })); if (search) renderOptions(search.value); };
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 2500);
+    if (!window.fetch || location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { clearTimeout(timer); done(fallback(), false); return; }
+    fetch('/cdn-cgi/trace', { cache: 'no-store', signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (txt) { clearTimeout(timer); var c = M.countryFromTrace(txt); done(c || fallback(), !!c); })
+      .catch(function () { clearTimeout(timer); done(fallback(), false); });
   }
 
   function place() {
     if (document.getElementById('lang-switch')) return;
     var w = buildWidget();
+    detectCountry();
     var search = document.getElementById('tool-search-input');
     if (search) {                                           // index.html: beside the search field (desktop); far right of the header row (phones)
       var box = document.getElementById('tool-search-box') || search.closest('.relative.hidden');   // the whole search pill, never an element inside it
@@ -170,12 +230,14 @@
     '.fc-lang-btn[aria-expanded="true"] .fc-chev{transform:rotate(180deg)}' +
     '.fc-lang-code{display:inline;min-width:1.2em;text-align:center}' +
     /* the list: a short fade with a few pixels of movement; hidden lists take no clicks and no focus */
-    '.fc-lang-list{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:80;margin:0;padding:6px;list-style:none;width:210px;max-height:min(70vh,420px);overflow-y:auto;overscroll-behavior:contain;background:#fff;border:1px solid rgb(226 232 240);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);' +
+    '.fc-lang-list{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:80;margin:0;padding:6px;display:flex;flex-direction:column;width:210px;max-height:min(70vh,420px);overflow:hidden;background:#fff;border:1px solid rgb(226 232 240);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);' +
       'opacity:0;transform:translateY(-6px);visibility:hidden;pointer-events:none;transition:opacity .16s ease,transform .16s ease,visibility 0s linear .16s}' +
     '.fc-lang-list.open{opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}' +
+    '.fc-lang-find{flex:none;padding:2px 2px 6px}.fc-lang-search{display:block;width:100%;box-sizing:border-box;height:32px;padding:0 10px;border:1px solid rgb(226 232 240);border-radius:9px;background:#f8fafc;color:#1e293b;font-family:inherit;font-size:13px;outline:none}.fc-lang-search:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.2)}.fc-lang-search::placeholder{color:#94a3b8}' +
+    '.fc-lang-opts{list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto;min-height:0}.fc-lang-none{padding:12px 10px;font-size:13px;color:#64748b;text-align:center}.fc-lang-none[hidden]{display:none}' +
     '.fc-lang-list li{padding:8px 10px;border-radius:9px;font-size:13px;color:#1e293b;cursor:pointer;outline:none;opacity:0;transform:translateY(-3px);transition:opacity .16s ease,transform .16s ease,background-color .12s ease}' +
     '.fc-lang-list.open li{opacity:1;transform:none}' +
-    '.fc-lang-list li:hover,.fc-lang-list li:focus{background:#eff6ff}.fc-lang-list li[aria-selected="true"]{font-weight:700;color:#1d4ed8}' +
+    '.fc-lang-list li:hover,.fc-lang-list li:focus{background:#eff6ff}.fc-lang-list li[aria-selected="true"]{font-weight:700;color:#1d4ed8}.fc-lang-list li{margin:0}' +
     'html[dir=rtl] .fc-lang-list{inset-inline-end:0}' +
     '@media (max-width:420px){.fc-lang-list{position:fixed;inset-inline-end:12px;top:64px;width:min(240px,calc(100vw - 24px))}}' +
     '@media (prefers-reduced-motion:reduce){.fc-lang-btn,.fc-lang-btn .fc-chev,.fc-lang-list,.fc-lang-list li{transition:none!important}.fc-lang-list{transform:none}.fc-lang-list li{transform:none;opacity:1}}' +

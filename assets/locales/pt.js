@@ -82,5 +82,7 @@ FileCornerI18n.register("pt", {
  "consent.text": "Gostaríamos de usar o Google Analytics para medir como o site é usado. Ele pode definir cookies e envia dados de uso ao Google. Nada é carregado sem a sua aceitação, e você pode mudar de ideia a qualquer momento.",
  "consent.accept": "Aceitar",
  "consent.decline": "Recusar",
- "consent.policy": "Política de cookies"
+ "consent.policy": "Política de cookies",
+ "lang.search": "Buscar idioma",
+ "lang.none": "Nenhum idioma encontrado"
 });

@@ -82,5 +82,7 @@ FileCornerI18n.register("en", {
  "consent.text": "We would like to use Google Analytics to measure how the site is used. It may set cookies and sends usage data to Google. Nothing is loaded unless you accept, and you can change your mind at any time.",
  "consent.accept": "Accept",
  "consent.decline": "Decline",
- "consent.policy": "Cookie policy"
+ "consent.policy": "Cookie policy",
+ "lang.search": "Search language",
+ "lang.none": "No language found"
 });
