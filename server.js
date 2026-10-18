@@ -1624,6 +1624,21 @@ async function buildNativeSummaryPdf(summary, name, pageCount) {
   return await doc.save();
 }
 
+// A small credit line at the foot of every page of a summary PDF (both build paths). Never blocks the download: on any problem the PDF is left as it is.
+async function stampSummaryFooter(pdfFile) {
+  try {
+    const doc = await PDFDocument.load(fs.readFileSync(pdfFile));
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const text = 'Summary created with FileCorner AI Summarizer and downloaded from pdfconverterfree.in';
+    for (const page of doc.getPages()) {
+      const { width } = page.getSize();
+      const size = 6.5;
+      page.drawText(text, { x: Math.max(10, (width - font.widthOfTextAtSize(text, size)) / 2), y: 14, size, font, color: rgb(0.62, 0.67, 0.74) });
+    }
+    fs.writeFileSync(pdfFile, await doc.save());
+  } catch (e) { console.warn('[summary] footer stamp skipped:', String(e.message || e).slice(0, 120)); }
+}
+
 // Builds the summary PDF with LibreOffice + Noto fonts (with native engine fallback)
 app.post('/api/summary/pdf', security.concurrencyLimiter, async (req, res) => {
   const { summary, filename, pageCount } = req.body;
@@ -1657,6 +1672,7 @@ ${summaryToHtml(summary, dirAttr)}
   try {
     fs.writeFileSync(htmlPath, html, 'utf8');
     pdfPath = await libreConvert(htmlPath, 'pdf', ['--infilter=HTML (StarWriter)']);
+    await stampSummaryFooter(pdfPath);
     downloadAndClean(res, pdfPath, `Summary_${name}.pdf`, [htmlPath]);
   } catch (err) {
     safeUnlink(htmlPath);
@@ -1666,6 +1682,7 @@ ${summaryToHtml(summary, dirAttr)}
       const pdfBytes = await buildNativeSummaryPdf(summary, name, pageCount);
       const out = newOutPath('summary', 'pdf');
       fs.writeFileSync(out, pdfBytes);
+      await stampSummaryFooter(out);
       downloadAndClean(res, out, `Summary_${name}.pdf`);
     } catch (fallbackErr) {
       console.error('Native summary PDF generation failed:', fallbackErr);
