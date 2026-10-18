@@ -72,5 +72,9 @@ FileCornerI18n.register("hi", {
  "dl.downloadFiles": "फ़ाइलें डाउनलोड करें",
  "dl.fileReady": "{n} फ़ाइल तैयार",
  "dl.filesReady": "{n} फ़ाइलें तैयार",
- "dl.allCompleted": "सभी रूपांतरण पूरे हुए"
+ "dl.allCompleted": "सभी रूपांतरण पूरे हुए",
+ "fb.eyebrow": "आपकी प्रतिक्रिया",
+ "fb.chip1": "लगभग 10 सेकंड लगते हैं",
+ "fb.chip2": "खाता ज़रूरी नहीं",
+ "fb.chip3": "सीधे FileCorner टीम को भेजा जाता है"
 });

@@ -72,5 +72,9 @@ FileCornerI18n.register("ar", {
  "dl.downloadFiles": "تنزيل الملفات",
  "dl.fileReady": "{n} ملف جاهز",
  "dl.filesReady": "{n} ملفات جاهزة",
- "dl.allCompleted": "اكتملت جميع التحويلات"
+ "dl.allCompleted": "اكتملت جميع التحويلات",
+ "fb.eyebrow": "ملاحظاتك",
+ "fb.chip1": "تستغرق نحو 10 ثوانٍ",
+ "fb.chip2": "لا حاجة لحساب",
+ "fb.chip3": "يصل مباشرة إلى فريق FileCorner"
 });
