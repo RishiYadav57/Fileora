@@ -90,9 +90,9 @@ function renderToolHtml(html, tool, toolId) {
     // 7. Pre-render Hero H1 and Subtitle in raw HTML
     const heroH1Rendered = tool.h1Html || escapeHtml(tool.h1);
     html = html.replace(/<h1 id=["']hero-main-h1["'][\s\S]*?<\/h1>/i,
-      `<h1 id="hero-main-h1" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">${heroH1Rendered}</h1>`);
+      `<span id="hero-badge" class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase" data-i18n="hero.badge">Your online file workspace</span><h1 id="hero-main-h1" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">${heroH1Rendered}</h1>`);
     html = html.replace(/<p id=["']hero-main-sub["'][\s\S]*?<\/p>/i,
-      `<p id="hero-main-sub" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 sm:mt-1.5 max-w-xl mx-auto leading-normal">${escapeHtml((tool.intro || '').split('\\n')[0])}</p>`);
+      `<p id="hero-main-sub" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 sm:mt-1.5 max-w-xl mx-auto leading-normal"><span class="hidden md:inline">${escapeHtml((tool.intro || '').split('\\n')[0])}</span><span class="md:hidden text-sm">${escapeHtml(tool.heroShort || (tool.intro || '').split('\\n')[0])}</span></p>`);
 
     // 8. Bootstrap client script with current tool ID
     html = html.replace('</body>', `<script>window.INITIAL_TOOL_ID = "${toolId}";</script>\n</body>`);

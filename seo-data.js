@@ -9,6 +9,7 @@ const SEO_DATA = {
     "h1": "Merge PDF Files Online",
     "h1Html": "Merge <span class=\"text-blue-600 dark:text-blue-500\">PDF Files</span> Online",
     "intro": "Bring your documents together in one organized PDF. Whether you're combining assignments, business reports, invoices, or supporting documents, FileCorner helps you turn separate PDF files into one convenient document.",
+    "heroShort": "Combine several PDF files into one document in your preferred order.",
     "steps": [
       "Upload the PDF files you want to combine.",
       "Arrange their order if the tool supports reordering.",
@@ -48,6 +49,7 @@ const SEO_DATA = {
     "h1": "Split PDF Files Online",
     "h1Html": "Split <span class=\"text-blue-600 dark:text-blue-500\">PDF Files</span> Online",
     "intro": "Have a PDF that contains more pages than you need? Split it into smaller documents to separate chapters, extract useful sections, or share only the pages that matter.",
+    "heroShort": "Divide a PDF into separate files or pick the pages you need.",
     "steps": [
       "Upload your PDF document.",
       "Choose the available page-selection or splitting options.",
@@ -83,6 +85,7 @@ const SEO_DATA = {
     "h1": "Remove Pages from PDF",
     "h1Html": "Remove Pages <span class=\"text-blue-600 dark:text-blue-500\">from PDF</span>",
     "intro": "Clean up your PDF by removing unwanted pages. Whether you need to remove blank pages, outdated information, or irrelevant sections, this tool helps you prepare a more focused document.",
+    "heroShort": "Delete the pages you do not need and keep a cleaner PDF.",
     "steps": [
       "Upload your PDF.",
       "Select the pages you want to remove using the available controls.",
@@ -118,6 +121,7 @@ const SEO_DATA = {
     "h1": "Extract Pages from PDF",
     "h1Html": "Extract Pages <span class=\"text-blue-600 dark:text-blue-500\">from PDF</span>",
     "intro": "Get the pages you need without sharing or carrying the entire document. Extract useful sections from reports, manuals, assignments, and other multi-page PDFs.",
+    "heroShort": "Pull selected pages out of a PDF and save them separately.",
     "steps": [
       "Upload your PDF.",
       "Select the pages you want to extract.",
@@ -153,6 +157,7 @@ const SEO_DATA = {
     "h1": "Organize PDF Pages Online",
     "h1Html": "Organize <span class=\"text-blue-600 dark:text-blue-500\">PDF Pages</span> Online",
     "intro": "Put your PDF pages in a more useful order. Organizing a document can help improve its flow, separate sections, and prepare it for reading, printing, or sharing.",
+    "heroShort": "Rearrange, rotate and reorder PDF pages into the layout you want.",
     "steps": [
       "Upload your PDF document.",
       "Use the available page-management controls.",
@@ -188,6 +193,7 @@ const SEO_DATA = {
     "h1": "Compress PDF Files Online",
     "h1Html": "Compress <span class=\"text-blue-600 dark:text-blue-500\">PDF Files</span> Online",
     "intro": "Make large PDF files easier to upload, share, and store. FileCorner helps you reduce PDF size while balancing file size and document quality.",
+    "heroShort": "Reduce PDF file size while keeping documents clear and easy to share.",
     "steps": [
       "Upload the PDF you want to compress.",
       "Select one of the available compression options.",
@@ -227,6 +233,7 @@ const SEO_DATA = {
     "h1": "Repair a PDF File Online",
     "h1Html": "Repair a <span class=\"text-blue-600 dark:text-blue-500\">PDF File</span> Online",
     "intro": "Having trouble opening a PDF? A damaged or malformed document may fail to load, display pages incorrectly, or cause errors in PDF readers.\r\n\r\nThe Repair PDF tool attempts to process supported problematic documents so you can check whether their content can be recovered.",
+    "heroShort": "Recover readable content from damaged PDF files where possible.",
     "steps": [
       "Upload the problematic PDF.",
       "Start the repair operation.",
@@ -262,6 +269,7 @@ const SEO_DATA = {
     "h1": "Compress Images Online",
     "h1Html": "Compress <span class=\"text-blue-600 dark:text-blue-500\">Images Online</span>",
     "intro": "Make your images smaller and easier to share. Image compression can reduce storage requirements and help prepare photos and graphics for websites, documents, and online uploads.",
+    "heroShort": "Reduce image file size for easier uploads while keeping quality.",
     "steps": [
       "Upload your image.",
       "Choose the available compression settings.",
@@ -297,6 +305,7 @@ const SEO_DATA = {
     "h1": "Convert Word to PDF Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">Word to PDF</span> Online",
     "intro": "Turn Word documents into PDFs that are convenient to share and view. Whether you're preparing a report, assignment, business document, or other written material, PDF conversion helps create a consistent page-based version.",
+    "heroShort": "Turn Word documents into PDF files that are ready to share.",
     "steps": [
       "Upload your supported Word file.",
       "Start the conversion.",
@@ -332,6 +341,7 @@ const SEO_DATA = {
     "h1": "Convert PowerPoint to PDF Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PowerPoint to PDF</span> Online",
     "intro": "Share your presentation as a PDF. Converting slides into a document makes them convenient to distribute, print, and review without requiring every recipient to work with a presentation file.",
+    "heroShort": "Convert PowerPoint presentations into PDFs for easy sharing and printing.",
     "steps": [
       "Upload your PowerPoint file.",
       "Start the conversion.",
@@ -367,6 +377,7 @@ const SEO_DATA = {
     "h1": "Convert Excel to PDF Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">Excel to PDF</span> Online",
     "intro": "Turn spreadsheet data into a PDF that is easier to share and review. Excel-to-PDF conversion can be useful for distributing reports, schedules, tables, and summaries in a page-based format.",
+    "heroShort": "Convert Excel spreadsheets into PDFs for sharing and printing.",
     "steps": [
       "Upload the supported spreadsheet.",
       "Start the conversion.",
@@ -402,6 +413,7 @@ const SEO_DATA = {
     "h1": "Convert JPG to PDF Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">JPG to PDF</span> Online",
     "intro": "Turn JPG images into PDF documents that are convenient to share, print, and organize. This can be useful for photographs, scanned pages, receipts, and image-based documents.",
+    "heroShort": "Turn JPG images into a PDF document you can share or print.",
     "steps": [
       "Upload your JPG image or images if multiple-file support is available.",
       "Choose the available conversion options.",
@@ -437,6 +449,7 @@ const SEO_DATA = {
     "h1": "Convert PDF to Word Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PDF to Word</span> Online",
     "intro": "Convert PDF documents into editable Word files so you can update text, reuse content, and continue editing your documents.\r\n\r\nPDFs may contain text, images, tables, columns, and complex layouts. The output depends on the structure of the original PDF and the capabilities of the conversion engine.",
+    "heroShort": "Convert PDF files into editable Word documents you can modify.",
     "steps": [
       "Upload your PDF.",
       "Start the conversion.",
@@ -472,6 +485,7 @@ const SEO_DATA = {
     "h1": "Convert PowerPoint to Word Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PowerPoint to Word</span> Online",
     "intro": "Reuse presentation content in a Word document. This conversion can be useful when preparing meeting notes, written reports, study material, or a document-based version of presentation slides.",
+    "heroShort": "Turn PowerPoint slides into an editable Word document.",
     "steps": [
       "Upload your presentation.",
       "Start the conversion.",
@@ -507,6 +521,7 @@ const SEO_DATA = {
     "h1": "Convert Word to PowerPoint Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">Word to PowerPoint</span> Online",
     "intro": "Turn written content into a presentation format. Converting a Word document into PowerPoint can provide a starting point for organizing reports, notes, and educational material into slides.",
+    "heroShort": "Turn Word document content into PowerPoint slides for presentations.",
     "steps": [
       "Upload your Word document.",
       "Start the conversion.",
@@ -542,6 +557,7 @@ const SEO_DATA = {
     "h1": "Convert PDF to PowerPoint Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PDF to PowerPoint</span> Online",
     "intro": "Reuse PDF content in a presentation workflow. PDF-to-PowerPoint conversion can help you create a starting point for presentations based on reports, documents, or previously exported slides.",
+    "heroShort": "Convert PDF pages into PowerPoint slides you can edit and present.",
     "steps": [
       "Upload your PDF.",
       "Start the conversion.",
@@ -577,6 +593,7 @@ const SEO_DATA = {
     "h1": "Convert PDF to Excel Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PDF to Excel</span> Online",
     "intro": "Move supported tabular information from PDFs into a spreadsheet workflow. This can help you reuse data from reports, lists, and tables without manually recreating every entry.",
+    "heroShort": "Extract tables from PDF files into Excel spreadsheets for analysis.",
     "steps": [
       "Upload your PDF.",
       "Start the conversion.",
@@ -612,6 +629,7 @@ const SEO_DATA = {
     "h1": "Convert PDF to JPG Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PDF to JPG</span> Online",
     "intro": "Turn PDF pages into JPG images when you need image versions of document pages. This can be useful for sharing visual content, preparing previews, or incorporating pages into image-based workflows.",
+    "heroShort": "Save each page of a PDF as a JPG image.",
     "steps": [
       "Upload your PDF.",
       "Start the conversion.",
@@ -647,6 +665,7 @@ const SEO_DATA = {
     "h1": "Unlock PDF Files",
     "h1Html": "Unlock <span class=\"text-blue-600 dark:text-blue-500\">PDF Files</span>",
     "intro": "Some PDFs restrict opening, printing, or editing. When you have the necessary authorization and credentials, a compatible PDF tool may help remove supported restrictions.",
+    "heroShort": "Remove password protection from a PDF when you know the password.",
     "steps": [
       "Upload the document.",
       "Provide any password required by the supported workflow.",
@@ -682,6 +701,7 @@ const SEO_DATA = {
     "h1": "Protect PDF Files",
     "h1Html": "Protect <span class=\"text-blue-600 dark:text-blue-500\">PDF Files</span>",
     "intro": "Add supported password protection to PDF documents before sharing them. Password protection can help control access to sensitive reports, personal documents, and business files.",
+    "heroShort": "Add a password to your PDF to keep it private.",
     "steps": [
       "Upload the PDF you want to protect.",
       "Configure the available password and protection settings.",
@@ -717,6 +737,7 @@ const SEO_DATA = {
     "h1": "Add a Watermark to PDF",
     "h1Html": "Add a <span class=\"text-blue-600 dark:text-blue-500\">Watermark</span> to PDF",
     "intro": "Add a watermark to identify documents, communicate their status, or display supported branding. Watermarks can be useful for drafts, internal reports, and documents that need visible identification.",
+    "heroShort": "Add a text or image watermark to the pages of your PDF.",
     "steps": [
       "Upload your PDF.",
       "Configure the watermark options available in the tool.",
@@ -756,6 +777,7 @@ const SEO_DATA = {
     "h1": "Create ZIP Files Online",
     "h1Html": "Create <span class=\"text-blue-600 dark:text-blue-500\">ZIP Files</span> Online",
     "intro": "Combine supported files into a ZIP archive. Packaging multiple files together can simplify sharing documents, images, and other related content.",
+    "heroShort": "Package multiple files into one ZIP archive for easy storage and sharing.",
     "steps": [
       "Select the files you want to package.",
       "Arrange or rename them using the available controls.",
@@ -791,6 +813,7 @@ const SEO_DATA = {
     "h1": "Unzip Files Online",
     "h1Html": "Unzip <span class=\"text-blue-600 dark:text-blue-500\">Files Online</span>",
     "intro": "Access files packaged inside supported ZIP archives. Extracting an archive is useful when you receive a collection of documents or images in one compressed file.",
+    "heroShort": "Extract the files inside a ZIP archive in just a few clicks.",
     "steps": [
       "Upload your ZIP archive.",
       "Start the extraction process.",
@@ -826,6 +849,7 @@ const SEO_DATA = {
     "h1": "AI Document Summarizer",
     "h1Html": "AI <span class=\"text-blue-600 dark:text-blue-500\">Document Summarizer</span>",
     "intro": "Make lengthy documents easier to review with structured AI-generated summaries. A summary can help you identify the central ideas, important facts, findings, and conclusions without reading every paragraph first.",
+    "heroShort": "Get the key points and a clear summary of your document with AI.",
     "steps": [
       "Upload a supported document.",
       "Start the summarization process.",
@@ -865,6 +889,7 @@ const SEO_DATA = {
     "h1": "Translate Documents Online",
     "h1Html": "Translate <span class=\"text-blue-600 dark:text-blue-500\">Documents Online</span>",
     "intro": "Make document content accessible to readers of another language. Document translation can help with reports, study materials, business documents, and other supported files.\r\n\r\nTranslation quality depends on the source text, language pair, technical terminology, and translation engine.",
+    "heroShort": "Translate your document into another language and download it as a PDF.",
     "steps": [
       "Upload a supported document.",
       "Choose the target language from the available options.",
@@ -900,6 +925,7 @@ const SEO_DATA = {
     "h1": "Scan PDF and Make It Searchable",
     "h1Html": "Scan PDF <span class=\"text-blue-600 dark:text-blue-500\">and Make It Searchable</span>",
     "intro": "Scanned PDFs often contain page images instead of selectable text. OCR can recognize words in those images and create a searchable text layer, making it easier to find information inside the document.",
+    "heroShort": "Make scanned PDFs searchable by adding selectable text (OCR).",
     "steps": [
       "Upload the PDF.",
       "Allow the tool to inspect its pages.",
@@ -935,6 +961,7 @@ const SEO_DATA = {
     "h1": "Enhance Image Quality Online",
     "h1Html": "Enhance <span class=\"text-blue-600 dark:text-blue-500\">Image Quality</span> Online",
     "intro": "Improve the appearance of supported images using image-processing adjustments. Sharpening can improve perceived edge clarity, contrast adjustments can make details easier to see, and denoising can reduce unwanted visual noise.",
+    "heroShort": "Sharpen and improve photo clarity, brightness and contrast.",
     "steps": [
       "Upload your image.",
       "Select the available enhancement controls.",

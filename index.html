@@ -1619,6 +1619,18 @@
       // Hero H1 and Subtitle
       const heroH1 = document.getElementById("hero-main-h1");
       const heroSub = document.getElementById("hero-main-sub");
+      // Phone only: a small badge above the tool title (the home page carries its own badge inside its heading)
+      let heroBadge = document.getElementById("hero-badge");
+      if (isHome) { if (heroBadge) heroBadge.remove(); }
+      else if (heroH1 && !heroBadge) {
+        heroBadge = document.createElement("span");
+        heroBadge.id = "hero-badge";
+        heroBadge.className = "md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase";
+        heroBadge.setAttribute("data-i18n", "hero.badge");
+        heroBadge.textContent = "Your online file workspace";
+        heroH1.parentNode.insertBefore(heroBadge, heroH1);
+        if (window.FileCornerI18n) FileCornerI18n.apply(heroBadge.parentNode);
+      }
       if (isHome) {
         if (heroH1) heroH1.innerHTML = `<span class="hidden md:block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5" data-i18n="hero.d1">All Your File Tools. One Simple Place.</span><span class="hidden md:block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto" data-i18n="hero.d2">Convert, Compress &amp; Get More Done.</span><span class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase" data-i18n="hero.badge">Your online file workspace</span><span class="md:hidden block text-[28px] font-extrabold text-blue-950 dark:text-white leading-tight" data-i18n="hero.title">Everything you need for your files.</span>`; if (window.FileCornerI18n) FileCornerI18n.apply(heroH1);
         if (heroSub) {
@@ -1630,7 +1642,8 @@
         if (heroH1) heroH1.innerHTML = seo.h1Html || escapeHtml(seo.h1);
         if (heroSub) {
           heroSub.className = "text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 max-w-xl mx-auto leading-normal text-center";
-          heroSub.textContent = (seo.intro || "").split("\n")[0];
+          const longIntro = (seo.intro || "").split("\n")[0];
+          heroSub.innerHTML = `<span class="hidden md:inline">${escapeHtml(longIntro)}</span><span class="md:hidden text-sm">${escapeHtml(seo.heroShort || longIntro)}</span>`;   // phones read the short line
         }
       }
 
