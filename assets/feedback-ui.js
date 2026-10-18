@@ -111,7 +111,7 @@
       // saved (200) or already saved for this conversion (409): the visitor is done; an e-mail problem on our side is never shown as a failure
       if (res.ok || res.status === 409) {
         mark();
-        form.innerHTML = '<div class="py-1 text-center"><p class="text-base font-bold text-emerald-700" role="status"><span aria-hidden="true">★</span> ' + esc(t('fb.thanks', 'Thank you! Your feedback was sent.')) + '</p></div>';
+        form.innerHTML = '<div class="py-1 text-center"><p class="text-base font-bold text-emerald-700" role="status"><span aria-hidden="true">★</span> ' + esc(res.status === 200 && res.j && res.j.notification === 'sent' ? t('fb.thanks', 'Thank you! Your feedback was sent.') : t('fb.saved', 'Thank you! Your feedback was saved.')) + '</p></div>';
         return;
       }
       throw res;
@@ -123,7 +123,7 @@
     }).then(function () { clearTimeout(timer); });
   });
 
-  if (done()) { form.innerHTML = '<p class="py-1 text-center text-sm font-semibold text-emerald-700" role="status">' + esc(t('fb.thanks', 'Thank you! Your feedback was sent.')) + '</p>'; return; }
+  if (done()) { form.innerHTML = '<p class="py-1 text-center text-sm font-semibold text-emerald-700" role="status">' + esc(t('fb.saved', 'Thank you! Your feedback was saved.')) + '</p>'; return; }
   drawStars(); drawLists(); lowPrompt();
   document.addEventListener('fc:lang', function () { if (document.getElementById('fc-cat')) { drawLists(); drawStars(); lowPrompt(); if (I) I.apply(slot); btn.textContent = t('fb.submit', 'Submit Feedback'); } });
   if (I) I.apply(slot);

@@ -109,6 +109,63 @@ function getTransporter() {
   });
 }
 
+
+/**
+ * Shared delivery layer for Contact Support and review notifications.
+ *  - SMTP (Gmail, nodemailer) is the default: SMTP_PASS is required, SMTP_USER / SMTP_HOST / SMTP_PORT have defaults.
+ *  - RESEND_API_KEY (optional) switches delivery to Resend over HTTPS, for hosts that block outbound SMTP.
+ * Every failure is thrown as an Error with a stable `.mailCode` (MAIL_NOT_CONFIGURED, MAIL_AUTH, MAIL_CONNECT, MAIL_REJECTED, MAIL_TIMEOUT)
+ * so callers can answer truthfully; messages never contain credentials.
+ */
+let senderOverride = null;   // test hook: replaces the real transport so automated tests never send mail
+function setSenderForTests(fn) { senderOverride = fn || null; }
+
+function mailConfig() {
+  if (process.env.RESEND_API_KEY) return { provider: 'resend', ready: true, missing: [] };
+  const missing = [];
+  if (!(process.env.SMTP_PASS || '').replace(/\s+/g, '')) missing.push('SMTP_PASS');
+  return { provider: 'smtp', ready: missing.length === 0, missing };
+}
+
+function mailError(code, message, cause) { const e = new Error(message); e.mailCode = code; if (cause && cause.code) e.causeCode = String(cause.code); return e; }
+
+function classify(err) {
+  if (err && err.mailCode) return err;
+  const c = String((err && (err.code || err.responseCode)) || '');
+  const msg = String((err && err.message) || '');
+  if (c === 'EAUTH' || /^535|Invalid login|Username and Password not accepted|BadCredentials/i.test(msg)) return mailError('MAIL_AUTH', 'The mail server refused the sign-in (check SMTP_USER and SMTP_PASS; Gmail needs an App Password)', err);
+  if (['ECONNECTION', 'ECONNREFUSED', 'ENOTFOUND', 'EDNS', 'ESOCKET', 'ENETUNREACH', 'EHOSTUNREACH'].includes(c)) return mailError('MAIL_CONNECT', 'Could not reach the mail server (outbound SMTP may be blocked by the host)', err);
+  if (['ETIMEDOUT', 'ECONNRESET'].includes(c) || /timeout|timed out/i.test(msg)) return mailError('MAIL_TIMEOUT', 'The mail server did not answer in time', err);
+  return mailError('MAIL_REJECTED', 'The mail server did not accept the message' + (err && err.responseCode ? ` (SMTP ${err.responseCode})` : ''), err);
+}
+
+async function deliver({ from, to, replyTo, subject, text, html, headers, resendFrom }) {
+  if (senderOverride) return senderOverride({ from, to, replyTo, subject, text, html, headers });
+  const cfg = mailConfig();
+  if (!cfg.ready) throw mailError('MAIL_NOT_CONFIGURED', 'Missing configuration: ' + cfg.missing.join(', '));
+  if (cfg.provider === 'resend') {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const resp = await fetch(`${(process.env.RESEND_API_BASE || 'https://api.resend.com').replace(/\/+$/, '')}/emails`, {
+        method: 'POST', signal: ctl.signal,
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: resendFrom || process.env.FEEDBACK_FROM || 'FileCorner <onboarding@resend.dev>', to: [to], reply_to: replyTo || undefined, subject, text, html })
+      });
+      const body = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw mailError(resp.status === 401 || resp.status === 403 ? 'MAIL_AUTH' : 'MAIL_REJECTED', `Resend refused the message (HTTP ${resp.status}${body && body.name ? ' ' + body.name : ''})`);
+      return { provider: 'resend', messageId: body.id };
+    } catch (e) {
+      throw e && e.mailCode ? e : mailError(e && e.name === 'AbortError' ? 'MAIL_TIMEOUT' : 'MAIL_CONNECT', 'Could not reach the mail provider');
+    } finally { clearTimeout(timer); }
+  }
+  try {
+    const info = await getTransporter().sendMail({ from, to, replyTo, subject, text, html, headers });
+    if (info && Array.isArray(info.rejected) && info.rejected.length && !(info.accepted || []).length) throw mailError('MAIL_REJECTED', 'The recipient address was rejected');
+    return { provider: 'smtp', messageId: info.messageId };
+  } catch (e) { throw classify(e); }
+}
+
 /**
  * Validate and normalize submission fields
  */
@@ -166,7 +223,6 @@ function validateSubmission(body) {
  * Send Contact Form notification email via Gmail SMTP
  */
 async function sendContactEmail(submissionData) {
-  const transporter = getTransporter();
   const smtpUser = process.env.SMTP_USER || 'pdfconverterfreebusiness@gmail.com';
   const recipient = process.env.CONTACT_TO || 'pdfconverterfreebusiness@gmail.com';
   const referenceId = generateReferenceId();
@@ -297,7 +353,7 @@ async function sendContactEmail(submissionData) {
     }
   };
 
-  const info = await transporter.sendMail(mailOptions);
+  const info = await deliver({ ...mailOptions, resendFrom: `FileCorner Support <${process.env.FEEDBACK_FROM_ADDRESS || 'onboarding@resend.dev'}>` });
   return {
     success: true,
     messageId: info.messageId,
@@ -311,7 +367,6 @@ async function sendContactEmail(submissionData) {
  * subject. No file names, contents or attachments are included. Throws when delivery fails (the caller keeps the saved review).
  */
 async function sendFeedbackEmail(r) {
-  const transporter = process.env.RESEND_API_KEY ? null : getTransporter();
   const smtpUser = process.env.SMTP_USER || 'pdfconverterfreebusiness@gmail.com';
   const recipient = process.env.FEEDBACK_TO || process.env.CONTACT_TO || 'pdfconverterfreebusiness@gmail.com';
   const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
@@ -329,25 +384,7 @@ async function sendFeedbackEmail(r) {
     `<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 10px;background:#f1f5f9;font-weight:bold;width:110px">${escapeHtml(k)}</td><td style="padding:6px 10px;border-bottom:1px solid #e2e8f0">${escapeHtml(v)}</td></tr>`).join('')}</table>` +
     `<h3 style="margin:16px 0 6px">Comment</h3><div style="white-space:pre-wrap;padding:10px;border:1px solid #e2e8f0;border-radius:8px">${escapeHtml(comment)}</div></div>`;
   const subject = sanitizeHeader(`New FileCorner User Review — ${r.rating}/5 Stars`);
-  // 1) Resend over HTTPS (RESEND_API_KEY): works on hosts that block outbound SMTP, which free Render web services do.
-  if (process.env.RESEND_API_KEY) {
-    const from = process.env.FEEDBACK_FROM || 'FileCorner Reviews <onboarding@resend.dev>';
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 15000);
-    try {
-      const resp = await fetch(`${(process.env.RESEND_API_BASE || 'https://api.resend.com').replace(/\/+$/, '')}/emails`, {
-        method: 'POST', signal: ctl.signal,
-        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [recipient], subject, text, html })
-      });
-      const body = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(`Resend refused the message (HTTP ${resp.status}${body && body.name ? ' ' + body.name : ''}${body && body.message ? ': ' + String(body.message).slice(0, 120) : ''})`);
-      return { provider: 'resend', messageId: body.id };
-    } finally { clearTimeout(timer); }
-  }
-  // 2) Gmail SMTP (SMTP_USER / SMTP_PASS): needs outbound SMTP, which is not available on every host.
-  const info = await transporter.sendMail({ from: `"FileCorner Reviews" <${smtpUser}>`, to: recipient, subject, text, html });
-  return { provider: 'smtp', messageId: info.messageId };
+  return deliver({ from: `"FileCorner Reviews" <${smtpUser}>`, to: recipient, subject, text, html, resendFrom: process.env.FEEDBACK_FROM || 'FileCorner Reviews <onboarding@resend.dev>' });
 }
 
 module.exports = {
@@ -357,5 +394,7 @@ module.exports = {
   validateSubmission,
   sendContactEmail,
   getTransporter,
+  mailConfig,
+  setSenderForTests,
   generateReferenceId
 };

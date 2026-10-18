@@ -315,18 +315,19 @@
       `;
 
       try {
-        const res = await fetch("/api/contact", {
+        const apiBase = (window.FILEORA_CONFIG && window.FILEORA_CONFIG.apiBase) ? window.FILEORA_CONFIG.apiBase() : "";
+        const res = await fetch(apiBase + "/api/contact", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, category, message, hp })
         });
         const data = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
+        if (!res.ok || !data.success) {
           const fallbackHtml = data.fallbackEmail 
             ? `<div class="mt-1.5 pt-1.5 border-t border-rose-200/60 dark:border-rose-900/50">Direct email: <a href="mailto:${data.fallbackEmail}" class="underline font-bold hover:text-rose-900 dark:hover:text-white">${data.fallbackEmail}</a></div>`
             : '';
-          throw { message: data.error || "Submission failed. Please try again.", fallbackHtml };
+          throw { message: data.error || "Your message could not be sent right now. Please try again shortly or email us directly.", fallbackHtml: fallbackHtml || '<div class="mt-1.5 pt-1.5 border-t border-rose-200/60 dark:border-rose-900/50">Direct email: <a href="mailto:pdfconverterfreebusiness@gmail.com" class="underline font-bold">pdfconverterfreebusiness@gmail.com</a></div>' };
         }
 
         // On verified acceptance by server and SMTP dispatch:
@@ -338,6 +339,7 @@
         }
         successBox.classList.remove("hidden");
       } catch (err) {
+        if (err instanceof TypeError) err = { message: "We couldn't reach the server. Check your connection and try again." };
         errBox.innerHTML = `<div>${err.message || "An error occurred while transmitting your request."}</div>${err.fallbackHtml || ''}`;
         errBox.classList.remove("hidden");
       } finally {

@@ -106,12 +106,36 @@ function handler(mailer) {
       return res.status(503).json({ error: 'FEEDBACK_UNAVAILABLE', message: 'Feedback could not be saved right now. Please try again later.' });
     }
     if (d.jobId) { seenJobs.add(d.jobId); if (seenJobs.size > 5000) seenJobs.delete(seenJobs.values().next().value); }
-    // The review is saved. The notification e-mail is queued separately: it is NOT reported as sent, and its outcome never changes this answer.
-    res.json({ success: true, saved: true, notification: 'queued' });
-    mailer.sendFeedbackEmail({ ...rec, categoryLabel: CATEGORIES[d.category] })
-      .then((r) => { console.log(`[feedback] notification e-mail accepted by ${r.provider} for review ${rec.id}`); return db().executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [rec.id]).catch(() => {}); })
-      .catch((e) => console.error(`[feedback] notification e-mail NOT sent for saved review ${rec.id}: ${String(e && e.message || e).replace(/re_[A-Za-z0-9_]+/g, '[key]').slice(0, 200)}`));
+    // The review is saved; now try the notification (bounded wait). The answer says what really happened: nothing is reported as sent unless the provider accepted it.
+    let notification = 'failed';
+    try {
+      const sent = await Promise.race([mailer.sendFeedbackEmail({ ...rec, categoryLabel: CATEGORIES[d.category] }), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timed out'), { mailCode: 'MAIL_TIMEOUT' })), 20000).unref())]);
+      console.log(`[feedback] notification accepted by ${sent.provider} for review ${rec.id}`);
+      await db().executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [rec.id]).catch(() => {});
+      notification = 'sent';
+    } catch (e) {
+      console.error(`[feedback] review ${rec.id} saved, notification NOT sent (${e && e.mailCode || 'UNKNOWN'}): ${String(e && e.message || e).replace(/re_[A-Za-z0-9_]+/g, '[key]').slice(0, 160)}`);   // emailed stays 0: the retry sweep picks it up
+    }
+    res.json({ success: true, saved: true, notification });
   };
 }
 
-module.exports = { handler, validate, CATEGORIES, LIMITS, _reset: () => { hits.clear(); seenJobs.clear(); tableState = null; } };
+// Reviews that were saved but not yet e-mailed (mail was misconfigured or down) are retried every 10 minutes for 24 hours.
+async function retryUnsent(mailer) {
+  const s = db();
+  if (!s || tableState !== true) return 0;
+  const rows = await s.executeD1Query('SELECT id, created_at, rating, category, name, country, comment, tool, job_id FROM feedback WHERE emailed = 0 AND created_at < ? AND created_at > ? ORDER BY created_at LIMIT 10', [Date.now() - 2 * 60 * 1000, Date.now() - 24 * 3600 * 1000]).catch(() => null);
+  const list = Array.isArray(rows) ? rows : (rows && (rows.results || rows.rows)) || [];
+  let n = 0;
+  for (const r of list) {
+    try {
+      await mailer.sendFeedbackEmail({ id: r.id, createdAt: r.created_at, rating: r.rating, category: r.category, categoryLabel: CATEGORIES[r.category] || r.category, name: r.name, country: r.country, comment: r.comment, tool: r.tool, jobId: r.job_id });
+      await s.executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [r.id]);
+      n++;
+    } catch (e) { break; }   // mail is still down: try again at the next sweep
+  }
+  return n;
+}
+function startRetry(mailer) { const t = setInterval(() => retryUnsent(mailer).catch(() => {}), 10 * 60 * 1000); t.unref(); return t; }
+
+module.exports = { handler, retryUnsent, startRetry, validate, CATEGORIES, LIMITS, _reset: () => { hits.clear(); seenJobs.clear(); tableState = null; } };

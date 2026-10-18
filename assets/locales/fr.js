@@ -76,5 +76,6 @@ FileCornerI18n.register("fr", {
  "fb.eyebrow": "Votre avis",
  "fb.chip1": "Environ 10 secondes",
  "fb.chip2": "Aucun compte requis",
- "fb.chip3": "Envoyé directement à l’équipe FileCorner"
+ "fb.chip3": "Envoyé directement à l’équipe FileCorner",
+ "fb.saved": "Merci ! Votre avis a été enregistré."
 });

@@ -265,9 +265,12 @@ allToolSlugs.forEach(slug => {
 
 // Download-page feedback: stored first, e-mailed afterwards (see feedback.js). There is deliberately no route that lists reviews.
 app.post('/api/feedback', feedback.handler(mailer));
+feedback.startRetry(mailer);
 
 // Contact submission backend endpoint with Gmail SMTP notifications
 const contactLogFile = path.join(__dirname, 'contact_submissions.log');
+const contactRecent = new Map();   // dedupe key -> { at, promise, ok }
+setInterval(() => { const n = Date.now(); for (const [k, v] of contactRecent) if (n - v.at > 5 * 60 * 1000) contactRecent.delete(k); }, 5 * 60 * 1000).unref();
 app.post('/api/contact', async (req, res) => {
   const clientIp = security.getClientIp(req);
 
@@ -285,9 +288,20 @@ app.post('/api/contact', async (req, res) => {
     return res.status(400).json({ error: validation.error });
   }
 
-  // 3. Dispatch notification email via Gmail SMTP
+  // 3. Retry / double-click guard: the same message from the same connection within 2 minutes is answered with the first result, not mailed twice
+  const dupKey = require('crypto').createHash('sha256').update(clientIp + '|' + validation.data.email + '|' + validation.data.message).digest('hex');
+  const dup = contactRecent.get(dupKey);
+  if (dup && Date.now() - dup.at < 2 * 60 * 1000) {
+    if (dup.promise) { try { await dup.promise; } catch (e) { /* fall through to a fresh attempt below */ } }
+    if (dup.ok) return res.json({ success: true, duplicate: true, referenceId: dup.ok.referenceId, message: dup.ok.message });
+  }
+
+  // 4. Dispatch the notification (shared mail service) and answer success only when it was accepted
   try {
-    const result = await mailer.sendContactEmail(validation.data);
+    const pending = mailer.sendContactEmail(validation.data);
+    contactRecent.set(dupKey, { at: Date.now(), promise: pending });
+    const result = await pending;
+    contactRecent.get(dupKey).ok = { referenceId: result.referenceId, message: `Thank you for reaching out to FileCorner. Your message has been received and routed to our support team (Ref: ${result.referenceId}). We will review your query promptly.` };
     console.log(`[Contact] Email dispatched for Ref ${result.referenceId} to ${process.env.CONTACT_TO || 'admin'} (MessageId: ${result.messageId})`);
 
     // Append minimal operational audit entry (without storing full message text indefinitely)
@@ -306,12 +320,13 @@ app.post('/api/contact', async (req, res) => {
     return res.json({
       success: true,
       referenceId: result.referenceId,
-      message: `Thank you for reaching out to FileCorner. Your message has been received and routed to our support team (Ref: ${result.referenceId}). We will review your query promptly.`
+      message: contactRecent.get(dupKey).ok.message
     });
   } catch (err) {
-    console.error('[Contact] SMTP delivery error:', err.message || err);
+    contactRecent.delete(dupKey);
+    console.error(`[Contact] delivery failed (${err.mailCode || 'UNKNOWN'}${err.causeCode ? '/' + err.causeCode : ''}): ${String(err.message || err).slice(0, 160)}`);
 
-    if (err.message === 'SMTP_PASS_NOT_CONFIGURED') {
+    if (err.mailCode === 'MAIL_NOT_CONFIGURED') {
       return res.status(503).json({
         error: 'The notification service is temporarily undergoing maintenance. Please email pdfconverterfreebusiness@gmail.com directly.',
         fallbackEmail: 'pdfconverterfreebusiness@gmail.com'
@@ -2569,7 +2584,7 @@ const httpServer = app.listen(PORT, () => {
   console.log(`FileCorner conversion engine listening on port ${PORT}`);
   // One startup line for the platform logs: runtime facts and which backends are configured (booleans only, no values)
   let sqliteOk = false; try { require('node:sqlite'); sqliteOk = true; } catch (e) {}
-  console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);
+  console.log(`[startup] node=${process.version} platform=${process.platform}/${process.arch} node:sqlite=${sqliteOk} r2Configured=${r2Storage.isR2Configured} d1Configured=${r2Storage.isD1Configured} geminiKey=${Boolean(process.env.GEMINI_API_KEY)} smtpPass=${Boolean(process.env.SMTP_PASS)} mail=${mailer.mailConfig().provider}:${mailer.mailConfig().ready ? 'ready' : 'MISSING ' + mailer.mailConfig().missing.join(',')} heavyConcurrency=${process.env.HEAVY_CONCURRENCY || 1}`);
   // Job records must live somewhere reliable. With REQUIRE_D1=true a missing or unusable D1 stops the process (a failed
   // deploy keeps the previous version running) instead of serving jobs that cannot be found later.
   if (r2Storage.isD1Configured) { const c = r2Storage.d1ConfigDiagnostics; console.log(`[startup] d1 config: accountIdSource=${c.accountIdSource} accountIdLength=${c.accountIdLength} accountIdFormatOk=${c.accountIdFormatOk} databaseIdFormatOk=${c.databaseIdFormatOk}`); }
