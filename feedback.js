@@ -10,8 +10,8 @@
  *  - Stored: rating, category, optional name, optional country code, optional comment, tool id, internal job id. Never stored: file
  *    names, file contents, e-mail addresses, IP addresses (the rate limiter keeps a hashed address in memory only).
  *  - There is no endpoint that lists reviews.
- *  - The table is created automatically for the local database. For a remote D1 it is created only when FEEDBACK_AUTO_MIGRATE=true;
- *    otherwise run migrations/002_create_feedback.sql once, and until then the endpoint answers 503 FEEDBACK_UNAVAILABLE.
+ *  - The table is created on first use with CREATE TABLE IF NOT EXISTS (local database and remote D1). Set FEEDBACK_AUTO_MIGRATE=false to disable that and
+ *    run migrations/002_create_feedback.sql yourself; while the table is missing the endpoint answers 503 FEEDBACK_UNAVAILABLE.
  */
 const crypto = require('crypto');
 const COUNTRIES = new Set(require('./assets/countries.js'));
@@ -69,7 +69,7 @@ async function ensureTable() {
   const s = db();
   if (!s || !s.executeD1Query) return false;
   try {
-    if (!s.isD1Configured || String(process.env.FEEDBACK_AUTO_MIGRATE || '').toLowerCase() === 'true') {
+    if (String(process.env.FEEDBACK_AUTO_MIGRATE || '').toLowerCase() !== 'false') {   // idempotent CREATE TABLE IF NOT EXISTS; FEEDBACK_AUTO_MIGRATE=false switches it off
       await s.executeD1Query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL, rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
         category TEXT NOT NULL, name TEXT, country TEXT, comment TEXT, tool TEXT, job_id TEXT, emailed INTEGER NOT NULL DEFAULT 0)`);
       await s.executeD1Query('CREATE UNIQUE INDEX IF NOT EXISTS idx_feedback_job ON feedback(job_id) WHERE job_id IS NOT NULL');

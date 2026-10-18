@@ -27,8 +27,8 @@
   slot.innerHTML =
     '<form id="fc-fb" class="rounded-2xl border border-slate-200 bg-white px-3.5 py-3 sm:px-4 shadow-sm" novalidate aria-labelledby="fc-fb-title">' +
     '<div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">' +
-    '<div class="min-w-0"><h2 id="fc-fb-title" class="text-base sm:text-lg font-extrabold text-slate-900" data-i18n="fb.heading">Enjoying FileCorner? Share your feedback</h2>' +
-    '<p class="mt-0.5 text-xs sm:text-[13px] leading-snug text-slate-500" data-i18n="fb.intro">Your feedback helps us improve our conversion quality, fix formatting issues, and make FileCorner more useful for everyone. Tell us what worked well or what we can do better.</p></div>' +
+    '<div class="min-w-0"><h2 id="fc-fb-title" class="text-base sm:text-lg font-extrabold text-slate-900" data-i18n="fb.heading">Rate this conversion</h2>' +
+    '<p class="mt-0.5 text-xs sm:text-[13px] leading-snug text-slate-500" data-i18n="fb.intro">Your feedback helps us improve conversion quality and make FileCorner better for everyone.</p></div>' +
     '<div id="fc-stars" role="radiogroup" aria-labelledby="fc-fb-title" class="flex gap-0.5 shrink-0"></div></div>' +
     '<div class="mt-2 grid gap-2 sm:grid-cols-2">' +
     '<div><label class="' + LABEL + '" for="fc-cat" data-i18n="fb.category">What best describes it?</label><select id="fc-cat" class="' + INPUT + '"></select></div>' +

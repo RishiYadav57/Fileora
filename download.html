@@ -148,7 +148,7 @@
           <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
         </div>
         <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Preparing Your File...</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Connecting to Cloudflare R2 cloud storage</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Loading your files</p>
       </div>
 
       <!-- Error / Expired State -->
@@ -177,7 +177,7 @@
         </div>
         <h2 class="text-2xl font-black text-slate-900 dark:text-slate-100">File Permanently Deleted</h2>
         <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto">
-          The converted file has been completely and irreversibly removed from Cloudflare R2 cloud storage.
+          File deleted successfully. Your file has been removed from our server.
         </p>
         <div class="mt-8 flex justify-center">
           <a href="/" class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md shadow-blue-500/20">
@@ -281,8 +281,12 @@
   <!-- Background: Same as Homepage popular tools / how it works (slate-50)     -->
   <!-- Tools: Genuine available converters on our website                        -->
   <!-- ========================================================================= -->
-  <section class="bg-slate-50 dark:bg-slate-950 py-16 px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 dark:border-slate-800 flex-1">
+  <section class="bg-slate-50 dark:bg-slate-950 pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 dark:border-slate-800 flex-1">
     <div class="max-w-6xl mx-auto">
+
+      <!-- Optional feedback: part of this section (same background), directly above the heading; shown with the success state only.
+           It never blocks or delays the downloads. -->
+      <div id="feedback-slot" class="hidden max-w-3xl mx-auto mb-6"></div>
 
       <!-- Section Header -->
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -440,12 +444,6 @@
     </div>
   </section>
 
-  <!-- Optional feedback: its own section below the file list and the other-formats section; never blocks or delays the download.
-       Same background as the "other formats" section above (bg-slate-50 / dark:bg-slate-950). -->
-  <section id="feedback-section" class="hidden bg-slate-50 dark:bg-slate-950 px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 pt-2 border-t border-slate-200/80 dark:border-slate-800" aria-label="Feedback">
-    <div class="max-w-3xl mx-auto"><div id="feedback-slot"></div></div>
-  </section>
-
   <!-- Footer -->
   <footer class="bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 py-8 px-4 text-center text-xs text-slate-500 dark:text-slate-400 reveal-on-scroll">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -467,7 +465,7 @@
   <script>
     // the converted-files and feedback sections live outside the hero but appear and disappear with the success state
     (function () {
-      var hero = document.getElementById('state-success'), rest = document.getElementById('state-success-rest'), fb = document.getElementById('feedback-section');
+      var hero = document.getElementById('state-success'), rest = document.getElementById('state-success-rest'), fb = document.getElementById('feedback-slot');
       if (!hero || !rest) return;
       var sync = function () { var h = hero.classList.contains('hidden'); rest.classList.toggle('hidden', h); if (fb) fb.classList.toggle('hidden', h); };
       new MutationObserver(sync).observe(hero, { attributes: true, attributeFilter: ['class'] });
@@ -864,6 +862,7 @@
       const overlay = $('confirm-overlay'), dialog = $('confirm-dialog'), okBtn = $('confirm-ok'), cancelBtn = $('confirm-cancel'), errP = $('confirm-error');
       let confirmState = null;
       function openConfirm(opts) {
+        say('');   // an old message must not sit next to a new question
         confirmState = { opener: document.activeElement, busy: false, run: opts.run };
         $('confirm-title').textContent = opts.title;
         $('confirm-desc').textContent = opts.desc;
@@ -885,12 +884,12 @@
         confirmState.busy = true; okBtn.disabled = true; cancelBtn.disabled = true;
         okBtn.textContent = 'Deleting…';
         let result;
-        try { result = await confirmState.run(); } catch (e) { result = { ok: false, error: 'Network error. Please try again.' }; }
+        try { result = await confirmState.run(); } catch (e) { result = { ok: false, error: DELETE_FAIL }; }
         if (!confirmState) return;
         if (result && result.ok) { closeConfirm(false); if (result.after) result.after(); }
         else {
           confirmState.busy = false; okBtn.disabled = false; cancelBtn.disabled = false; okBtn.textContent = 'Try again';
-          errP.textContent = (result && result.error) || 'Could not delete the file.'; errP.classList.remove('hidden');
+          errP.textContent = (result && result.error) || DELETE_FAIL; errP.classList.remove('hidden');
         }
       });
       cancelBtn.addEventListener('click', () => { if (confirmState && !confirmState.busy) closeConfirm(); });
@@ -907,11 +906,13 @@
         }
       });
 
+      const DELETE_OK = 'File deleted successfully. Your file has been removed from our server.';
+      const DELETE_FAIL = "We couldn't delete your file right now. Please try again.";
       async function deleteJob(it) {
         const res = await fetch(`${API}/api/jobs/${encodeURIComponent(it.jobId)}?token=${encodeURIComponent(it.token)}`, { method: 'DELETE' });
         if (res.ok) return { ok: true };
-        const j = await res.json().catch(() => ({}));
-        return { ok: false, error: j.message || 'Could not delete the file.' };
+        if (res.status === 404 || res.status === 410) return { ok: true, gone: true };   // expired or already deleted: nothing is left to keep on the page
+        return { ok: false, error: DELETE_FAIL };
       }
 
       function removeItems(keys, focusKey) {
@@ -955,7 +956,9 @@
       }
 
       // ---------------------------------------------------------------- events (delegated, bound once)
-      stateSuccess.addEventListener('click', (e) => {
+      // the summary (hero) and the file list are separate containers: listen on both
+      const onSuccess = (type, fn) => [stateSuccess, $('state-success-rest')].forEach(el => el && el.addEventListener(type, fn));
+      onSuccess('click', (e) => {
         const btn = e.target.closest('[data-action]');
         if (!btn || btn.disabled) return;
         const row = btn.closest('[data-key]');
@@ -969,13 +972,13 @@
           case 'delete':
             if (!it || it.deleting) break;
             openConfirm({
-              title: `Delete ${nameOf(it)}?`,
-              desc: 'This permanently removes the converted file from temporary storage. It cannot be undone.',
+              title: 'Delete this file?',
+              desc: "Are you sure you want to delete this file? You won't be able to download it afterward.",
               run: async () => {
                 it.deleting = true;
-                const r = await deleteJob(it);
-                it.deleting = false;
-                return r.ok ? { ok: true, after: () => removeItems([it.key]) } : r;
+                let r;
+                try { r = await deleteJob(it); } catch (e) { r = { ok: false, error: DELETE_FAIL }; } finally { it.deleting = false; }   // a network error must not leave the button locked
+                return r.ok ? { ok: true, after: () => { removeItems([it.key]); say(DELETE_OK); } } : r;
               }
             });
             break;
@@ -984,13 +987,13 @@
             if (!targets.length) break;
             openConfirm({
               title: `Delete all ${targets.length} files?`,
-              desc: 'This permanently removes every converted file on this page from temporary storage. It cannot be undone.',
+              desc: "Are you sure you want to delete all of these files? You won't be able to download them afterward.",
               run: async () => {
                 const results = await Promise.allSettled(targets.map(deleteJob));
                 const done = targets.filter((t, i) => results[i].status === 'fulfilled' && results[i].value.ok);
-                if (done.length === targets.length) return { ok: true, after: () => removeItems(done.map(d => d.key)) };
+                if (done.length === targets.length) return { ok: true, after: () => { removeItems(done.map(d => d.key)); say(DELETE_OK); } };
                 if (done.length) removeItems(done.map(d => d.key));
-                return { ok: false, error: `${targets.length - done.length} of ${targets.length} files could not be deleted. Try again.` };
+                return { ok: false, error: DELETE_FAIL };
               }
             });
             break;
@@ -998,7 +1001,7 @@
         }
       });
 
-      stateSuccess.addEventListener('submit', (e) => {
+      onSuccess('submit', (e) => {
         const form = e.target.closest('form.res-edit');
         if (!form) return;
         e.preventDefault();
@@ -1006,7 +1009,7 @@
         if (it) saveRename(it, form);
       });
 
-      stateSuccess.addEventListener('keydown', (e) => {
+      onSuccess('keydown', (e) => {
         if (e.key !== 'Escape') return;
         const form = e.target.closest && e.target.closest('form.res-edit');
         if (!form) return;
