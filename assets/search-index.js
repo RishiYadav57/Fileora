@@ -183,6 +183,16 @@
     var q = String(query || '').trim();
     if (q.length < 1) return [];
     var rawWords = words(q);
+    // the word still being typed: a prefix of a known word ("pd", "pass", "compr") is matched as a prefix, never "repaired" into another word
+    var lastTyped = rawWords.length && /[a-z0-9]$/i.test(q) ? String(q).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').pop() : '';
+    var partial = '';
+    if (lastTyped && !STOP[lastTyped] && !index.raw[lastTyped] && !index.raw[ALIAS[lastTyped]]) {
+      var known = Object.keys(index.raw);
+      for (var ki = 0; ki < known.length; ki++) if (known[ki].indexOf(lastTyped) === 0 || (lastTyped.length >= 3 && known[ki].indexOf(lastTyped) > 0)) { partial = lastTyped; break; }
+    }
+    // a finished word can still be the start of a longer one ("me" -> merge): its name / synonym prefix matches are added on top of the normal result
+    var addPrefix = !partial && lastTyped && !STOP[lastTyped] ? lastTyped : '';
+    if (partial) rawWords = rawWords.slice(0, -1);   // the finished words are matched as before; the partial word is handled below
     rawWords = rawWords.map(function (w) {
       if (STOP[w] || w.length < 4 || index.raw[w]) return w;
       var best = null, bd = w.length > 6 ? 2 : 1;
@@ -190,7 +200,7 @@
       return best || w;
     });
     var tokens = rawWords.filter(function (w) { return !STOP[w]; }).map(stem);
-    if (!tokens.length) return [];
+    if (!tokens.length && !partial) return [];
     // tolerate typos: a token the index has never seen is replaced by the closest known token (one edit; two for long words)
     var fixed = tokens.map(function (t) {
       if (index.vocab.indexOf(t) >= 0 || t.length < 4) return t;
@@ -228,7 +238,27 @@
         if (e.all[t]) { covered++; if (!GENERIC[t]) nonGenericHits++; if (e.nameTokens.indexOf(t) >= 0) inName++; else if (e.synTokens[t]) inSyn++; }
       });
       var need = fixed.length >= 4 ? Math.ceil(fixed.length * 0.75) : fixed.length;
-      if (covered >= need && covered > 0) {
+      if (partial) score = 0;   // while a word is being typed the tool must match that word (and every finished word before it)
+      if ((partial || addPrefix) && covered >= need - (addPrefix ? 1 : 0)) {
+        var pw = partial || addPrefix;
+        // prefix / substring match for the word being typed (names rank above synonyms, synonyms above descriptions)
+        var ps = 0, k;
+        var starts = function (map) { return Object.keys(map).some(function (t) { return t.indexOf(pw) === 0; }); };
+        var within = function (map) { return pw.length >= 3 && Object.keys(map).some(function (t) { return t.indexOf(pw) > 0; }); };
+        var nm = {}; e.nameTokens.forEach(function (t) { nm[t] = 1; });
+        if (e.nameKey.indexOf(pw) === 0) ps = 82;
+        else if (starts(nm)) ps = 78;
+        else if (within(nm)) ps = 58;
+        else if (starts(e.synTokens)) ps = 56;
+        else if (starts(e.fileTokens)) ps = 50;
+        else if (within(e.synTokens)) ps = 46;
+        else if (starts(e.descTokens)) ps = 40;
+        else if (e.phrases.some(function (ph) { return ph.indexOf(pw) >= 0; })) ps = 38;
+        if (partial && ps && fixed.length) ps = Math.min(ps, 40 + 25 * covered / (fixed.length + 1) + 10 * inName);   // finished words that also match keep the tool on top
+        if (addPrefix && ps < 56) ps = 0;
+        if (ps > score) score = ps;
+      }
+      if (!partial && covered >= need && covered > 0) {
         var onlyGeneric = nonGenericHits === 0;
         var s2 = 30 + 25 * (covered / fixed.length) + 6 * inName + 3 * inSyn;
         if (onlyGeneric && !inName && !inSyn) s2 = 20;          // "pdf" alone must come from a name / synonym, not from a description

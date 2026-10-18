@@ -1174,6 +1174,7 @@
       const cleanQ = query.trim().toLowerCase();
       if (!cleanQ) {
         dropdown.classList.add("hidden");
+        dropdown.innerHTML = "";   // nothing stale is left behind when the field is cleared
         return;
       }
       // assets/search-index.js: official names, synonyms, phrases and formats (internal metadata, never shown); plain text match as the fallback
