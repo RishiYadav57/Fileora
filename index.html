@@ -297,7 +297,12 @@
           <div class="relative hidden sm:block">
             <div class="flex items-center bg-slate-100/90 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-full px-3 py-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
               <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <input type="text" id="tool-search-input" placeholder="Search tools..." data-i18n-placeholder="nav.search" oninput="handleToolSearch(this.value)" class="bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:outline-none w-24 sm:w-32 lg:w-24 xl:w-44 placeholder:text-slate-400">
+              <div class="relative">
+                <input type="text" id="tool-search-input" placeholder="Search tools..." data-i18n-placeholder="nav.search" oninput="handleToolSearch(this.value)" onkeydown="if (event.key === 'Escape') closeToolSearch(true)" autocomplete="off" class="bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:outline-none pr-4 w-24 sm:w-32 lg:w-24 xl:w-44 placeholder:text-slate-400">
+                <button type="button" id="tool-search-clear" onclick="closeToolSearch(true)" aria-label="Clear search" class="hidden absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+              </div>
             </div>
 
             <div id="search-results-dropdown" class="mega-menu-panel absolute right-0 top-full mt-2 w-72 max-w-[90vw] rounded-2xl border border-slate-200 dark:border-slate-800 p-2 z-50 hidden max-h-72 overflow-y-auto shadow-xl bg-white dark:bg-slate-900"></div>
@@ -1174,6 +1179,8 @@
     function handleToolSearch(query) {
       const dropdown = document.getElementById("search-results-dropdown");
       const cleanQ = query.trim().toLowerCase();
+      const clearBtn = document.getElementById("tool-search-clear");
+      if (clearBtn) clearBtn.classList.toggle("hidden", !query.length);   // the cross is only there while something is typed
       if (!cleanQ) {
         dropdown.classList.add("hidden");
         dropdown.innerHTML = "";   // nothing stale is left behind when the field is cleared
@@ -1211,7 +1218,7 @@
         <div class="px-3 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Suggested Tools</div>
         <div class="space-y-0.5">${suggested.map(suggestedRow).join('')}</div>`;
 
-      dropdown.style.width = suggested.length ? 'min(22rem, 90vw)' : '';
+      dropdown.style.width = suggested.length ? 'min(19rem, 90vw)' : '';
       if (matches.length === 0) {
         dropdown.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">No tools found matching "${escapeHtml(query)}"</div>`;
       } else if (named.length === 0) {
@@ -1249,6 +1256,22 @@
       dropdown.classList.remove("hidden");
     }
 
+    // Closes the results; with `clear` it also empties the field (cross button, Escape)
+    function closeToolSearch(clear) {
+      const dd = document.getElementById("search-results-dropdown"), input = document.getElementById("tool-search-input"), x = document.getElementById("tool-search-clear");
+      if (dd) { dd.classList.add("hidden"); }
+      if (clear) { if (input) { input.value = ""; input.focus(); } if (dd) dd.innerHTML = ""; if (x) x.classList.add("hidden"); }
+    }
+    // a tap or click anywhere outside the search box closes the results
+    ["mousedown", "touchstart"].forEach(ev => document.addEventListener(ev, e => {
+      const dd = document.getElementById("search-results-dropdown");
+      if (!dd || dd.classList.contains("hidden")) return;
+      const box = dd.parentElement;
+      if (box && !box.contains(e.target)) closeToolSearch(false);
+    }, { passive: true }));
+    // typing again or focusing a field that still has text brings the results back
+    document.addEventListener("focusin", e => { if (e.target && e.target.id === "tool-search-input" && e.target.value.trim()) handleToolSearch(e.target.value); });
+
     function selectSearchedTool(id, event) {
       if (event) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;
@@ -1256,6 +1279,7 @@
       }
       document.getElementById("search-results-dropdown").classList.add("hidden");
       document.getElementById("tool-search-input").value = "";
+      const xb = document.getElementById("tool-search-clear"); if (xb) xb.classList.add("hidden");
       loadTool(id, false, true);
     }
 
