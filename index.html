@@ -1211,7 +1211,7 @@
         <div class="px-3 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Suggested Tools</div>
         <div class="space-y-0.5">${suggested.map(suggestedRow).join('')}</div>`;
 
-      dropdown.style.width = suggested.length ? 'min(26rem, 90vw)' : '';
+      dropdown.style.width = suggested.length ? 'min(22rem, 90vw)' : '';
       if (matches.length === 0) {
         dropdown.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">No tools found matching "${escapeHtml(query)}"</div>`;
       } else if (named.length === 0) {
