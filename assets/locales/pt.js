@@ -77,5 +77,10 @@ FileCornerI18n.register("pt", {
  "fb.chip1": "Leva cerca de 10 segundos",
  "fb.chip2": "Sem precisar de conta",
  "fb.chip3": "Enviado direto à equipe do FileCorner",
- "fb.saved": "Obrigado! Seu feedback foi salvo."
+ "fb.saved": "Obrigado! Seu feedback foi salvo.",
+ "consent.title": "Cookies e análise",
+ "consent.text": "Gostaríamos de usar o Google Analytics para medir como o site é usado. Ele pode definir cookies e envia dados de uso ao Google. Nada é carregado sem a sua aceitação, e você pode mudar de ideia a qualquer momento.",
+ "consent.accept": "Aceitar",
+ "consent.decline": "Recusar",
+ "consent.policy": "Política de cookies"
 });

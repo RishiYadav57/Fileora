@@ -75,6 +75,8 @@
   <script src="/assets/warmup.js" defer></script>
   <script>(function(){try{var l=localStorage.getItem("fc_lang");if(l&&l!=="en"&&/^[a-z]{2}$/.test(l)){var h=document.documentElement;h.setAttribute("lang",l);h.setAttribute("dir",l==="ar"?"rtl":"ltr");h.classList.add("fc-i18n-pending");setTimeout(function(){h.classList.remove("fc-i18n-pending")},2500);var st=document.createElement("style");st.textContent="html.fc-i18n-pending body{visibility:hidden}";document.head.appendChild(st);["en",l].forEach(function(c){var k=document.createElement("link");k.rel="preload";k.as="script";k.href="/assets/locales/"+c+".js";document.head.appendChild(k);});}}catch(e){}})();</script>
   <script src="/assets/i18n.js" defer></script>
+  <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
+  <script src="/assets/consent.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-clip w-full max-w-full">
 
@@ -261,7 +263,7 @@
       </summary>
       <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
         <p>
-          Currently, our website runs with <strong>zero cookies</strong> and <strong>zero advertising scripts</strong>. We do not load Google Analytics, Meta Pixels, or session recording tools.
+          Our own servers set no cookies and we run no advertising scripts. Google Analytics is loaded only if you accept it in the analytics notice (it may then set its own cookies), and you can change that choice on the Cookie Policy page. We do not use Meta Pixels or session recording tools.
         </p>
         <p>
           Google AdSense is planned for possible future introduction to support infrastructure costs. Prior to activating any ad scripts, a certified Consent Management Platform (CMP) will be deployed to ensure user consent is collected in accordance with applicable laws (GDPR, DPDPA). Details are available in our <a href="/cookie-policy" class="text-blue-600 dark:text-blue-400 underline">Cookie Policy</a>.

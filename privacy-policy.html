@@ -75,6 +75,8 @@
   <script src="/assets/warmup.js" defer></script>
   <script>(function(){try{var l=localStorage.getItem("fc_lang");if(l&&l!=="en"&&/^[a-z]{2}$/.test(l)){var h=document.documentElement;h.setAttribute("lang",l);h.setAttribute("dir",l==="ar"?"rtl":"ltr");h.classList.add("fc-i18n-pending");setTimeout(function(){h.classList.remove("fc-i18n-pending")},2500);var st=document.createElement("style");st.textContent="html.fc-i18n-pending body{visibility:hidden}";document.head.appendChild(st);["en",l].forEach(function(c){var k=document.createElement("link");k.rel="preload";k.as="script";k.href="/assets/locales/"+c+".js";document.head.appendChild(k);});}}catch(e){}})();</script>
   <script src="/assets/i18n.js" defer></script>
+  <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
+  <script src="/assets/consent.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-clip w-full max-w-full">
 
@@ -397,7 +399,7 @@
       <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
         <h3 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">B. Browser Analytics and Local Storage</h3>
         <p class="text-xs text-slate-600 dark:text-slate-300">
-          We do not deploy browser tracking suites (such as Google Analytics or Meta Pixel). We use browser <code>localStorage</code> strictly to store your selected color mode (<code>theme = 'light'</code> or <code>'dark'</code>). You can disable or clear this anytime via your browser settings.
+          With your consent only, we use Google Analytics 4, a third-party service provided by Google, to measure website usage; it may set cookies and Google receives the usage data it collects (we send only page addresses without query strings, never file contents or private download links). Nothing is loaded if you decline, and you can change your choice on the Cookie Policy page. We do not deploy Meta Pixel or session-recording tools. We also use browser <code>localStorage</code> to store your color mode, language and analytics choice. You can clear this anytime via your browser settings.
         </p>
       </div>
     </section>

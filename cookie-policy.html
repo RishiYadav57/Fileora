@@ -75,6 +75,8 @@
   <script src="/assets/warmup.js" defer></script>
   <script>(function(){try{var l=localStorage.getItem("fc_lang");if(l&&l!=="en"&&/^[a-z]{2}$/.test(l)){var h=document.documentElement;h.setAttribute("lang",l);h.setAttribute("dir",l==="ar"?"rtl":"ltr");h.classList.add("fc-i18n-pending");setTimeout(function(){h.classList.remove("fc-i18n-pending")},2500);var st=document.createElement("style");st.textContent="html.fc-i18n-pending body{visibility:hidden}";document.head.appendChild(st);["en",l].forEach(function(c){var k=document.createElement("link");k.rel="preload";k.as="script";k.href="/assets/locales/"+c+".js";document.head.appendChild(k);});}}catch(e){}})();</script>
   <script src="/assets/i18n.js" defer></script>
+  <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
+  <script src="/assets/consent.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-clip w-full max-w-full">
 
@@ -138,9 +140,9 @@
       <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-3">
         <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <div class="space-y-1">
-          <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Current Technical Status: Zero Cookies Set</p>
+          <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Current Status: No Cookies Unless You Accept Analytics</p>
           <p class="text-xs text-slate-600 dark:text-slate-300">
-            A comprehensive audit of our Node.js/Express backend and client scripts confirms that <strong>no HTTP cookies</strong> (first-party or third-party) are currently created, transmitted, or stored on your device when you browse or convert files on our website.
+            Our own servers do not set HTTP cookies. If you press <strong>Accept</strong> on the analytics notice, Google Analytics 4 is loaded and may set its own cookies (such as <code>_ga</code> and <code>_ga_PWHNVWWB7Q</code>) in your browser. If you decline, or have not chosen yet, Google Analytics is not loaded and no analytics cookies are set. You can change your choice at any time with the button in Section 4.
           </p>
         </div>
       </div>
@@ -183,6 +185,20 @@
               <td class="py-2.5 px-4">Persistent until cleared by user</td>
               <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">No (client-only)</td>
             </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400">fc_consent</td>
+              <td class="py-2.5 px-4">HTML5 localStorage</td>
+              <td class="py-2.5 px-4">Remembers whether you accepted or declined analytics (<code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">granted</code> or <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">denied</code>).</td>
+              <td class="py-2.5 px-4">Persistent until cleared by user</td>
+              <td class="py-2.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">No (client-only)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400">_ga, _ga_PWHNVWWB7Q</td>
+              <td class="py-2.5 px-4">Cookies set by Google Analytics</td>
+              <td class="py-2.5 px-4">Only after you accept analytics: distinguish visitors and sessions so usage can be measured.</td>
+              <td class="py-2.5 px-4">Set by Google; up to about 2 years</td>
+              <td class="py-2.5 px-4 text-amber-600 dark:text-amber-400 font-semibold">Yes, to Google</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -193,16 +209,21 @@
 
     <!-- Section 4: Third-Party Trackers & Analytics Status -->
     <section class="space-y-3">
-      <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">4. Third-Party Trackers &amp; Analytics Audit</h2>
+      <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">4. Third-Party Services &amp; Analytics</h2>
       <p>
-        Our verified technical codebase audit confirms:
+        <strong>Google Analytics 4.</strong> With your consent, we use Google Analytics 4 (measurement ID <code>G-PWHNVWWB7Q</code>), a service provided by Google, to measure how the website is used: which pages are visited, how visitors arrive, and general device, browser and approximate location information. Google Analytics may use cookies or similar technologies, and the usage data it collects is sent to and processed by Google, which acts as a third-party service provider under its own terms and privacy policy.
       </p>
       <ul class="list-disc pl-5 space-y-1.5 text-slate-600 dark:text-slate-400">
-        <li><strong>No Analytics Scripts:</strong> Google Analytics (gtag.js / ga.js), Google Tag Manager, Mixpanel, Segment, and Amplitude are <strong>NOT installed</strong> or loaded.</li>
-        <li><strong>No Marketing Pixels:</strong> Meta (Facebook) Pixel, TikTok Pixel, LinkedIn Insight Tag, and Twitter Universal Website Tag are <strong>NOT installed</strong>.</li>
-        <li><strong>No Session Recording:</strong> Hotjar, Clarity, LogRocket, and FullStory are <strong>NOT installed</strong>.</li>
-        <li><strong>External CDNs:</strong> We load Tailwind CSS and Google Fonts via static CDN links for rendering aesthetics. These assets load static styling and do not set cookies on our domain.</li>
+        <li><strong>Only after consent:</strong> the Google Analytics script is not loaded, and no analytics events are sent, until you accept. If you decline, nothing is loaded. We also treat a Global Privacy Control signal as a refusal.</li>
+        <li><strong>What we send:</strong> only the page address without its query string or fragment. We do not send file names, file contents, or the private download links and tokens used for converted files. The download page does not load Analytics at all.</li>
+        <li><strong>What Google may receive:</strong> as with any website visit, information such as your IP address, browser and device details is available to Google when its script runs. We cannot promise that no personal data is involved; Google describes its handling in its own privacy policy.</li>
+        <li><strong>Changing your mind:</strong> use the button below to open the choice again. Choosing "Decline" switches Analytics off and removes the Google Analytics cookies this site could set.</li>
+        <li><strong>Other tools:</strong> Meta (Facebook) Pixel, TikTok Pixel, LinkedIn Insight Tag, Hotjar, Clarity, LogRocket and FullStory are not installed.</li>
+        <li><strong>External CDNs:</strong> we load Tailwind CSS and Google Fonts from static CDN links for styling.</li>
       </ul>
+      <p>
+        <button type="button" data-fc-consent-open class="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-700 px-4 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Change my analytics choice</button>
+      </p>
     </section>
 
     <!-- Section 5: Google AdSense Future Disclosure & CMP Commitments -->

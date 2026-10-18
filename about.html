@@ -75,6 +75,8 @@
   <script src="/assets/warmup.js" defer></script>
   <script>(function(){try{var l=localStorage.getItem("fc_lang");if(l&&l!=="en"&&/^[a-z]{2}$/.test(l)){var h=document.documentElement;h.setAttribute("lang",l);h.setAttribute("dir",l==="ar"?"rtl":"ltr");h.classList.add("fc-i18n-pending");setTimeout(function(){h.classList.remove("fc-i18n-pending")},2500);var st=document.createElement("style");st.textContent="html.fc-i18n-pending body{visibility:hidden}";document.head.appendChild(st);["en",l].forEach(function(c){var k=document.createElement("link");k.rel="preload";k.as="script";k.href="/assets/locales/"+c+".js";document.head.appendChild(k);});}}catch(e){}})();</script>
   <script src="/assets/i18n.js" defer></script>
+  <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
+  <script src="/assets/consent.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-clip w-full max-w-full">
 
@@ -185,7 +187,7 @@
       <ul class="list-disc pl-5 space-y-1.5 text-slate-600 dark:text-slate-400">
         <li><strong>No Account Required:</strong> Convert, download, and get on with your day. We never ask for your email address, phone number, or social media logins to access standard conversion tools.</li>
         <li><strong>Strict Upload &amp; Quality Limits:</strong> Up to 3 MB per file, 5 MB and 3 files per batch, with strict concurrency limits to ensure equitable server performance for all visitors.</li>
-        <li><strong>Zero Spyware or Secret Trackers:</strong> No marketing pixels, no third-party analytics tracking scripts, and zero active cookies.</li>
+        <li><strong>No Hidden Trackers:</strong> No marketing pixels, and Google Analytics runs only if you accept it in the analytics notice.</li>
         <li><strong>Full User IP Retention:</strong> You retain 100% intellectual property ownership of your files. We never sell, scrape, or repurpose your document content.</li>
       </ul>
     </section>
