@@ -45,7 +45,7 @@
     if (banner || !document.body) return;
     if (!document.getElementById('fc-consent-css')) {
       var css = document.createElement('style'); css.id = 'fc-consent-css';
-      css.textContent = '.fc-consent{position:fixed;z-index:90;left:12px;right:12px;bottom:28px;max-width:420px;margin-inline:auto;padding:10px 12px;background:#fff;color:#334155;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 10px 28px rgba(15,23,42,.16);font-family:inherit;font-size:12px;line-height:1.4;opacity:0;transform:translateY(18px);transition:opacity .35s ease,transform .35s ease}.fc-consent.fc-in{opacity:1;transform:none}@media (prefers-reduced-motion:reduce){.fc-consent{transition:none;transform:none}}' +
+      css.textContent = '.fc-consent{position:fixed;z-index:90;left:12px;right:12px;bottom:28px;max-width:420px;margin-inline:auto;padding:10px 12px;background:#fff;color:#334155;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 10px 28px rgba(15,23,42,.16);font-family:inherit;font-size:12px;line-height:1.4;opacity:0;transform:translateY(18px);transition:opacity .35s ease,transform .35s ease}.fc-consent.fc-in{opacity:1;transform:none}@media (min-width:640px){.fc-consent{left:auto;right:24px;margin-inline:0;width:400px}}@media (max-width:639px){.fc-consent{left:16px;right:16px;padding:8px 10px;font-size:11px;line-height:1.35;border-radius:12px}.fc-consent b{font-size:11.5px}.fc-consent p{margin-bottom:6px}.fc-consent button{font-size:11px;padding:4px 11px}.fc-consent .fc-row{gap:5px}}@media (prefers-reduced-motion:reduce){.fc-consent{transition:none;transform:none}}' +
         '.fc-consent b{display:block;color:#0f172a;font-size:12.5px;margin-bottom:2px}.fc-consent p{margin:0 0 8px}.fc-consent a{color:#2563eb;text-decoration:underline}' +
         '.fc-consent .fc-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.fc-consent button{font-family:inherit;font-size:12px;font-weight:600;border-radius:9999px;padding:5px 13px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#334155}' +
         '.fc-consent button.fc-yes{background:#2563eb;border-color:#2563eb;color:#fff}.fc-consent button:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}';
@@ -67,7 +67,7 @@
     if (v === 'granted') load();
     else if (v === 'denied') { /* respected: nothing loads */ }
     else if (navigator.globalPrivacyControl === true) { /* Global Privacy Control: treated as a refusal, no prompt */ }
-    else setTimeout(show, 2000);   // first visit: the notice slides in two seconds after the page opens
+    else setTimeout(show, 1000);   // first visit: the notice slides in one second after the page opens
     document.addEventListener('click', function (e) { var el = e.target && e.target.closest ? e.target.closest('[data-fc-consent-open]') : null; if (el) { e.preventDefault(); hide(); show(); } });
     document.addEventListener('fc:lang', function () { if (banner) { hide(); show(); } });
   }
