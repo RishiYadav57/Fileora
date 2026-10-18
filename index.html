@@ -1181,10 +1181,12 @@
       }
       // assets/search-index.js: official names, synonyms, phrases and formats (internal metadata, never shown); plain text match as the fallback
       const flat = getAllToolsFlat();
-      let matches;
+      let matches, nameIds = null;
       if (window.FileCornerSearch) {
         const byId = new Map(flat.map(t => [t.id, t]));
-        matches = window.FileCornerSearch.search(query, flat.map(t => t.id)).map(r => byId.get(r.id)).filter(Boolean);
+        const found = window.FileCornerSearch.search(query, flat.map(t => t.id));
+        matches = found.map(r => byId.get(r.id)).filter(Boolean);
+        nameIds = new Set(found.filter(r => r.nameMatch).map(r => r.id));
       } else {
         matches = flat.filter(t =>
           t.name.toLowerCase().includes(cleanQ) ||
@@ -1192,16 +1194,46 @@
           t.categoryName.toLowerCase().includes(cleanQ)
         );
       }
+      // tools whose own name matches are listed as results; tools found only through their description / synonyms go under "Suggested Tools"
+      const named = nameIds ? matches.filter(t => nameIds.has(t.id)) : matches;
+      const suggested = nameIds ? matches.filter(t => !nameIds.has(t.id)) : [];
 
+      const suggestedRow = t => `
+        <a href="/tools/${t.id}" onclick="selectSearchedTool('${t.id}', event)" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          ${menuIconHtml(t, "w-10 h-10 rounded-xl bg-brand-50 dark:bg-slate-800 text-brand-600 dark:text-brand-400 font-bold font-mono text-xs flex items-center justify-center flex-shrink-0")}
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">${t.name}${unavailBadge(t.id)}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 truncate">${t.desc}</div>
+          </div>
+          <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </a>`;
+      const suggestedHtml = () => `
+        <div class="px-3 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Suggested Tools</div>
+        <div class="space-y-0.5">${suggested.map(suggestedRow).join('')}</div>`;
+
+      dropdown.style.width = suggested.length ? 'min(26rem, 90vw)' : '';
       if (matches.length === 0) {
         dropdown.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">No tools found matching "${escapeHtml(query)}"</div>`;
+      } else if (named.length === 0) {
+        dropdown.innerHTML = `
+          <div class="flex items-center gap-3 p-3">
+            <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+            </div>
+            <div>
+              <div class="text-[13px] font-bold uppercase tracking-wide text-slate-800 dark:text-slate-100">No exact matches</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Try a related tool below.</div>
+            </div>
+          </div>
+          <div class="border-t border-slate-100 dark:border-slate-800 my-1.5"></div>
+          ${suggestedHtml()}`;
       } else {
         dropdown.innerHTML = `
           <div class="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
-            Matching Tools (${matches.length})
+            Matching Tools (${named.length})
           </div>
           <div class="space-y-0.5">
-            ${matches.map(t => `
+            ${named.map(t => `
               <a href="/tools/${t.id}" onclick="selectSearchedTool('${t.id}', event)" class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 ${menuIconHtml(t, "w-6 h-6 rounded bg-brand-50 dark:bg-slate-800 text-brand-600 dark:text-brand-400 font-bold font-mono text-[10px] flex items-center justify-center flex-shrink-0")}
                 <div class="truncate">
@@ -1211,6 +1243,7 @@
               </a>
             `).join('')}
           </div>
+          ${suggested.length ? `<div class="border-t border-slate-100 dark:border-slate-800 my-1.5"></div>${suggestedHtml()}` : ''}
         `;
       }
       dropdown.classList.remove("hidden");

@@ -218,9 +218,9 @@
 
     var res = [];
     index.list.forEach(function (e, pos) {
-      var score = 0, directional = false;
-      if (qKey === e.nameKey) score = 100;
-      else if (e.nameKey.indexOf(qKey) >= 0 && qKey.length >= 3) score = 85;
+      var score = 0, directional = false, viaName = false;   // viaName: the tool matched through its own name (not only a synonym / description)
+      if (qKey === e.nameKey) { score = 100; viaName = true; }
+      else if (e.nameKey.indexOf(qKey) >= 0 && qKey.length >= 3) { score = 85; viaName = true; }
       e.phrases.forEach(function (p) {
         var s = 0;
         if (p === qKey) s = 95;
@@ -230,13 +230,13 @@
       });
       if (pair && e.pairs) {
         var inOk = e.in.indexOf(pair.from) >= 0, outOk = e.out.indexOf(pair.to) >= 0;
-        if (inOk && outOk && pair.from !== pair.to) { score = Math.max(score, 90); directional = true; }
+        if (inOk && outOk && pair.from !== pair.to) { score = Math.max(score, 90); directional = true; viaName = true; }
         else if (inOk && outOk) { score = Math.max(score, 60); }
       }
       // token coverage: every meaningful word of the query is known to the tool (one may be missing in long queries)
-      var covered = 0, inName = 0, inSyn = 0, nonGenericHits = 0;
+      var covered = 0, inName = 0, inSyn = 0, nonGenericHits = 0, nameSpecific = 0;
       fixed.forEach(function (t) {
-        if (e.all[t]) { covered++; if (!GENERIC[t]) nonGenericHits++; if (e.nameTokens.indexOf(t) >= 0) inName++; else if (e.synTokens[t]) inSyn++; }
+        if (e.all[t]) { covered++; if (!GENERIC[t]) nonGenericHits++; if (e.nameTokens.indexOf(t) >= 0) { inName++; if (!GENERIC[t]) nameSpecific++; } else if (e.synTokens[t]) inSyn++; }
       });
       var need = fixed.length >= 4 ? Math.ceil(fixed.length * 0.75) : fixed.length;
       if (partial) score = 0;   // while a word is being typed the tool must match that word (and every finished word before it)
@@ -247,9 +247,10 @@
         var starts = function (map) { return Object.keys(map).some(function (t) { return t.indexOf(pw) === 0; }); };
         var within = function (map) { return pw.length >= 3 && Object.keys(map).some(function (t) { return t.indexOf(pw) > 0; }); };
         var nm = {}; e.nameTokens.forEach(function (t) { nm[t] = 1; }); e.nameWords.forEach(function (t) { nm[t] = 1; });   // the name as written ("Zip Files" keeps "files")
-        if (e.nameKey.indexOf(pw) === 0) ps = 82;
-        else if (starts(nm)) ps = 78;
-        else if (within(nm)) ps = 58;
+        var nameHit = false;
+        if (e.nameKey.indexOf(pw) === 0) { ps = 82; nameHit = true; }
+        else if (starts(nm)) { ps = 78; nameHit = true; }
+        else if (within(nm)) { ps = 58; nameHit = true; }
         else if (starts(e.synTokens)) ps = 56;
         else if (starts(e.fileTokens)) ps = 50;
         else if (within(e.synTokens)) ps = 46;
@@ -257,6 +258,7 @@
         else if (e.phrases.some(function (ph) { return ph.indexOf(pw) >= 0; })) ps = 38;
         if (partial && ps && fixed.length) ps = Math.min(ps, 40 + 25 * covered / (fixed.length + 1) + 10 * inName);   // finished words that also match keep the tool on top
         if (addPrefix && ps < 56) ps = 0;
+        if (ps && nameHit) viaName = true;
         if (ps > score) score = ps;
       }
       if (!partial && covered >= need && covered > 0) {
@@ -264,15 +266,16 @@
         var s2 = 30 + 25 * (covered / fixed.length) + 6 * inName + 3 * inSyn;
         if (onlyGeneric && !inName && !inSyn) s2 = 20;          // "pdf" alone must come from a name / synonym, not from a description
         if (!inName && !inSyn) s2 = Math.min(s2, 44);            // description-only matches stay weak
+        if (nameSpecific || (inName && !fixed.some(function (t) { return !GENERIC[t]; }))) viaName = true;   // a generic word such as "pdf" only counts when it is all that was typed
         if (s2 > score) score = s2;
       }
-      if (score) res.push({ id: e.id, score: score, directional: directional, pos: order ? (order.indexOf(e.id) < 0 ? 999 : order.indexOf(e.id)) : pos });
+      if (score) res.push({ id: e.id, score: score, directional: directional, nameMatch: viaName, pos: order ? (order.indexOf(e.id) < 0 ? 999 : order.indexOf(e.id)) : pos });
     });
     if (pair && res.some(function (r) { return r.directional; })) res = res.filter(function (r) { return r.directional; });   // direction matters: PDF to JPG is not JPG to PDF
     res.sort(function (a, b) { return b.score - a.score || a.pos - b.pos; });
     var best = res.length ? res[0].score : 0;
     var floor = best >= 90 ? 0.7 : 0.45;
-    return res.filter(function (r) { return r.score >= 35 && r.score >= best * floor; }).slice(0, 8).map(function (r) { return { id: r.id, score: Math.round(r.score) }; });
+    return res.filter(function (r) { return r.score >= 35 && r.score >= best * floor; }).slice(0, 8).map(function (r) { return { id: r.id, score: Math.round(r.score), nameMatch: r.nameMatch }; });
   }
 
   return { tools: T, search: search, _stem: stem, _words: words };
