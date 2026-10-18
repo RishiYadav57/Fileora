@@ -4525,8 +4525,10 @@
       const downloadName = `${baseName(file)}_scanned.pdf`;
       triggerDownload(blob, downloadName);
 
-      if (parseInt(scannedPages, 10) > 0) {
-        return `Scanned ${totalPages} page(s) (${scannedPages} scanned page(s) OCR-indexed with ${wordsAdded} words added, ${nativePages} native text page(s) preserved).`;
+      const skippedPages = parseInt(res.headers.get("X-Skipped-Pages") || "0", 10);
+      const skippedNote = skippedPages > 0 ? ` ${skippedPages} page(s) were not read in time because this is a free server. Scan the downloaded file again to finish the rest.` : "";
+      if (parseInt(scannedPages, 10) > 0 || skippedPages > 0) {
+        return `Scanned ${totalPages} page(s) (${scannedPages} scanned page(s) OCR-indexed with ${wordsAdded} words added, ${nativePages} native text page(s) preserved).${skippedNote}`;
       }
       return `Scanned and verified ${totalPages} page(s) (all ${nativePages} native text pages preserved with full fidelity).`;
     }

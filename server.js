@@ -62,7 +62,7 @@ app.disable('x-powered-by');
 app.use((req, res, next) => { res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin'); next(); });
 app.use(cors({ origin: '*', exposedHeaders: [
   'X-Original-Size', 'X-Result-Size', 'X-Target-Met', 'X-Converter-Fallback', 'X-Already-Optimized', 'X-Format', 'X-Native-Pages',
-  'X-Original-W', 'X-Original-H', 'X-Output-W', 'X-Output-H', 'X-Page-Count', 'X-Repair-Status', 'X-Scanned-Pages', 'X-Total-Pages', 'X-Words-Added'] }));
+  'X-Original-W', 'X-Original-H', 'X-Output-W', 'X-Output-H', 'X-Page-Count', 'X-Repair-Status', 'X-Scanned-Pages', 'X-Skipped-Pages', 'X-Total-Pages', 'X-Words-Added'] }));
 
 // General IP-based rate limiting (120 req/min)
 // Per-IP rate limit for API calls only: page and asset requests (one page view is ~20 of them) must not eat the budget
@@ -2499,7 +2499,8 @@ app.post('/api/pdf/scan', requireTool('scan-pdf'), security.concurrencyLimiter, 
       'X-Total-Pages': String(metrics.total_pages || 1),
       'X-Scanned-Pages': String(metrics.scanned_pages || 0),
       'X-Native-Pages': String(metrics.native_pages || 0),
-      'X-Words-Added': String(metrics.words_added || 0)
+      'X-Words-Added': String(metrics.words_added || 0),
+      'X-Skipped-Pages': String(metrics.skipped_pages || 0)
     });
 
     const downloadName = `${path.parse(req.file.originalname).name}_scanned.pdf`;

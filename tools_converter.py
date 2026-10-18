@@ -4512,7 +4512,7 @@ def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
     # The render size is limited to about 2000 px on the long side (150 dpi on A4): more pixels only cost time. A time budget keeps a very
     # long scan from running into the server's request limit; pages not reached in time are left unchanged (reported in the metrics).
     os.environ.setdefault('OMP_THREAD_LIMIT', '1')        # Tesseract's own threading is slower than one process per page
-    budget = float(os.environ.get('SCAN_TIME_BUDGET', '110'))
+    budget = float(os.environ.get('SCAN_TIME_BUDGET', '100'))
     started = time.time()
     results = {}
     jobs = []
@@ -4591,7 +4591,7 @@ def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
     return {
         'success': True,
         'total_pages': total_pages,
-        'scanned_pages': scanned_count,
+        'scanned_pages': scanned_count - skipped_pages,
         'native_pages': native_count,
         'words_added': words_added_total,
         'skipped_pages': skipped_pages,
