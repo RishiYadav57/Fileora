@@ -106,11 +106,11 @@
       synonyms: ['translate pdf', 'pdf translator', 'document translator', 'translate document', 'pdf language translator'],
       keywords: ['translate pdf to english', 'translate pdf to hindi', 'translate pdf to spanish', 'translate text file', 'change language of pdf', 'convert pdf language', 'translate a document online'],
       examples: ['translate pdf', 'translate document to english', 'pdf translator'], fileTypes: { pair: false, in: ['pdf', 'txt'], out: ['pdf'] } },
-    'scan-pdf': { name: 'Scan PDF', description: 'Straighten scanned pages and add a searchable text layer (OCR); currently unavailable on the free server.',
+    'scan-pdf': { name: 'Scan PDF', description: 'Straighten scanned pages and add a searchable text layer (OCR).',
       synonyms: ['ocr pdf', 'pdf ocr', 'make pdf searchable', 'searchable pdf', 'scan to text', 'deskew pdf'],
       keywords: ['ocr scanned pdf', 'recognize text in pdf', 'straighten scanned pages', 'make scanned pdf searchable', 'text recognition', 'pdf scanner'],
       examples: ['ocr pdf', 'make pdf searchable', 'scan pdf to text'], fileTypes: { pair: false, in: ['pdf'], out: ['pdf'] } },
-    'enhance-image': { name: 'Enhance Image', description: 'Improve clarity, sharpness, contrast and colour balance of a photo with filters; currently unavailable on the free server.',
+    'enhance-image': { name: 'Enhance Image', description: 'Improve clarity, sharpness, contrast and colour balance of a photo with filters.',
       synonyms: ['image enhancer', 'photo enhancer', 'sharpen image', 'improve image quality', 'photo sharpener', 'picture enhancer'],
       keywords: ['make photo clearer', 'increase image sharpness', 'improve photo quality', 'adjust contrast', 'brighten image', 'denoise photo', 'fix blurry image', 'enhance photo'],
       examples: ['sharpen image', 'improve photo quality', 'enhance a picture'], fileTypes: { pair: false, in: ['jpg', 'png', 'webp'], out: ['jpg', 'png', 'webp'] } }

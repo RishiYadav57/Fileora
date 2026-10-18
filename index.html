@@ -1737,7 +1737,7 @@
 
     // Tools the free server has switched off (OCR, image enhancement). The page starts with the usual list and refreshes it from
     // GET /api/capabilities, so the server stays the single source of truth.
-    const UNAVAILABLE_TOOLS = new Set(["scan-pdf", "enhance-image"]);
+    const UNAVAILABLE_TOOLS = new Set([]);   // filled from the server (/api capabilities) when a tool is switched off
     const UNAVAILABLE_NOTE = "Temporarily unavailable on the free server.";
     const unavailBadge = (id) => UNAVAILABLE_TOOLS.has(id) ? ' <span class="ml-1 rounded bg-slate-200 px-1 py-px text-[9px] font-semibold uppercase text-slate-600">Unavailable</span>' : "";
     (async () => {

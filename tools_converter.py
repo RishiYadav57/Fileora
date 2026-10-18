@@ -21,6 +21,7 @@ import os
 for _v in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS'):
     os.environ.setdefault(_v, '1')
 import re
+import time
 import subprocess
 import shutil
 import tempfile
@@ -4409,6 +4410,47 @@ def unlock_pdf(input_path, output_path, password=''):
         'file_size': os.path.getsize(output_path)
     }
 
+def _ocr_page_words(pdf_path, page_idx, lang_code, tessdata_dir, dpi):
+    """OCR one page in a worker process (opens its own copy of the PDF). Returns [(x0, y0, x1, y1, word), ...]; [] when the page cannot be read."""
+    try:
+        d = fitz.open(pdf_path)
+        pg = d[page_idx]
+        tp = pg.get_textpage_ocr(language=lang_code, tessdata=tessdata_dir, dpi=dpi)
+        out = [(w[0], w[1], w[2], w[3], w[4]) for w in pg.get_text("words", textpage=tp)]
+        d.close()
+        return out
+    except Exception:
+        return []
+
+
+def _ocr_workers(pages_to_read):
+    """How many pages are OCR'd at once: one per CPU, at most 4 and at most what the memory limit allows (each worker needs roughly 80 MB).
+    SCAN_WORKERS overrides. On the small free server this is 1 or 2; on a bigger machine OCR is several times faster."""
+    try:
+        forced = int(os.environ.get('SCAN_WORKERS', '0'))
+    except ValueError:
+        forced = 0
+    if forced > 0:
+        return max(1, min(forced, pages_to_read))
+    cpus = os.cpu_count() or 1
+    mem_mb = None
+    for f in ('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in_bytes'):
+        try:
+            v = open(f).read().strip()
+            if v.isdigit() and int(v) < (1 << 50):
+                mem_mb = int(v) // (1024 * 1024)
+                break
+        except Exception:
+            pass
+    if mem_mb is None:
+        try:
+            mem_mb = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') // (1024 * 1024)
+        except Exception:
+            mem_mb = 4096
+    by_mem = max(1, int((mem_mb - 300) // 80))
+    return max(1, min(cpus, 4, by_mem, pages_to_read))
+
+
 def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
     """
     Production-grade Scan PDF Engine:
@@ -4423,10 +4465,6 @@ def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
     4. Mixed pages: only injects OCR text in regions where native text does not already exist (no overlapping layers).
     5. Output validation: verifies file exists, opens cleanly, has identical page count, and validates text searchability.
     """
-    import cv2
-    import numpy as np
-    from PIL import Image
-
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input file not found: {input_path}")
 
@@ -4458,53 +4496,80 @@ def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
     scanned_count = 0
     native_count = 0
     words_added_total = 0
+    skipped_pages = 0
 
+    # Pass 1: which pages are scans (native text pages are left exactly as they are)
+    todo = []            # (page index, text blocks that already exist on it)
     for page_idx, page in enumerate(doc):
-        existing_text = page.get_text().strip()
-        existing_char_count = len(existing_text)
-
-        is_native_text = existing_char_count >= 50 and mode == 'smart'
-        if is_native_text:
+        existing_char_count = len(page.get_text().strip())
+        if existing_char_count >= 50 and mode == 'smart':
             native_count += 1
             continue
-
         scanned_count += 1
-        existing_blocks = [fitz.Rect(b[:4]) for b in page.get_text("blocks")]
+        todo.append((page_idx, [fitz.Rect(b[:4]) for b in page.get_text("blocks")]))
 
+    # Pass 2: OCR. Pages are independent, so they are read by several processes at once when the machine has the CPU and memory for it.
+    # The render size is limited to about 2000 px on the long side (150 dpi on A4): more pixels only cost time. A time budget keeps a very
+    # long scan from running into the server's request limit; pages not reached in time are left unchanged (reported in the metrics).
+    os.environ.setdefault('OMP_THREAD_LIMIT', '1')        # Tesseract's own threading is slower than one process per page
+    budget = float(os.environ.get('SCAN_TIME_BUDGET', '110'))
+    started = time.time()
+    results = {}
+    jobs = []
+    for page_idx, _blocks in todo:
+        r = doc[page_idx].rect
+        long_in = max(r.width, r.height) / 72.0
+        jobs.append((page_idx, int(max(72, min(150, 2000.0 / max(long_in, 0.1))))))
+    workers = _ocr_workers(len(jobs))
+    if workers > 1:
+        from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
+        ex = ProcessPoolExecutor(max_workers=workers)
         try:
-            tp = page.get_textpage_ocr(language=lang_code, tessdata=tessdata_dir, dpi=150)
-            words = page.get_text("words", textpage=tp)
+            pending = {ex.submit(_ocr_page_words, input_path, idx, lang_code, tessdata_dir, dpi): idx for idx, dpi in jobs}
+            while pending:
+                left = budget - (time.time() - started)
+                if left <= 0:
+                    break
+                done, _ = wait(list(pending), timeout=left, return_when=FIRST_COMPLETED)
+                for f in done:
+                    results[pending.pop(f)] = f.result()
         except Exception:
+            pass          # a worker could not start or died: the pages without a result are read one by one below
+        finally:
+            ex.shutdown(wait=False, cancel_futures=True)
+    for idx, dpi in jobs:
+        if idx in results:
             continue
+        if time.time() - started > budget:
+            break
+        results[idx] = _ocr_page_words(input_path, idx, lang_code, tessdata_dir, dpi)
+    skipped_pages = len([1 for idx, _ in jobs if idx not in results])
 
+    # Pass 3: invisible text layer, one TextWriter per page (much faster than one insert_text call per word)
+    font = fitz.Font('helv')
+    for page_idx, existing_blocks in todo:
+        words = results.get(page_idx)
+        if not words:
+            continue
+        page = doc[page_idx]
+        tw = fitz.TextWriter(page.rect)
+        wrote = 0
         for w in words:
-            # w: (x0, y0, x1, y1, word_text, block_no, line_no, word_no)
-            x0, y0, x1, y1, word_text = w[0], w[1], w[2], w[3], w[4]
+            x0, y0, x1, y1, word_text = w
             if not word_text or not word_text.strip():
                 continue
-
             word_rect = fitz.Rect(x0, y0, x1, y1)
-            collides = False
-            for eb in existing_blocks:
-                if eb.intersects(word_rect):
-                    collides = True
-                    break
-            if collides:
+            if any(eb.intersects(word_rect) for eb in existing_blocks):
                 continue
-
-            h = y1 - y0
-            fontsize = max(6.0, min(72.0, h * 0.85))
-
+            fontsize = max(6.0, min(72.0, (y1 - y0) * 0.85))
             try:
-                page.insert_text(
-                    fitz.Point(x0, y1 - 1.5),
-                    word_text,
-                    fontsize=fontsize,
-                    render_mode=3
-                )
-                words_added_total += 1
+                tw.append(fitz.Point(x0, y1 - 1.5), word_text, font=font, fontsize=fontsize)
+                wrote += 1
             except Exception:
                 pass
+        if wrote:
+            tw.write_text(page, render_mode=3)
+            words_added_total += wrote
 
     doc.save(
         output_path,
@@ -4529,6 +4594,7 @@ def scan_pdf(input_path, output_path, lang='eng', mode='smart'):
         'scanned_pages': scanned_count,
         'native_pages': native_count,
         'words_added': words_added_total,
+        'skipped_pages': skipped_pages,
         'file_size': os.path.getsize(output_path)
     }
 
@@ -4573,6 +4639,22 @@ def enhance_image(input_path, output_path, preset='balanced', sharpen='medium', 
         rgb_im = im.convert('RGB')
 
     cv_img = cv2.cvtColor(np.array(rgb_im), cv2.COLOR_RGB2BGR)
+    rgb_im = None
+    im.close()
+    # Speed and memory: the filters cost time and memory in proportion to the pixel count (about 35 MB per megapixel while a picture is being
+    # processed). A picture above ENHANCE_MAX_PIXELS (8 megapixels by default, set higher on a bigger server) is reduced to that size first and the
+    # result is never larger than 1.5 times that. A 3 MB upload is normally below this, so most pictures are untouched.
+    try:
+        MAX_IN_PX = int(os.environ.get('ENHANCE_MAX_PIXELS', '8000000'))
+    except ValueError:
+        MAX_IN_PX = 8_000_000
+    MAX_OUT_PX = int(MAX_IN_PX * 1.5)
+    if cv_img.shape[0] * cv_img.shape[1] > MAX_IN_PX:
+        f = (MAX_IN_PX / float(cv_img.shape[0] * cv_img.shape[1])) ** 0.5
+        cv_img = cv2.resize(cv_img, (max(1, int(cv_img.shape[1] * f)), max(1, int(cv_img.shape[0] * f))), interpolation=cv2.INTER_AREA)
+        if alpha_channel is not None:
+            alpha_channel = alpha_channel.resize((cv_img.shape[1], cv_img.shape[0]), Image.Resampling.LANCZOS)
+        orig_w, orig_h = cv_img.shape[1], cv_img.shape[0]
 
     p = str(preset or 'balanced').lower()
     if p == 'document':
@@ -4606,10 +4688,11 @@ def enhance_image(input_path, output_path, preset='balanced', sharpen='medium', 
         bright_val = int(brightness)
         sat_val = 1.05
 
+    big = cv_img.shape[0] * cv_img.shape[1] > 4_000_000
     if dn_val == 1:
-        cv_img = cv2.bilateralFilter(cv_img, d=7, sigmaColor=50, sigmaSpace=50)
+        cv_img = cv2.bilateralFilter(cv_img, d=5 if big else 7, sigmaColor=50, sigmaSpace=50)
     elif dn_val == 2:
-        cv_img = cv2.bilateralFilter(cv_img, d=9, sigmaColor=75, sigmaSpace=75)
+        cv_img = cv2.bilateralFilter(cv_img, d=7 if big else 9, sigmaColor=75, sigmaSpace=75)
 
     if use_clahe:
         lab = cv2.cvtColor(cv_img, cv2.COLOR_BGR2LAB)
@@ -4623,11 +4706,10 @@ def enhance_image(input_path, output_path, preset='balanced', sharpen='medium', 
         cv_img = cv2.convertScaleAbs(cv_img, alpha=1.0, beta=bright_val)
 
     if abs(sat_val - 1.0) > 0.01:
-        hsv = cv2.cvtColor(cv_img, cv2.COLOR_BGR2HSV).astype(np.float32)
-        h, s, v = cv2.split(hsv)
-        s = np.clip(s * sat_val, 0, 255)
-        hsv = cv2.merge((h, s, v)).astype(np.uint8)
+        hsv = cv2.cvtColor(cv_img, cv2.COLOR_BGR2HSV)
+        hsv[:, :, 1] = cv2.convertScaleAbs(hsv[:, :, 1], alpha=sat_val)      # saturating 8-bit multiply, same result as clip(s * sat, 0, 255)
         cv_img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        hsv = None
 
     if sh_val > 0.05:
         gaussian = cv2.GaussianBlur(cv_img, (0, 0), sigmaX=2.0)
@@ -4640,15 +4722,18 @@ def enhance_image(input_path, output_path, preset='balanced', sharpen='medium', 
     if sc not in (1.0, 1.5, 2.0, 3.0, 4.0):
         sc = 1.0
 
+    while sc > 1.0 and orig_w * orig_h * sc * sc > MAX_OUT_PX:
+        sc = {4.0: 3.0, 3.0: 2.0, 2.0: 1.5, 1.5: 1.0}[sc]
     new_w, new_h = orig_w, orig_h
     if sc != 1.0:
         new_w = max(1, int(orig_w * sc))
         new_h = max(1, int(orig_h * sc))
-        cv_img = cv2.resize(cv_img, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+        cv_img = cv2.resize(cv_img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
         if alpha_channel is not None:
             alpha_channel = alpha_channel.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
     rgb_result = Image.fromarray(cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB))
+    cv_img = None
 
     in_ext = os.path.splitext(input_path)[1].lower().lstrip('.')
     fmt = str(out_fmt or 'default').strip().lower()
@@ -4668,16 +4753,16 @@ def enhance_image(input_path, output_path, preset='balanced', sharpen='medium', 
         final_im = rgb_result.convert('RGBA')
         final_im.putalpha(alpha_channel)
         if tgt_fmt == 'PNG':
-            final_im.save(output_path, format='PNG', optimize=True, compress_level=9)
+            final_im.save(output_path, format='PNG', compress_level=6)
         else:
-            final_im.save(output_path, format='WEBP', quality=90, method=6)
+            final_im.save(output_path, format='WEBP', quality=90, method=4)
     else:
         if tgt_fmt == 'JPEG':
             rgb_result.save(output_path, format='JPEG', quality=92, optimize=True, progressive=True, subsampling='4:2:0')
         elif tgt_fmt == 'PNG':
-            rgb_result.save(output_path, format='PNG', optimize=True, compress_level=9)
+            rgb_result.save(output_path, format='PNG', compress_level=6)
         elif tgt_fmt == 'WEBP':
-            rgb_result.save(output_path, format='WEBP', quality=90, method=6)
+            rgb_result.save(output_path, format='WEBP', quality=90, method=4)
         else:
             rgb_result.save(output_path, format='JPEG', quality=92, optimize=True)
 
@@ -5103,7 +5188,9 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if cmd == 'scan_pdf':
-        if not OCR_ENABLED:
+        # The Scan PDF tool is on by default (the server's DISABLED_TOOLS list is the switch). FILEORA_ENABLE_OCR is a different setting: it makes the
+        # PDF-to-Word / PowerPoint converters read scanned pages, and it is deliberately left as it was.
+        if os.environ.get('FILEORA_DISABLE_SCAN_TOOL', '').strip().lower() in ('1', 'true', 'yes'):
             print("ERROR: TOOL_DISABLED: Scan PDF (OCR) is temporarily unavailable.", file=sys.stderr)
             sys.exit(5)
         lang = extra[0] if len(extra) > 0 else 'eng'
@@ -5119,7 +5206,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if cmd == 'enhance_image':
-        if os.environ.get('FILEORA_ENABLE_ENHANCE', '').strip().lower() not in ('1', 'true', 'yes'):
+        if os.environ.get('FILEORA_DISABLE_ENHANCE_TOOL', '').strip().lower() in ('1', 'true', 'yes'):
             print("ERROR: TOOL_DISABLED: Image enhancement is temporarily unavailable.", file=sys.stderr)
             sys.exit(5)
         preset = extra[0] if len(extra) > 0 else 'balanced'

@@ -438,12 +438,13 @@ function inputGuard(kind) {
 
 // ---------------------------------------------------------------------
 // Tools that are switched off on the free server. DISABLED_TOOLS (comma separated) overrides the default list.
-//   scan-pdf, enhance-image : OCR / image enhancement need more memory and time than the free server has
+//   scan-pdf, enhance-image : ON by default now (OCR runs several pages at once when the machine allows it, image filters work on capped sizes);
+//                             list them here to switch one off again if a small server struggles
 //   word-to-pptx            : can be added to the list to switch it off (not disabled by default)
 // pptx-editable (editable PowerPoint -> Word) is switched on only with FILEORA_ENABLE_PPTX_EDITABLE=true.
 // A disabled tool answers before the upload is read: it cannot be reached by calling the route directly.
 // ---------------------------------------------------------------------
-const DISABLED_TOOLS = new Set(String(process.env.DISABLED_TOOLS === undefined ? 'scan-pdf,enhance-image' : process.env.DISABLED_TOOLS)
+const DISABLED_TOOLS = new Set(String(process.env.DISABLED_TOOLS === undefined ? '' : process.env.DISABLED_TOOLS)
   .split(',').map((x) => x.trim().toLowerCase()).filter(Boolean));
 const PPTX_EDITABLE_ENABLED = String(process.env.FILEORA_ENABLE_PPTX_EDITABLE || '').toLowerCase() === 'true';
 const TOOL_LABELS = { 'scan-pdf': 'Scan PDF', 'enhance-image': 'Enhance image', 'word-to-pptx': 'Word to PowerPoint', 'pptx-editable': 'Editable PowerPoint to Word' };
