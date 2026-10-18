@@ -1624,12 +1624,12 @@ async function buildNativeSummaryPdf(summary, name, pageCount) {
   return await doc.save();
 }
 
-// A small credit line at the foot of every page of a summary PDF (both build paths). Never blocks the download: on any problem the PDF is left as it is.
-async function stampSummaryFooter(pdfFile) {
+// A small credit line at the foot of every page of an AI Summarizer or Translate PDF (both build paths). Never blocks the download: on any problem the PDF is left as it is.
+async function stampSummaryFooter(pdfFile, what) {
   try {
     const doc = await PDFDocument.load(fs.readFileSync(pdfFile));
     const font = await doc.embedFont(StandardFonts.Helvetica);
-    const text = 'Summary created with FileCorner AI Summarizer and downloaded from pdfconverterfree.in';
+    const text = (what || 'Summary created with FileCorner AI Summarizer') + ' and downloaded from pdfconverterfree.in';
     for (const page of doc.getPages()) {
       const { width } = page.getSize();
       const size = 6.5;
@@ -1765,6 +1765,7 @@ ${paragraphs}
   try {
     fs.writeFileSync(htmlPath, html, 'utf8');
     pdfPath = await libreConvert(htmlPath, 'pdf', ['--infilter=HTML (StarWriter)']);
+    await stampSummaryFooter(pdfPath, 'Translation created with FileCorner Translate Document');
     downloadAndClean(res, pdfPath, `${safeBase(filename)}_${targetLang}.pdf`, [htmlPath]);
   } catch (err) {
     safeUnlink(htmlPath);
