@@ -265,13 +265,14 @@
     @media (prefers-reduced-motion: reduce) { #mobile-drawer, #mobile-drawer-panel { transition: none; } }
     @media (min-width: 1024px) { #mobile-drawer { display: none !important; } html.drawer-lock, html.drawer-lock body { overflow: auto; } }
   </style>
+  <script src="/assets/i18n.js" defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white transition-colors duration-200 overflow-x-hidden">
 
   <!-- Global Header Navigation -->
   <header class="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shadow-xs w-full">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 gap-3 sm:gap-6">
+      <div class="flex items-center justify-between h-16 gap-3 sm:gap-6 lg:gap-3 xl:gap-6">
         
         <!-- Brand Logo & Mobile Drawer Toggle -->
         <div class="flex items-center gap-3 flex-shrink-0">
@@ -292,7 +293,7 @@
           <div class="relative hidden sm:block">
             <div class="flex items-center bg-slate-100/90 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-full px-3 py-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
               <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <input type="text" id="tool-search-input" placeholder="Search tools..." oninput="handleToolSearch(this.value)" class="bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:outline-none w-24 sm:w-44 placeholder:text-slate-400">
+              <input type="text" id="tool-search-input" placeholder="Search tools..." data-i18n-placeholder="nav.search" oninput="handleToolSearch(this.value)" class="bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:outline-none w-24 sm:w-32 lg:w-24 xl:w-44 placeholder:text-slate-400">
             </div>
 
             <div id="search-results-dropdown" class="mega-menu-panel absolute right-0 top-full mt-2 w-72 max-w-[90vw] rounded-2xl border border-slate-200 dark:border-slate-800 p-2 z-50 hidden max-h-72 overflow-y-auto shadow-xl bg-white dark:bg-slate-900"></div>
@@ -358,11 +359,11 @@
       
       <!-- Main Hero Heading -->
       <div class="mb-3 sm:mb-4 reveal-on-scroll">
-        <h1 id="hero-main-h1" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-          <span class="hidden md:block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span><span class="hidden md:block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span><span class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase">Your online file workspace</span><span class="md:hidden block text-[28px] font-extrabold text-blue-950 dark:text-white leading-tight">Everything you need for your files.</span>
+        <h1 id="hero-main-h1" dir="auto" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+          <span class="hidden md:block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5" data-i18n="hero.d1">All Your File Tools. One Simple Place.</span><span class="hidden md:block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto" data-i18n="hero.d2">Convert, Compress &amp; Get More Done.</span><span class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase" data-i18n="hero.badge">Your online file workspace</span><span class="md:hidden block text-[28px] font-extrabold text-blue-950 dark:text-white leading-tight" data-i18n="hero.title">Everything you need for your files.</span>
         </h1>
-        <p id="hero-main-sub" class="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed">
-          <span class="hidden md:inline">Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.</span><span class="md:hidden text-sm">Convert documents, organize PDFs and compress images.</span>
+        <p id="hero-main-sub" dir="auto" class="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed">
+          <span class="hidden md:inline" data-i18n="hero.dsub">Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.</span><span class="md:hidden text-sm" data-i18n="hero.subM">Convert documents, organize PDFs and compress images.</span>
         </p>
       </div>
 
@@ -385,12 +386,8 @@
           </div>
 
           <div id="mode-toggle" class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0 self-start sm:self-auto">
-            <button id="btn-mode-single" onclick="setProcessingMode('single')" class="px-3 py-1 rounded-md text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs whitespace-nowrap">
-              Single File
-            </button>
-            <button id="btn-mode-batch" onclick="setProcessingMode('batch')" class="px-3 py-1 rounded-md text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
-              Batch Processing
-            </button>
+            <button id="btn-mode-single" onclick="setProcessingMode('single')" class="px-3 py-1 rounded-md text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs whitespace-nowrap"><span data-i18n="mode.single">Single File</span></button>
+            <button id="btn-mode-batch" onclick="setProcessingMode('batch')" class="px-3 py-1 rounded-md text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white whitespace-nowrap"><span data-i18n="mode.batch">Batch Processing</span></button>
           </div>
         </div>
 
@@ -405,7 +402,7 @@
               </svg>
             </div>
             
-            <div class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            <div class="text-base sm:text-lg font-bold text-slate-900 dark:text-white" data-i18n="drop.title">
               Drop your files here
             </div>
             <span id="dropzone-action-name" class="hidden">PDF to PPTX</span>
@@ -415,11 +412,11 @@
 
             <button type="button" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/25 transition flex items-center gap-2">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-              <span>Choose Files</span>
+              <span data-i18n="drop.choose">Choose Files</span>
             </button>
 
             <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
-              <span>Maximum 3 MB per file &middot; Maximum 5 MB total per batch &middot; Up to 3 files</span>
+              <span data-i18n="drop.limits">Maximum 3 MB per file &middot; Maximum 5 MB total per batch &middot; Up to 3 files</span>
             </div>
           </div>
         </div>
@@ -433,13 +430,13 @@
         <div id="file-queue-section" class="border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 hidden space-y-3 mt-3">
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-900 dark:text-white">Selected Document</span>
+              <span class="text-xs font-bold text-slate-900 dark:text-white" data-i18n="queue.selected">Selected Document</span>
               <span id="queue-count-badge" class="px-2 py-0.5 rounded-full text-[12px] font-inter font-medium bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-slate-700">0 Files</span>
               <span id="queue-size-badge" class="text-[12px] text-[#64748B] dark:text-slate-400 font-inter font-normal">0 KB</span>
             </div>
             <div class="flex items-center gap-3">
               <button id="btn-add-more" onclick="if (!isJobLocked()) document.getElementById('file-input').click()" class="file-act hidden text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold">+ Add more files</button>
-              <button id="btn-clear-all" onclick="clearQueue()" class="file-act text-[11px] text-rose-600 dark:text-rose-400 hover:underline font-semibold">Clear All</button>
+              <button id="btn-clear-all" onclick="clearQueue()" class="file-act text-[11px] text-rose-600 dark:text-rose-400 hover:underline font-semibold"><span data-i18n="queue.clearAll">Clear All</span></button>
             </div>
           </div>
 
@@ -450,7 +447,7 @@
           <div class="pt-2 flex items-center justify-end">
             <button id="btn-process-now" onclick="executeCurrentTool()" class="w-full sm:w-auto px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 transition flex items-center justify-center gap-2">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              <span>Convert & Download</span>
+              <span data-i18n="btn.convert">Convert & Download</span>
             </button>
           </div>
         </div>
@@ -463,7 +460,7 @@
           <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
           </div>
-          <span>Secure Processing</span>
+          <span data-i18n="trust.secure">Secure Processing</span>
         </div>
         
         <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
@@ -472,7 +469,7 @@
           <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
-          <span>High-Quality Output</span>
+          <span data-i18n="trust.quality">High-Quality Output</span>
         </div>
 
         <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
@@ -481,7 +478,7 @@
           <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
           </div>
-          <span>AI-Powered Tools</span>
+          <span data-i18n="trust.ai">AI-Powered Tools</span>
         </div>
       </div>
 
@@ -494,12 +491,12 @@
   <section class="max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-10 sm:mb-12">
     <div class="relative flex items-center justify-between gap-4 mb-4 reveal-on-scroll">
       <div>
-        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Popular tools</h2>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight" data-i18n="nav.popular">Popular tools</h2>
         <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Most used file conversion tools. Fast, reliable and easy to use.</p>
       </div>
       <div class="relative">
         <button id="btn-view-all-tools" onclick="toggleAllToolsDropdown(event)" class="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-semibold text-xs items-center gap-1.5 transition flex-shrink-0 shadow-xs border border-blue-100 dark:border-blue-900/50">
-          <span>View all tools</span>
+          <span data-i18n="nav.allTools">View all tools</span>
           <svg id="view-all-tools-icon" class="w-3.5 h-3.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
 
@@ -916,6 +913,10 @@
 
     const SERVER_DOWN_MSG = "Could not reach the FileCorner server. It may be waking up, so wait about a minute and try again.";
 
+    // translations (assets/i18n.js): T(key, English default, {vars}); English is used for anything a language does not have
+    const T = (k, d, v) => (window.FileCornerI18n ? FileCornerI18n.t(k, d, v) : (v ? String(d).replace(/\{(\w+)\}/g, (m, x) => (v[x] != null ? v[x] : m)) : d));
+    const CAT_KEYS = { organize: "nav.organize", optimize: "nav.optimize", "convert-to": "nav.convertToPdf", "convert-docs": "nav.convertDocs", "pdf-tools": "nav.pdfTools", intelligence: "nav.pdfIntel" };
+    const catLabel = (cat) => T(CAT_KEYS[cat.id] || ("cat." + cat.id), cat.name);
     let currentToolId = "pdf-to-powerpoint";
     let processingMode = "single";
     let fileQueue = [];
@@ -1017,6 +1018,15 @@
       }
       loadTool("pdf-to-powerpoint", false);
     }
+
+    document.addEventListener("fc:lang", () => {
+      try {
+        renderNavigation(); renderMobilePills(); renderMobileDrawer(); renderMobileQuickGrid(); renderFooter();
+        const hint = document.getElementById("dropzone-hint");
+        if (hint && !DROP_HINTS[currentToolId]) hint.textContent = T("drop.sub", "or click to browse from your device");
+        if (typeof isJobLocked === "function" && !isJobLocked()) setProcessButton(false, idleLabel());
+      } catch (e) { /* the page is still starting; the first render uses the saved language */ }
+    });
 
     window.addEventListener("DOMContentLoaded", () => {
       initTheme();
@@ -1219,13 +1229,13 @@
       nav.innerHTML = navGroups.map(cat => `
         <div class="relative group py-2">
           <button class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition flex items-center gap-1.5 xl:gap-2 whitespace-nowrap">
-            <span>${cat.name}</span>
+            <span>${catLabel(cat)}</span>
             <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </button>
           
           <div class="mega-menu-panel absolute ${cat.id === 'intelligence' || cat.id === 'pdf-tools' ? 'right-0' : 'left-0'} top-full hidden group-hover:block w-64 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 z-50 shadow-xl">
             <div class="px-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${cat.name}</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${catLabel(cat)}</span>
             </div>
             <div class="space-y-0.5 max-h-72 overflow-y-auto">
               ${cat.tools.map(tool => `
@@ -1284,7 +1294,7 @@
       if (!container) return;
       container.innerHTML = TOOL_CATEGORIES.map(cat => `
         <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">${cat.name}</div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">${catLabel(cat)}</div>
           <div class="space-y-1">
             ${cat.tools.map(tool => `
               <a href="/tools/${tool.id}" onclick="selectPopularTool('${tool.id}', event); toggleAllToolsDropdown();" class="w-full text-left p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 group">
@@ -1319,7 +1329,7 @@
       if (!pillsContainer) return;
       pillsContainer.innerHTML = TOOL_CATEGORIES.map(cat => `
         <button onclick="openCategoryInMobileDrawer('${cat.id}')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap flex-shrink-0 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 transition flex items-center gap-1 shadow-2xs">
-          <span>${cat.name}</span>
+          <span>${catLabel(cat)}</span>
           <svg class="w-2.5 h-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
       `).join('');
@@ -1341,7 +1351,7 @@
       drawerCats.innerHTML = TOOL_CATEGORIES.map(cat => `
         <div id="drawer-cat-${cat.id}" class="space-y-1.5 transition-all">
           <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 px-1 flex items-center justify-between">
-            <span>${cat.name}</span>
+            <span>${catLabel(cat)}</span>
             <span class="text-[11px] text-slate-400 font-medium normal-case tracking-normal">${cat.tools.length} tools</span>
           </div>
           <div class="space-y-0.5">
@@ -1421,7 +1431,7 @@
       if (!footer) return;
       footer.innerHTML = TOOL_CATEGORIES.map(cat => `
         <div class="space-y-2">
-          <span class="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] block">${cat.name}</span>
+          <span class="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] block">${catLabel(cat)}</span>
           <ul class="space-y-1">
             ${cat.tools.map(tool => `
               <li><a href="/tools/${tool.id}" onclick="selectPopularTool('${tool.id}', event);" class="hover:text-brand-600 dark:hover:text-brand-400 transition text-[11px]">${tool.name}</a></li>
@@ -1432,7 +1442,7 @@
     }
 
     function idleLabel() {
-      return ACTION_LABELS[currentToolId] || "Convert & Download";
+      return ACTION_LABELS[currentToolId] || T("btn.convert", "Convert & Download");
     }
 
     // Inline SVG spinner (a font glyph such as the gear renders differently, or garbled, depending on the system font)
@@ -1539,10 +1549,11 @@
       const heroH1 = document.getElementById("hero-main-h1");
       const heroSub = document.getElementById("hero-main-sub");
       if (isHome) {
-        if (heroH1) heroH1.innerHTML = `<span class="hidden md:block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5">All Your File Tools. One Simple Place.</span><span class="hidden md:block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto">Convert, Compress &amp; Get More Done.</span><span class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase">Your online file workspace</span><span class="md:hidden block text-[28px] font-extrabold text-blue-950 dark:text-white leading-tight">Everything you need for your files.</span>`;
+        if (heroH1) heroH1.innerHTML = `<span class="hidden md:block text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-200 -mb-0.5" data-i18n="hero.d1">All Your File Tools. One Simple Place.</span><span class="hidden md:block text-[20px] sm:text-[25px] md:text-[31px] lg:text-[38px] xl:text-[40px] font-black text-blue-600 dark:text-blue-500 leading-tight max-w-4xl mx-auto" data-i18n="hero.d2">Convert, Compress &amp; Get More Done.</span><span class="md:hidden inline-block mb-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase" data-i18n="hero.badge">Your online file workspace</span><span class="md:hidden block text-[28px] font-extrabold text-blue-950 dark:text-white leading-tight" data-i18n="hero.title">Everything you need for your files.</span>`; if (window.FileCornerI18n) FileCornerI18n.apply(heroH1);
         if (heroSub) {
           heroSub.className = "text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-2xl mx-auto text-center font-normal leading-relaxed";
-          heroSub.innerHTML = `<span class="hidden md:inline">Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.</span><span class="md:hidden text-sm">Convert documents, organize PDFs and compress images.</span>`;
+          heroSub.innerHTML = `<span class="hidden md:inline" data-i18n="hero.dsub">Convert documents, organize PDFs, compress images, and summarize files with AI all in one easy-to-use workspace.</span><span class="md:hidden text-sm" data-i18n="hero.subM">Convert documents, organize PDFs and compress images.</span>`;
+          if (window.FileCornerI18n) FileCornerI18n.apply(heroSub);
         }
       } else if (seo) {
         if (heroH1) heroH1.innerHTML = seo.h1Html || escapeHtml(seo.h1);
@@ -1698,7 +1709,7 @@
       const egSubheading = document.getElementById("editorial-guide-subheading");
       if (egSubheading) egSubheading.textContent = `How to use ${tool.name} in 3 simple steps.`;
       document.getElementById("dropzone-hint").textContent =
-        DROP_HINTS[toolId] || "or click to browse from your device";
+        DROP_HINTS[toolId] || T("drop.sub", "or click to browse from your device");
 
       // Hide mode-toggle completely for Organize PDF tools (or forced mode tools)
       const isOrganize = info.category.id === "organize";
@@ -3062,7 +3073,7 @@
         ? files
         : files.filter(f => allowed.includes("." + f.name.split(".").pop().toLowerCase()));
       if (ok.length < files.length) {
-        notices.push(`This tool only accepts ${allowed.join(", ")} files. ${files.length - ok.length} file(s) were skipped.`);
+        notices.push(T("err.type", "This tool only accepts {types} files. {n} file(s) were skipped.", { types: allowed.join(", "), n: files.length - ok.length }));
       }
       if (!ok.length) { showUploadNotice(notices); return; }
 
@@ -3077,7 +3088,7 @@
       const oversized = ok.filter(f => f.size > MAX_FILE_SIZE);
       if (oversized.length > 0) {
         const names = oversized.slice(0, 3).map(f => `${f.name} (${formatSize(f.size)})`).join(", ") + (oversized.length > 3 ? ` and ${oversized.length - 3} more` : "");
-        notices.push((processingMode === "batch" ? "Each file must be 3 MB or smaller." : "Maximum file size is 3 MB.") + ` Not added: ${names}.`);
+        notices.push((processingMode === "batch" ? "Each file must be 3 MB or smaller." : T("err.size", "Maximum file size is 3 MB.")) + ` ${names}.`);
         ok = ok.filter(f => f.size <= MAX_FILE_SIZE);
       }
       if (!ok.length) { showUploadNotice(notices); return; }
@@ -3104,10 +3115,10 @@
         }
 
         if (countExceeded) {
-          notices.push(`Maximum ${MAX_FILE_COUNT} files per batch. Extra files were not added.`);
+          notices.push(T("err.count", "Maximum {n} files per batch. Extra files were not added.", { n: MAX_FILE_COUNT }));
         }
         if (batchSizeExceeded) {
-          notices.push("Maximum combined batch size is 5 MB. Some files were not added.");
+          notices.push(T("err.batch", "Maximum combined batch size is 5 MB. Some files were not added."));
         }
 
         fileQueue = newQueue;
@@ -3263,7 +3274,7 @@
         case "converting": return "Converting…";
         case "pages": return p.pages > 0 ? `${p.phase > 0 ? "Building" : "Processing"} page ${p.page} of ${p.pages}…` : "Converting…";
         case "validating": return "Validating output…";
-        case "verifying": return "Checking the result is complete…";
+        case "verifying": return T("state.verifying", "Checking the result is complete…");
         case "preparing": return "Preparing download…";
         default: return null;
       }
@@ -3316,7 +3327,7 @@
             return true;
           }
         } catch (e) { /* still starting */ }
-        setProcessButton(true, "Starting the server… this can take up to a minute");
+        setProcessButton(true, T("state.starting", "Starting the server… this can take up to a minute"));
         await new Promise(r => setTimeout(r, 3000));
       }
       return false;
@@ -3331,7 +3342,7 @@
       for (const targetBase of urlsToTry) {
         if (!(window.FileoraWarm && window.FileoraWarm.state === "ready")) {
           if (!(await waitForBackendAwake(targetBase, execId))) throw new Error(SERVER_DOWN_MSG);
-          setProcessButton(true, "Working...");
+          setProcessButton(true, T("state.working", "Working..."));
         }
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           if (execId !== currentExecutionId || activeAbortController?.signal?.aborted) {
@@ -3359,7 +3370,7 @@
             // the connection failed: make sure the server is up again before sending the request one more time
             if (window.FileoraWarm) window.FileoraWarm.state = "starting";
             if (!(await waitForBackendAwake(targetBase, execId))) break;
-            setProcessButton(true, "Working...");
+            setProcessButton(true, T("state.working", "Working..."));
           }
         }
       }
@@ -4757,7 +4768,7 @@
       executionLive = true;
 
       const serverStarting = window.FileoraWarm && (window.FileoraWarm.state === "starting" || window.FileoraWarm.state === "warming");
-      setProcessButton(true, serverStarting ? "Starting the server…" : "Working...");
+      setProcessButton(true, serverStarting ? T("state.starting", "Starting the server… this can take up to a minute") : T("state.working", "Working..."));
       let keepButton = false;
       try {
         let notice = null;
@@ -4841,7 +4852,7 @@
         const friendly = /SOI not found|not a valid (jpeg|jpg|png)|Unknown file format|Failed to parse|Invalid (jpeg|jpg|png)|incorrect header check/i.test(raw)
           ? "This image could not be read. Please try a different JPG or PNG file."
           : raw;
-        showUploadNotice([friendly || "Something went wrong. Please try again."]);   // shown in the page box, not a popup
+        showUploadNotice([friendly || T("err.generic", "Something went wrong. Please try again.")]);   // shown in the page box, not a popup
       } finally {
         if (thisExecId === currentExecutionId) {
           executionLive = false;
@@ -5343,7 +5354,7 @@
           window.__batchSession.items.push({ jobId: job.jobId, token: job.downloadToken, downloadUrl: job.downloadUrl, filename: job.filename || filename, size: job.size || 0 });
           return;
         }
-        window.location.href = job.downloadUrl + (job.notice === "scanned-pages" && job.downloadUrl.includes("?") ? "&note=scan" : "");
+        window.location.href = job.downloadUrl + (job.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : "") + (job.notice === "scanned-pages" && job.downloadUrl.includes("?") ? "&note=scan" : "");
         return;
       }
       const safeBlob = blob instanceof Blob ? blob : new Blob([blob]);
@@ -5407,7 +5418,7 @@
         if (res && res.ok) {
           const data = await res.json();
           if (data && data.downloadUrl) {
-            window.location.href = data.downloadUrl;
+            window.location.href = data.downloadUrl + (data.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : "");
             return;
           }
         }

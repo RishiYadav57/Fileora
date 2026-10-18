@@ -9,6 +9,7 @@ const fs = require('fs');
 const { PDFDocument, StandardFonts, degrees, rgb, ParseSpeeds } = require('pdf-lib');
 const complexity = require('./complexity');
 const { aiGuard } = require('./ai-guard');
+const feedback = require('./feedback');
 const SEO_DATA = require('./seo-data.js');
 const { renderToolHtml } = require('./seo-render.js');
 
@@ -261,6 +262,9 @@ allToolSlugs.forEach(slug => {
   const canonicalSlug = TOOL_ALIASES[slug] || slug;
   app.get(`/${slug}`, (req, res) => res.redirect(301, `/tools/${canonicalSlug}`));
 });
+
+// Download-page feedback: stored first, e-mailed afterwards (see feedback.js). There is deliberately no route that lists reviews.
+app.post('/api/feedback', feedback.handler(mailer));
 
 // Contact submission backend endpoint with Gmail SMTP notifications
 const contactLogFile = path.join(__dirname, 'contact_submissions.log');

@@ -306,7 +306,39 @@ async function sendContactEmail(submissionData) {
   };
 }
 
+/**
+ * Notification for one download-page review. Everything user-supplied is escaped in the HTML part and stripped of line breaks in the
+ * subject. No file names, contents or attachments are included. Throws when delivery fails (the caller keeps the saved review).
+ */
+async function sendFeedbackEmail(r) {
+  const transporter = getTransporter();
+  const smtpUser = process.env.SMTP_USER || 'pdfconverterfreebusiness@gmail.com';
+  const recipient = process.env.FEEDBACK_TO || process.env.CONTACT_TO || 'pdfconverterfreebusiness@gmail.com';
+  const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+  const tool = r.tool ? r.tool.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Not specified';
+  let country = r.country || 'Not provided';
+  try { if (r.country) country = `${new Intl.DisplayNames(['en'], { type: 'region' }).of(r.country)} (${r.country})`; } catch (e) { /* keep the code */ }
+  const when = new Date(r.createdAt).toUTCString();
+  const rows = [
+    ['Rating', `${r.rating}/5  ${stars}`], ['Category', r.categoryLabel], ['Tool', tool], ['Name', r.name || 'Not provided'],
+    ['Country', country], ['Submitted', `${when} (${new Date(r.createdAt).toISOString()})`], ['Review ID', r.id]
+  ];
+  const comment = r.comment || '(no comment)';
+  const text = ['NEW FILECORNER USER REVIEW', '', ...rows.map(([k, v]) => `${k.padEnd(10)}: ${v}`), '', '--- Comment ---', comment, '---------------', 'Website: https://pdfconverterfree.in'].join('\n');
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px"><h2 style="margin:0 0 12px">New FileCorner user review</h2>` +
+    `<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 10px;background:#f1f5f9;font-weight:bold;width:110px">${escapeHtml(k)}</td><td style="padding:6px 10px;border-bottom:1px solid #e2e8f0">${escapeHtml(v)}</td></tr>`).join('')}</table>` +
+    `<h3 style="margin:16px 0 6px">Comment</h3><div style="white-space:pre-wrap;padding:10px;border:1px solid #e2e8f0;border-radius:8px">${escapeHtml(comment)}</div></div>`;
+  const info = await transporter.sendMail({
+    from: `"FileCorner Reviews" <${smtpUser}>`,
+    to: recipient,
+    subject: sanitizeHeader(`New FileCorner User Review — ${r.rating}/5 Stars`),
+    text, html
+  });
+  return { messageId: info.messageId };
+}
+
 module.exports = {
+  sendFeedbackEmail,
   ALLOWED_CATEGORIES,
   checkContactRateLimit,
   validateSubmission,
