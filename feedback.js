@@ -107,15 +107,17 @@ function handler(mailer) {
     }
     if (d.jobId) { seenJobs.add(d.jobId); if (seenJobs.size > 5000) seenJobs.delete(seenJobs.values().next().value); }
     // The review is saved; now try the notification (bounded wait). The answer says what really happened: nothing is reported as sent unless the provider accepted it.
-    let notification = 'failed';
-    try {
-      const sent = await Promise.race([mailer.sendFeedbackEmail({ ...rec, categoryLabel: CATEGORIES[d.category] }), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timed out'), { mailCode: 'MAIL_TIMEOUT' })), 20000).unref())]);
+    // Wait only a few seconds for the provider: the visitor must not sit on a spinner. 'sent' = accepted, 'failed' = refused, 'pending' = still trying
+    // in the background (the row is marked e-mailed when it succeeds; otherwise the retry sweep picks it up).
+    const attempt = mailer.sendFeedbackEmail({ ...rec, categoryLabel: CATEGORIES[d.category] }).then(async (sent) => {
       console.log(`[feedback] notification accepted by ${sent.provider} for review ${rec.id}`);
       await db().executeD1Query('UPDATE feedback SET emailed = 1 WHERE id = ?', [rec.id]).catch(() => {});
-      notification = 'sent';
-    } catch (e) {
+      return 'sent';
+    }).catch((e) => {
       console.error(`[feedback] review ${rec.id} saved, notification NOT sent (${e && e.mailCode || 'UNKNOWN'}): ${String(e && e.message || e).replace(/re_[A-Za-z0-9_]+/g, '[key]').slice(0, 160)}`);   // emailed stays 0: the retry sweep picks it up
-    }
+      return 'failed';
+    });
+    const notification = await Promise.race([attempt, new Promise((r) => setTimeout(() => r('pending'), 4000).unref())]);
     res.json({ success: true, saved: true, notification });
   };
 }

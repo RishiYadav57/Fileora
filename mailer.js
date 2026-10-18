@@ -103,9 +103,9 @@ function getTransporter() {
     port,
     secure: port === 465, // true for 465 (implicit TLS)
     auth: { user, pass },
-    connectionTimeout: 10000, // 10s connection timeout
-    greetingTimeout: 10000,
-    socketTimeout: 15000
+    connectionTimeout: 6000, // fail fast: hosts that block outbound SMTP never answer
+    greetingTimeout: 6000,
+    socketTimeout: 12000
   });
 }
 
@@ -117,6 +117,7 @@ function getTransporter() {
  * Every failure is thrown as an Error with a stable `.mailCode` (MAIL_NOT_CONFIGURED, MAIL_AUTH, MAIL_CONNECT, MAIL_REJECTED, MAIL_TIMEOUT)
  * so callers can answer truthfully; messages never contain credentials.
  */
+let smtpDownUntil = 0;
 let senderOverride = null;   // test hook: replaces the real transport so automated tests never send mail
 function setSenderForTests(fn) { senderOverride = fn || null; }
 
@@ -159,11 +160,16 @@ async function deliver({ from, to, replyTo, subject, text, html, headers, resend
       throw e && e.mailCode ? e : mailError(e && e.name === 'AbortError' ? 'MAIL_TIMEOUT' : 'MAIL_CONNECT', 'Could not reach the mail provider');
     } finally { clearTimeout(timer); }
   }
+  if (smtpDownUntil > Date.now()) throw mailError('MAIL_CONNECT', 'Outbound SMTP is not reachable from this host (recent attempt failed); set RESEND_API_KEY to send over HTTPS');
   try {
     const info = await getTransporter().sendMail({ from, to, replyTo, subject, text, html, headers });
     if (info && Array.isArray(info.rejected) && info.rejected.length && !(info.accepted || []).length) throw mailError('MAIL_REJECTED', 'The recipient address was rejected');
     return { provider: 'smtp', messageId: info.messageId };
-  } catch (e) { throw classify(e); }
+  } catch (e) {
+    const ce = classify(e);
+    if (ce.mailCode === 'MAIL_CONNECT' || ce.mailCode === 'MAIL_TIMEOUT') smtpDownUntil = Date.now() + 5 * 60 * 1000;   // blocked or down: later attempts fail at once for 5 minutes instead of making visitors wait
+    throw ce;
+  }
 }
 
 /**
