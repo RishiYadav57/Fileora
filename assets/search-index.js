@@ -163,7 +163,7 @@
       var m = T[id], nm = (names && names[id]) || m.name;
       [].concat([nm], m.synonyms, m.keywords, m.examples, [m.description]).forEach(function (txt) { words(txt).forEach(function (w) { raw[w] = 1; }); });
       var phrases = [].concat(m.synonyms, m.keywords, m.examples).map(phraseKey).filter(Boolean);
-      var e = { id: id, nameKey: phraseKey(nm), nameTokens: sig(nm), phrases: phrases, synTokens: {}, descTokens: {}, fileTokens: {}, all: {} };
+      var e = { id: id, nameKey: phraseKey(nm), nameTokens: sig(nm), nameWords: words(nm), phrases: phrases, synTokens: {}, descTokens: {}, fileTokens: {}, all: {} };
       [].concat(m.synonyms, m.examples).forEach(function (p) { sig(p).forEach(function (t) { e.synTokens[t] = 1; }); });
       [].concat(m.keywords).forEach(function (p) { sig(p).forEach(function (t) { e.synTokens[t] = 1; }); });
       sig(m.description).forEach(function (t) { e.descTokens[t] = 1; });
@@ -186,12 +186,13 @@
     // the word still being typed: a prefix of a known word ("pd", "pass", "compr") is matched as a prefix, never "repaired" into another word
     var lastTyped = rawWords.length && /[a-z0-9]$/i.test(q) ? String(q).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').pop() : '';
     var partial = '';
-    if (lastTyped && !STOP[lastTyped] && !index.raw[lastTyped] && !index.raw[ALIAS[lastTyped]]) {
+    var onlyWord = rawWords.length === 1;   // a lone "a" or "to" is the start of a word, not a filler word
+    if (lastTyped && (STOP[lastTyped] ? onlyWord : !index.raw[lastTyped] && !index.raw[ALIAS[lastTyped]])) {
       var known = Object.keys(index.raw);
       for (var ki = 0; ki < known.length; ki++) if (known[ki].indexOf(lastTyped) === 0 || (lastTyped.length >= 3 && known[ki].indexOf(lastTyped) > 0)) { partial = lastTyped; break; }
     }
     // a finished word can still be the start of a longer one ("me" -> merge): its name / synonym prefix matches are added on top of the normal result
-    var addPrefix = !partial && lastTyped && !STOP[lastTyped] ? lastTyped : '';
+    var addPrefix = !partial && lastTyped && lastTyped.length <= 3 && !STOP[lastTyped] ? lastTyped : '';
     if (partial) rawWords = rawWords.slice(0, -1);   // the finished words are matched as before; the partial word is handled below
     rawWords = rawWords.map(function (w) {
       if (STOP[w] || w.length < 4 || index.raw[w]) return w;
@@ -245,7 +246,7 @@
         var ps = 0, k;
         var starts = function (map) { return Object.keys(map).some(function (t) { return t.indexOf(pw) === 0; }); };
         var within = function (map) { return pw.length >= 3 && Object.keys(map).some(function (t) { return t.indexOf(pw) > 0; }); };
-        var nm = {}; e.nameTokens.forEach(function (t) { nm[t] = 1; });
+        var nm = {}; e.nameTokens.forEach(function (t) { nm[t] = 1; }); e.nameWords.forEach(function (t) { nm[t] = 1; });   // the name as written ("Zip Files" keeps "files")
         if (e.nameKey.indexOf(pw) === 0) ps = 82;
         else if (starts(nm)) ps = 78;
         else if (within(nm)) ps = 58;
