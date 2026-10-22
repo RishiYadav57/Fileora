@@ -4138,7 +4138,8 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
 
     async function runZipFiles(files) {
       if (!window.JSZip) throw new Error("ZIP engine failed to load. Please refresh the page.");
-      const list = Array.isArray(files) ? files : [files];
+      const list = (Array.isArray(files) ? files : [files]).filter(Boolean);
+      if (!list.length) throw new Error("Select at least one file to put in the ZIP archive.");
       setProcessButton(true, `Compressing ${list.length} file(s)...`);
       const zip = new JSZip();
       const used = new Set();
@@ -4157,10 +4158,24 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
         type: "blob",
         compression: "DEFLATE",
         compressionOptions: { level: 6 }
-      });
+      }, meta => setProcessButton(true, `Compressing ${list.length} file(s)... ${Math.round(meta.percent)}%`));
       const outName = list.length === 1 ? `${baseName(list[0])}.zip` : "archive.zip";
       triggerDownload(blob, outName);
       return `Successfully compressed ${list.length} file(s) into ZIP archive.`;
+    }
+
+    // Limits that keep one small archive from expanding into something the browser cannot hold (a "ZIP bomb")
+    const UNZIP_MAX_ENTRIES = 200;
+    const UNZIP_MAX_TOTAL = 100 * 1000 * 1000;        // 100 MB after unpacking
+    const UNZIP_MAX_ENTRY = 50 * 1000 * 1000;         // 50 MB for one file
+    const UNZIP_MAX_RATIO = 1000;                     // unpacked size / packed size
+
+    // A safe file name from an archive path: no folders, no "..", no control characters, nothing that is only dots, never empty.
+    function safeEntryName(path) {
+      let name = String(path || "").replace(/\\/g, "/").split("/").filter(Boolean).pop() || "";
+      name = name.replace(/[\u0000-\u001f\u007f<>:"|?*]/g, "_").replace(/^\.+/, "").trim();
+      if (name.length > 150) { const dot = name.lastIndexOf("."); name = name.slice(0, 120) + (dot > 0 && name.length - dot <= 12 ? name.slice(dot) : ""); }
+      return name || "file";
     }
 
     async function runUnzipArchive(file) {
@@ -4170,23 +4185,55 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
       try {
         zip = await JSZip.loadAsync(await file.arrayBuffer());
       } catch (e) {
-        throw new Error("This file is not a valid ZIP archive, or it is corrupted or password-protected.");
+        const m = String((e && e.message) || e);
+        if (/encrypt/i.test(m)) throw new Error("This ZIP archive is password-protected. Password-protected archives cannot be opened here.");
+        if (/compression method|unsupported/i.test(m)) throw new Error("This ZIP archive uses a compression method that cannot be opened here.");
+        throw new Error("This file is not a valid ZIP archive, or it is corrupted.");
       }
-      const entries = Object.keys(zip.files).filter(k => !zip.files[k].dir);
+      // skip folders and the junk some systems add (macOS resource forks, Thumbs.db)
+      const entries = Object.keys(zip.files).filter(k => !zip.files[k].dir && !/(^|\/)(__MACOSX\/|\.DS_Store$|Thumbs\.db$)/i.test(k));
       if (entries.length === 0) throw new Error("The selected ZIP archive contains no files.");
+      if (entries.length > UNZIP_MAX_ENTRIES) throw new Error(`This archive holds ${entries.length} files. At most ${UNZIP_MAX_ENTRIES} files can be extracted at once.`);
+      let declared = 0;
+      for (const k of entries) {
+        const d = zip.files[k]._data || {};
+        const size = d.uncompressedSize || 0;
+        if (size > UNZIP_MAX_ENTRY) throw new Error(`"${k.split("/").pop()}" would unpack to ${formatSize(size)}, which is more than the ${formatSize(UNZIP_MAX_ENTRY)} allowed for one file.`);
+        declared += size;
+      }
+      if (declared > UNZIP_MAX_TOTAL) throw new Error(`This archive would unpack to ${formatSize(declared)}, which is more than the ${formatSize(UNZIP_MAX_TOTAL)} allowed.`);
+      if (file.size > 0 && declared / file.size > UNZIP_MAX_RATIO) throw new Error("This archive expands far more than a normal ZIP file would, so it was not opened for safety.");
 
       setProcessButton(true, `Extracting ${entries.length} file(s)...`);
       // One archive with several files: collect them all as one batch and open the downloads page once at the end
       const ownBatch = entries.length > 1 && !(window.__batchSession && window.__batchSession.active);
       if (ownBatch) window.__batchSession = { active: true, total: entries.length, current: 0, items: [], pendingUploads: [] };
-      let extractedCount = 0;
-      for (let i = 0; i < entries.length; i++) {
-        const entryName = entries[i];
-        const entryBlob = await zip.file(entryName).async("blob");
-        const safeName = entryName.split("/").pop() || entryName;
-        if (i > 0) await new Promise(r => setTimeout(r, 200));
-        triggerDownload(entryBlob, safeName);
-        extractedCount++;
+      let extractedCount = 0, actual = 0;
+      const used = new Set();
+      try {
+        for (let i = 0; i < entries.length; i++) {
+          const entryName = entries[i];
+          let entryBlob;
+          try { entryBlob = await zip.file(entryName).async("blob"); }
+          catch (e) { throw new Error(`"${entryName.split("/").pop()}" could not be extracted. The archive may be damaged.`); }
+          actual += entryBlob.size;
+          if (actual > UNZIP_MAX_TOTAL) throw new Error(`This archive unpacked to more than ${formatSize(UNZIP_MAX_TOTAL)}, so extraction was stopped.`);
+          // one name per file: when two folders hold the same file name, the second keeps its folder in the name
+          let safeName = safeEntryName(entryName);
+          if (used.has(safeName.toLowerCase())) {
+            const parts = entryName.replace(/\\/g, "/").split("/").filter(Boolean);
+            const parent = parts.length > 1 ? safeEntryName(parts[parts.length - 2]) : "";
+            const prefixed = parent ? parent + " - " + safeName : "";
+            safeName = prefixed && !used.has(prefixed.toLowerCase()) ? prefixed : safeName.replace(/(\.[^.]*)?$/, ` (${i + 1})$1`);
+          }
+          used.add(safeName.toLowerCase());
+          if (i > 0) await new Promise(r => setTimeout(r, 200));
+          triggerDownload(entryBlob, safeName);
+          extractedCount++;
+        }
+      } catch (e) {
+        if (ownBatch) window.__batchSession.active = false;
+        throw e;
       }
       if (ownBatch) {
         await Promise.all(window.__batchSession.pendingUploads);
@@ -4256,66 +4303,158 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
       }
     }
 
+    // ---- Image compression, done in the browser (Canvas). The picture never leaves the device unless the visitor agrees to a server retry. ----
+    const IMG_MAX_PIXELS = 60 * 1000 * 1000;      // a 60-megapixel picture already needs about 240 MB as pixels; beyond that the browser tab could crash
+
+    async function decodeImageLocal(file) {
+      if (window.createImageBitmap) {
+        try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) { /* older browser or unsupported option: try the plain call */ }
+        try { return await createImageBitmap(file); } catch (e) { /* fall through to <img> */ }
+      }
+      const url = URL.createObjectURL(file);
+      try {
+        const img = new Image();
+        img.src = url;
+        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error("decode")); });
+        return img;
+      } finally { URL.revokeObjectURL(url); }
+    }
+
+    // High-quality resize: big reductions are done in halving steps (a single big jump from a canvas looks jagged)
+    function resizeCanvasHQ(src, w, h) {
+      let cw = src.width || src.naturalWidth, ch = src.height || src.naturalHeight, cur = src;
+      while (cw / 2 >= w && ch / 2 >= h) {
+        const step = document.createElement("canvas");
+        step.width = Math.max(1, Math.round(cw / 2)); step.height = Math.max(1, Math.round(ch / 2));
+        const sctx = step.getContext("2d");
+        sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = "high";
+        sctx.drawImage(cur, 0, 0, step.width, step.height);
+        cur = step; cw = step.width; ch = step.height;
+      }
+      const out = document.createElement("canvas");
+      out.width = w; out.height = h;
+      const octx = out.getContext("2d");
+      octx.imageSmoothingEnabled = true; octx.imageSmoothingQuality = "high";
+      octx.drawImage(cur, 0, 0, w, h);
+      return out;
+    }
+
+    function canvasHasTransparency(canvas) {
+      // looked at on a small copy: enough to see any real transparent area without reading every pixel of a large picture
+      const probe = document.createElement("canvas");
+      probe.width = Math.min(canvas.width, 512); probe.height = Math.min(canvas.height, 512);
+      probe.getContext("2d").drawImage(canvas, 0, 0, probe.width, probe.height);
+      const d = probe.getContext("2d").getImageData(0, 0, probe.width, probe.height).data;
+      for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return true;
+      return false;
+    }
+
+    function flattenOnWhite(canvas) {
+      const flat = document.createElement("canvas");
+      flat.width = canvas.width; flat.height = canvas.height;
+      const fctx = flat.getContext("2d");
+      fctx.fillStyle = "#ffffff"; fctx.fillRect(0, 0, flat.width, flat.height);
+      fctx.drawImage(canvas, 0, 0);
+      return flat;
+    }
+
+    function canvasToBlobAsync(canvas, mime, quality) {
+      return new Promise(resolve => canvas.toBlob(resolve, mime, quality));
+    }
+
+    async function compressImageLocal(file, opts) {
+      const fmt = opts.fmt === "webp" ? "webp" : opts.fmt === "png" ? "png" : "jpeg";
+      const mime = fmt === "webp" ? "image/webp" : fmt === "png" ? "image/png" : "image/jpeg";
+      const ext = fmt === "webp" ? "webp" : fmt === "png" ? "png" : "jpg";
+      let src;
+      try { src = await decodeImageLocal(file); } catch (e) { const err = new Error(`"${file.name}" could not be read as an image.`); err.localDecodeFailed = true; throw err; }
+      const sw = src.width || src.naturalWidth, sh = src.height || src.naturalHeight;
+      if (!sw || !sh) { const err = new Error(`"${file.name}" could not be read as an image.`); err.localDecodeFailed = true; throw err; }
+      if (sw * sh > IMG_MAX_PIXELS) throw new Error(`"${file.name}" is too large to process in the browser (${sw} x ${sh} pixels). Please use a smaller picture.`);
+
+      const scale = opts.maxDim ? Math.min(1, opts.maxDim / Math.max(sw, sh)) : 1;
+      const tw = Math.max(1, Math.round(sw * scale)), th = Math.max(1, Math.round(sh * scale));
+      const base = resizeCanvasHQ(src, tw, th);
+      if (src.close) src.close();
+      const srcExt = (file.name.split(".").pop() || "").toLowerCase().replace("jpeg", "jpg");
+      const mayHaveAlpha = /^(png|webp|gif)$/.test(srcExt) || /image\/(png|webp|gif)/.test(file.type);
+      const hasAlpha = mayHaveAlpha && canvasHasTransparency(base);
+      const notes = [];
+      if (hasAlpha && fmt === "jpeg") notes.push(`"${file.name}" has transparent areas. JPEG cannot keep transparency, so they were filled with white. Choose PNG or WebP to keep them.`);
+      if (fmt === "png") notes.push("PNG is lossless, so the quality setting does not change a PNG. Choose JPEG or WebP for a smaller file.");
+      const forFormat = c => (fmt === "jpeg" ? flattenOnWhite(c) : c);
+      const encode = async (canvas, q) => {
+        const blob = await canvasToBlobAsync(forFormat(canvas), mime, fmt === "png" ? undefined : q);
+        if (!blob || blob.type !== mime) throw new Error(`This browser cannot save ${ext.toUpperCase()} files. Choose a different format.`);
+        return blob;
+      };
+
+      let blob, targetMet = true;
+      if (opts.mode === "manual" && opts.targetKb > 0) {
+        const targetBytes = opts.targetKb * 1024;
+        let best = null, smallest = null;
+        for (const step of [1, 0.85, 0.72, 0.6, 0.5, 0.4, 0.3]) {
+          const cv = step === 1 ? base : resizeCanvasHQ(base, Math.max(32, Math.round(tw * step)), Math.max(32, Math.round(th * step)));
+          if (fmt === "png") {
+            const c = await encode(cv);
+            if (!smallest || c.size < smallest.size) smallest = c;
+            if (c.size <= targetBytes) { best = c; break; }
+            continue;
+          }
+          let lo = 10, hi = 92, pass = null;
+          // even the lowest quality is too big at this size: no need to search, go straight to a smaller size
+          const floor = await encode(cv, 0.1);
+          if (!smallest || floor.size < smallest.size) smallest = floor;
+          if (floor.size > targetBytes) continue;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const c = await encode(cv, mid / 100);
+            if (!smallest || c.size < smallest.size) smallest = c;
+            if (c.size <= targetBytes) { pass = c; lo = mid + 1; } else { hi = mid - 1; }
+          }
+          if (pass) { best = pass; break; }
+        }
+        if (!best) {
+          const minKb = Math.round(smallest.size / 1024);
+          throw new Error(`Could not compress image below ${opts.targetKb} KB without excessive quality loss. The smallest achievable size was ${minKb} KB.`);
+        }
+        blob = best;
+      } else {
+        blob = await encode(base, Math.min(0.95, Math.max(0.1, opts.quality || 0.7)));
+      }
+
+      const formatChanged = srcExt !== ext;
+      const resized = scale < 1;
+      // like the server: a result that is not smaller is dropped (the original is kept) unless the format or size was changed on purpose
+      if (!(opts.mode === "manual") && !formatChanged && !resized && blob.size >= file.size) {
+        return { blob: file, name: file.name, before: file.size, after: file.size, alreadyOptimized: true, notes, local: true };
+      }
+      return { blob, name: `${baseName(file)}_compressed.${ext}`, before: file.size, after: blob.size, alreadyOptimized: false, targetMet, notes, local: true };
+    }
+
+    // The picture is only sent to the server when the browser could not read it AND the visitor agrees.
     async function compressOneImage(file, opts) {
       try {
-        const qualityInt = Math.round((opts.quality <= 1 ? opts.quality * 100 : opts.quality) || 80);
-        const res = await postFile("/api/image/compress", file, {
-          format: opts.fmt,
-          quality: String(qualityInt),
-          maxDim: String(opts.maxDim || 0),
-          mode: opts.mode || "auto",
-          targetKb: String(opts.targetKb || 0)
-        });
-        const blob = await res.blob();
-        const before = parseInt(res.headers.get("X-Original-Size"), 10) || file.size;
-        const after = parseInt(res.headers.get("X-Result-Size"), 10) || blob.size;
-        const alreadyOptimized = res.headers.get("X-Already-Optimized") === "1";
-        const targetMet = res.headers.get("X-Target-Met");
-        const ext = opts.fmt === "webp" ? "webp" : opts.fmt === "png" ? "png" : "jpg";
-        return {
-          blob,
-          name: `${baseName(file)}_compressed.${ext}`,
-          before,
-          after,
-          alreadyOptimized,
-          targetMet
-        };
-      } catch (serverErr) {
-        if (isServerRejection(serverErr)) throw serverErr;
-        if (opts.mode === "manual") {
-          throw serverErr;
-        }
-        console.warn("Server image compression notice, attempting client fallback:", serverErr);
-        const url = URL.createObjectURL(file);
-        try {
-          const img = new Image();
-          img.src = url;
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = () => reject(new Error(`"${file.name}" is not a readable image.`));
-          });
-          const scale = opts.maxDim ? Math.min(1, opts.maxDim / Math.max(img.naturalWidth, img.naturalHeight)) : 1;
-          const w = Math.max(1, Math.round(img.naturalWidth * scale));
-          const h = Math.max(1, Math.round(img.naturalHeight * scale));
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          if (opts.fmt === "jpeg") {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, w, h);
-          }
-          ctx.drawImage(img, 0, 0, w, h);
-          const mime = opts.fmt === "webp" ? "image/webp" : opts.fmt === "png" ? "image/png" : "image/jpeg";
-          const blob = await new Promise(r => canvas.toBlob(r, mime, opts.quality));
-          if (!blob) throw new Error(`"${file.name}" could not be compressed.`);
-          if (blob.size >= file.size) return { blob: file, name: file.name, before: file.size, after: file.size, alreadyOptimized: true };
-          const ext = blob.type === "image/webp" ? "webp" : blob.type === "image/png" ? "png" : "jpg";
-          return { blob, name: `${baseName(file)}_compressed.${ext}`, before: file.size, after: blob.size, alreadyOptimized: false };
-        } finally {
-          URL.revokeObjectURL(url);
-        }
+        return await compressImageLocal(file, opts);
+      } catch (localErr) {
+        if (!localErr || !localErr.localDecodeFailed) throw localErr;     // real problems (target not reachable, too large, format) are shown as they are
+        const agreed = window.confirm(`Your browser could not open "${file.name}" (it may be damaged or a format your browser does not support).\n\nDo you want to upload it to our server to try again? The file is deleted after processing. Choose Cancel to keep it on your device.`);
+        if (!agreed) throw new Error("Nothing was uploaded. The image was not compressed.");
       }
+      const qualityInt = Math.round((opts.quality <= 1 ? opts.quality * 100 : opts.quality) || 80);
+      const res = await postFile("/api/image/compress", file, {
+        format: opts.fmt,
+        quality: String(qualityInt),
+        maxDim: String(opts.maxDim || 0),
+        mode: opts.mode || "auto",
+        targetKb: String(opts.targetKb || 0)
+      });
+      const blob = await res.blob();
+      const before = parseInt(res.headers.get("X-Original-Size"), 10) || file.size;
+      const after = parseInt(res.headers.get("X-Result-Size"), 10) || blob.size;
+      const alreadyOptimized = res.headers.get("X-Already-Optimized") === "1";
+      const ext = opts.fmt === "webp" ? "webp" : opts.fmt === "png" ? "png" : "jpg";
+      return { blob, name: `${baseName(file)}_compressed.${ext}`, before, after, alreadyOptimized, targetMet: res.headers.get("X-Target-Met"), notes: [] };
     }
 
     async function runCompressImages(files) {
@@ -4357,6 +4496,7 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
         triggerDownload(await zip.generateAsync({ type: "blob" }), "Compressed_images.zip");
       }
 
+      const notes = [...new Set(results.flatMap(r => r.notes || []))].join(" ");
       if (after < before) {
         const saved = before - after;
         const pct = Math.round((saved / before) * 100);
@@ -4364,9 +4504,10 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
         if (mode === "manual" && opts.targetKb > 0) {
           msg += ` Target: ${opts.targetKb} KB (${after <= opts.targetKb * 1024 ? "Target met" : "Closest achievable"}).`;
         }
-        return msg;
+        return (msg + " " + notes).trim();
       }
-      return `Original size: ${formatSize(before)} | Output: ${formatSize(after)}. This image is already well optimized, so the original was retained.`;
+      if (results.every(r => r.alreadyOptimized)) return (`Original size: ${formatSize(before)}. This image is already well optimized, so the original was kept and no smaller file could be made. ` + notes).trim();
+      return (`Original size: ${formatSize(before)} | Output: ${formatSize(after)}. The new file is not smaller because the format or size was changed. ` + notes).trim();
     }
 
     // EXIF orientation (1 = upright). pdf-lib embeds JPEG bytes as-is and ignores it, so phone photos would come out sideways.
