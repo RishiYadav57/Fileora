@@ -91,8 +91,12 @@
 
   <!-- Mozilla PDF.js (reading/rendering), pdf-lib (page tools), JSZip, PptxGenJS, and Core Converter Engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- pdf-lib and JSZip run Merge / Split / Remove / Extract / Organize in the browser. They are served from this site (faster, no third-party outage);
+       the CDN copy is only a fallback. Nothing is uploaded for these tools. -->
+  <script src="/assets/vendor/pdf-lib.min.js"></script>
+  <script>window.PDFLib || document.write('<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"><\/script>');</script>
+  <script src="/assets/vendor/jszip.min.js"></script>
+  <script>window.JSZip || document.write('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"><\/script>');</script>
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="/converter-engine.js"></script>
   <script src="/seo-data.js"></script>
