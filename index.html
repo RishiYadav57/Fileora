@@ -353,15 +353,20 @@
       <div class="min-w-0 flex-1">
         <div class="flex items-center justify-between gap-1">
           <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-            <span>File Downloaded</span>
+            <span id="toast-title">Download Complete!</span>
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </span>
-          <span class="text-[10px] text-slate-400 font-mono">Reset in <span id="countdown-val" class="font-bold text-blue-600 dark:text-blue-400">4</span>s</span>
+          <span id="toast-reset" class="text-[10px] text-slate-400 font-mono">Reset in <span id="countdown-val" class="font-bold text-blue-600 dark:text-blue-400">4</span>s</span>
         </div>
-        <p id="toast-filename" class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 font-medium">Document downloaded</p>
+        <p id="toast-filename" class="text-[11px] text-slate-700 dark:text-slate-200 truncate mt-0.5 font-semibold">Document downloaded</p>
+        <p id="toast-message" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Your file has been saved to your device.</p>
+        <div id="toast-actions" class="hidden flex-wrap gap-2 mt-2">
+          <button id="toast-go-now" type="button" onclick="goToDownloadPageNow()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold">Go to Download Page Now</button>
+          <button id="toast-stay" type="button" onclick="dismissDownloadToast()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">Stay Here</button>
+        </div>
         <a id="toast-download-again" href="#" target="_blank" rel="noopener noreferrer" class="hidden text-[10.5px] text-blue-600 dark:text-blue-400 underline font-semibold hover:text-blue-700 mt-1 block">Tap here if download didn't start</a>
       </div>
-      <button onclick="dismissDownloadToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold p-1 self-start" title="Close">✕</button>
+      <button onclick="dismissDownloadToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold p-1 self-start" title="Close" aria-label="Close and stay here">✕</button>
     </div>
   </div>
 
@@ -3913,7 +3918,8 @@
         const angle = Math.PI / 4;
         for (const page of doc.getPages()) {
           const { width, height } = page.getSize();
-          const maxW = Math.sqrt(width * width + height * height) * 0.7;
+          // 70% of the diagonal, but never so long that the slanted text runs off a very wide or very tall page (normal pages are unaffected)
+          const maxW = Math.min(Math.sqrt(width * width + height * height) * 0.7, Math.min(width, height) * 1.27);
           let size = 80;
           let tw = font.widthOfTextAtSize(text, size);
           if (tw > maxW) {
@@ -3935,7 +3941,12 @@
         return "Watermark added successfully.";
       } catch (clientErr) {
         if (clientErr && clientErr.skipFallback) throw clientErr;
-        // Fallback to server route
+        // The browser could not do it (for example, characters the built-in font cannot draw). The server route can, but it means sending the
+        // file, so that only happens after the visitor agrees.
+        const agreed = window.confirm(`Your browser could not add this watermark (${String((clientErr && clientErr.message) || "unknown error").slice(0, 120)}).
+
+Do you want to upload "${file.name}" to our server to try again? The file is deleted after processing. Choose Cancel to keep it on your device.`);
+        if (!agreed) { const declined = new Error("Nothing was uploaded. The watermark was not added."); declined.skipFallback = true; throw declined; }
         const res = await postFile("/api/pdf/watermark", file, { text });
         triggerDownload(await res.blob(), `${baseName(file)}_watermarked.pdf`);
         return "Watermark added successfully.";
@@ -4398,6 +4409,7 @@
         const isJpg = file.type === "image/jpeg" || /\.(jpe?g)$/i.test(file.name);
 
         let img, w, h;
+        try {
         if (isPng) {
           // Direct lossless PNG embedding with transparency preservation
           const bytes = new Uint8Array(await file.arrayBuffer());
@@ -4416,6 +4428,9 @@
           img = await out.embedJpg(converted.bytes);
           w = converted.w;
           h = converted.h;
+        }
+        } catch (imgErr) {
+          throw new Error(`"${file.name}" could not be read as an image. Choose a JPG, PNG or WebP picture.`);
         }
 
         if (sizeMode === "fit") {
@@ -4844,6 +4859,7 @@
         alert(`${findTool(currentToolId)?.tool?.name || "This tool"} is temporarily unavailable on the free server. Please try another tool.`);
         return;
       }
+      pendingDownloadPage = null;          // a new run starts without any download page from the previous one
       const runner = TOOL_RUNNERS[currentToolId];
       if (!runner) {
         alert("This tool is not available yet.");
@@ -4930,6 +4946,8 @@
             return;
           }
         }
+        if (thisExecId !== currentExecutionId) return;
+        if (downloadInFlight) { try { await downloadInFlight; } catch (e) { /* the direct download fallback already ran */ } downloadInFlight = null; }
         if (thisExecId !== currentExecutionId) return;
         triggerAutoReset(notice, lastDownloadFilename);
       } catch (err) {
@@ -5390,6 +5408,14 @@
     let lastDownloadUrl = null;
     let lastDownloadFilename = "";
     let downloadResetTimer = null;
+    // The download page of the file that was just made (set only when the server really created one for it; never built from a guess).
+    let pendingDownloadPage = null;
+    function setPendingDownloadPage(url, filename) { pendingDownloadPage = url ? { url, filename } : null; }
+    function goToDownloadPageNow() {
+      const target = pendingDownloadPage;
+      if (downloadResetTimer) clearInterval(downloadResetTimer);
+      if (target && target.url) window.location.href = target.url;
+    }
 
     function directAnchorDownload(safeBlob, filename) {
       const url = URL.createObjectURL(safeBlob);
@@ -5431,7 +5457,15 @@
       }, 120000);
     }
 
-    async function triggerDownload(blob, filename) {
+    // Runners call triggerDownload without waiting for it; the popup waits for the last one (the server may still be storing the file)
+    let downloadInFlight = null;
+    function triggerDownload(blob, filename) {
+      const p = triggerDownloadNow(blob, filename);
+      downloadInFlight = p;
+      return p;
+    }
+
+    async function triggerDownloadNow(blob, filename) {
       // output of a conversion that was cancelled (or superseded) while it was still running: drop it
       if (typeof executionLive !== "undefined" && !executionLive) return;
       lastDownloadFilename = filename;
@@ -5442,7 +5476,7 @@
           window.__batchSession.items.push({ jobId: job.jobId, token: job.downloadToken, downloadUrl: job.downloadUrl, filename: job.filename || filename, size: job.size || 0 });
           return;
         }
-        window.location.href = job.downloadUrl + (job.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : "") + (job.notice === "scanned-pages" && job.downloadUrl.includes("?") ? "&note=scan" : "");
+        setPendingDownloadPage(job.downloadUrl + (job.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : "") + (job.notice === "scanned-pages" && job.downloadUrl.includes("?") ? "&note=scan" : ""), job.filename || filename);
         return;
       }
       const safeBlob = blob instanceof Blob ? blob : new Blob([blob]);
@@ -5506,7 +5540,7 @@
         if (res && res.ok) {
           const data = await res.json();
           if (data && data.downloadUrl) {
-            window.location.href = data.downloadUrl + (data.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : "");
+            setPendingDownloadPage(data.downloadUrl + (data.downloadUrl.includes("?") ? "&tool=" + encodeURIComponent(currentToolId) : ""), data.filename || filename);
             return;
           }
         }
@@ -5520,6 +5554,7 @@
 
     function dismissDownloadToast() {
       if (downloadResetTimer) clearInterval(downloadResetTimer);
+      pendingDownloadPage = null;          // closing the popup or pressing "Stay Here" cancels the redirect
       const toast = document.getElementById("reset-toast");
       if (toast) {
         toast.classList.add("translate-y-[-140px]", "opacity-0");
@@ -5532,23 +5567,49 @@
       const countdownEl = document.getElementById("countdown-val");
       const filenameEl = document.getElementById("toast-filename");
       const directLink = document.getElementById("toast-download-again");
+      const messageEl = document.getElementById("toast-message");
+      const actionsEl = document.getElementById("toast-actions");
+      const resetEl = document.getElementById("toast-reset");
+      const target = pendingDownloadPage;                          // set only when the server made a download page for this file
 
-      const finalName = filename || lastDownloadFilename || (fileQueue[0] ? fileQueue[0].name : "Document ready");
+      const finalName = (target && target.filename) || filename || lastDownloadFilename || (fileQueue[0] ? fileQueue[0].name : "Document ready");
       if (filenameEl) filenameEl.textContent = finalName;
-      if (directLink && lastDownloadUrl) {
+      if (directLink && lastDownloadUrl && !target) {
         directLink.href = lastDownloadUrl;
         directLink.download = finalName;
         directLink.classList.remove("hidden");
+      } else if (directLink) {
+        directLink.classList.add("hidden");
       }
 
-      let count = msg ? 6 : 4;
       if (toast) {
         toast.classList.remove("translate-y-[-140px]", "opacity-0");
         toast.classList.add("translate-y-0", "opacity-100");
       }
-      if (countdownEl) countdownEl.textContent = count;
-
       if (downloadResetTimer) clearInterval(downloadResetTimer);
+
+      if (target) {
+        // A download page exists for this file: count down, then open it (or open it now / stay here)
+        let count = 3;
+        const say = () => { if (messageEl) messageEl.textContent = `Your file is ready. Redirecting to your download page in ${count} second${count === 1 ? "" : "s"}...`; };
+        if (resetEl) resetEl.classList.add("hidden");
+        if (actionsEl) { actionsEl.classList.remove("hidden"); actionsEl.classList.add("flex"); }
+        say();
+        downloadResetTimer = setInterval(() => {
+          count--;
+          if (count > 0) { say(); return; }
+          clearInterval(downloadResetTimer);
+          goToDownloadPageNow();
+        }, 1000);
+        return;
+      }
+
+      // Browser-only result (saved straight to the device): no download page exists, so nothing to redirect to
+      if (messageEl) messageEl.textContent = "Your file has been saved to your device.";
+      if (actionsEl) { actionsEl.classList.add("hidden"); actionsEl.classList.remove("flex"); }
+      if (resetEl) resetEl.classList.remove("hidden");
+      let count = msg ? 6 : 4;
+      if (countdownEl) countdownEl.textContent = count;
       downloadResetTimer = setInterval(() => {
         count--;
         if (count > 0) {
