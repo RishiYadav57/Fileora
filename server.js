@@ -1055,6 +1055,36 @@ async function libreConvert(inputPath, targetExt, extraArgs) {
   return out;
 }
 
+// The first LibreOffice run on a fresh profile folder takes several times longer than later runs (it creates its settings). That folder lives in the
+// temp directory, so it is empty after every restart or deploy and the first visitor would wait for it. This prepares it once in the background.
+// It takes the same single conversion slot as a real job (so a Python tool can never run beside it and push a 512 MB server over its limit; a visitor's job
+// simply waits behind it), is skipped when a profile already exists or a job is already running, never blocks the server from starting, and any failure
+// is only logged. LO_WARMUP=false switches it off.
+let loWarmupStarted = false;
+function warmLibreOffice() {
+  if (loWarmupStarted || String(process.env.LO_WARMUP || '').toLowerCase() === 'false') return;
+  loWarmupStarted = true;
+  const profileMarker = path.join(loProfileDir, 'user', 'registrymodifications.xcu');
+  if (fs.existsSync(profileMarker)) return;                      // a conversion (or an earlier run) already created the profile
+  const busy = jobgate.stats();
+  if (busy.active || busy.queued) return;                        // a visitor is already converting: that job creates the profile itself
+  const dir = path.join(os.tmpdir(), 'fileconverter-warmup');       // its own folder: the upload and output folders only ever hold real jobs
+  const src = path.join(dir, 'warmup.txt');
+  const started = Date.now();
+  try { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(src, 'FileCorner warm-up'); } catch (e) { return; }
+  const profileUri = 'file:///' + loProfileDir.replace(/\\/g, '/').replace(/^\/+/, '');
+  const args = ['--headless', '--norestore', `-env:UserInstallation=${profileUri}`, '--convert-to', 'pdf', '--outdir', dir, src];
+  // enter the job gate like a request would (a stand-in request/response: status 499 keeps it out of the average job time)
+  const fakeReq = { headers: {}, originalUrl: '/api/_lo-warmup', url: '/api/_lo-warmup' };
+  const fakeRes = Object.assign(new (require('events').EventEmitter)(), { headersSent: false, writableFinished: true, statusCode: 499, setHeader() {}, status() { return this; }, json() {} });
+  jobgate.enter(fakeReq, fakeRes, () => {
+    withLibreOffice(() => execFileP(getLibreOfficeCmd(), args, { timeout: 90000 }))
+      .then(() => console.log(`[startup] libreoffice warm-up done in ${((Date.now() - started) / 1000).toFixed(1)}s`))
+      .catch((e) => console.warn(`[startup] libreoffice warm-up skipped: ${String((e && e.message) || e).slice(0, 120)}`))
+      .finally(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* nothing to clean */ } fakeRes.emit('close'); });
+  });
+}
+
 function safeBase(filename) {
   const base = String(filename || 'document')
     .replace(/\.[^/.]+$/, '')
@@ -2608,6 +2638,7 @@ const httpServer = app.listen(PORT, () => {
   // Job records must live somewhere reliable. With REQUIRE_D1=true a missing or unusable D1 stops the process (a failed
   // deploy keeps the previous version running) instead of serving jobs that cannot be found later.
   if (r2Storage.isD1Configured) { const c = r2Storage.d1ConfigDiagnostics; console.log(`[startup] d1 config: accountIdSource=${c.accountIdSource} accountIdLength=${c.accountIdLength} accountIdFormatOk=${c.accountIdFormatOk} databaseIdFormatOk=${c.databaseIdFormatOk}`); }
+  setTimeout(warmLibreOffice, 3000).unref();                    // after the port is open and the checks below have started; never delays startup
   r2Storage.verifyR2().then((r) => console.log(`[startup] r2 check: ${r.ok ? 'ok' : 'PROBLEM'} - ${r.reason}`)).catch(() => {});
   r2Storage.verifyPersistence().then((st) => {
     console.log(`[startup] job database: ${st.ok ? 'ok' : 'PROBLEM'} - ${st.reason}`);
