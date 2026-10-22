@@ -68,7 +68,11 @@ setInterval(() => { const cut = Date.now() - 15 * 60 * 1000; for (const [k, v] o
 function parseProgressLine(line) {
   let m = /FILEORA_PROGRESS page=(\d+) total=(\d+)/.exec(line);
   if (!m) m = /\((\d+)\/(\d+)\)\s+Page/.exec(line);
-  return m ? { stage: 'pages', page: parseInt(m[1], 10), pages: parseInt(m[2], 10) } : null;
+  if (m) return { stage: 'pages', page: parseInt(m[1], 10), pages: parseInt(m[2], 10) };
+  // pdf2docx's own step lines: the long layout analysis before any page counter, and its closing line before our clean-up of the Word file
+  if (/\[2\/4\]\s+Analyzing document/.test(line)) return { stage: 'analyzing' };
+  if (/\bTerminated in [\d.]+s/.test(line)) return { stage: 'finishing' };
+  return null;
 }
 let nextId = 1;
 

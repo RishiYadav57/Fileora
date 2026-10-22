@@ -3363,7 +3363,9 @@
         }
         case "reading": return "Reading file…";
         case "converting": return "Converting…";
-        case "pages": return p.pages > 0 ? `${p.phase > 0 ? "Building" : "Processing"} page ${p.page} of ${p.pages}…` : "Converting…";
+        case "analyzing": return "Analyzing the document layout…";
+        case "pages": return p.pages > 0 ? `${p.phase > 0 ? "Building Word page" : "Reading page"} ${p.page} of ${p.pages}…` : "Converting…";
+        case "finishing": return "Finishing the Word document…";
         case "validating": return "Validating output…";
         case "verifying": return T("state.verifying", "Checking the result is complete…");
         case "preparing": return "Preparing download…";
@@ -3381,9 +3383,9 @@
             if (label && label !== last) { last = label; setProcessButton(true, label); }
           }
         } catch (e) { /* the server may still be waking up: keep the last label */ }
-        if (!stopped) setTimeout(tick, 4500);
+        if (!stopped) setTimeout(tick, 2000);
       };
-      setTimeout(tick, 2500);
+      setTimeout(tick, 1500);
       return () => { stopped = true; };
     }
 
