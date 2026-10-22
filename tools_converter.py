@@ -38,12 +38,10 @@ if not _LIGHT: from docx.enum.text import WD_ALIGN_PARAGRAPH
 if not _LIGHT: from docx.enum.table import WD_TABLE_ALIGNMENT
 if not _LIGHT: from docx.oxml import parse_xml, OxmlElement
 if not _LIGHT: from docx.oxml.ns import qn
-# PDF -> Word never touches python-pptx (checked: no function reachable from that command uses it), so it is not loaded for it (~0.5 s per run).
-_NO_PPTX = __name__ == '__main__' and len(sys.argv) > 1 and sys.argv[1].lower() == 'pdf2docx'
-if not _LIGHT and not _NO_PPTX: from pptx import Presentation
-if not _LIGHT and not _NO_PPTX: from pptx.dml.color import RGBColor as PptxRGBColor
-if not _LIGHT and not _NO_PPTX: from pptx.enum.shapes import MSO_SHAPE_TYPE
-if not _LIGHT and not _NO_PPTX: from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
+if not _LIGHT: from pptx import Presentation
+if not _LIGHT: from pptx.dml.color import RGBColor as PptxRGBColor
+if not _LIGHT: from pptx.enum.shapes import MSO_SHAPE_TYPE
+if not _LIGHT: from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 if not _LIGHT: from pdf2docx import Converter
 if not _LIGHT: from pdf2docx.text.Spans import Spans
 if not _LIGHT: from pdf2docx.text.TextSpan import TextSpan
@@ -1014,9 +1012,6 @@ def enhance_docx_fidelity(docx_path, pdf_path):
 
     for p in doc.paragraphs:
         for r in p.runs:
-            rt = r.text                                   # read once (each read walks the run's XML)
-            if not any(ch in rt for ch in PUA_BULLET_REPLACEMENTS):
-                continue
             for pua_char, replacement in PUA_BULLET_REPLACEMENTS.items():
                 if pua_char in r.text:
                     r.text = r.text.replace(pua_char, replacement)
