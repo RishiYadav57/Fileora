@@ -56,8 +56,8 @@ const SEO_DATA = {
       "Start processing the document.",
       "Download the resulting files and verify their contents."
     ],
-    "whyHeading": "Split your PDF in a few steps",
-    "whyBody": "1. Upload your PDF document.\r\n2. Choose the available page-selection or splitting options.\r\n3. Start processing the document.\r\n4. Download the resulting files and verify their contents.\r\n\r\n### Make long PDFs easier to manage\r\n\r\nSplitting helps you organize lengthy reports, separate document sections, extract relevant pages, and prepare smaller files for sharing.",
+    "whyHeading": "Make long PDFs easier to manage",
+    "whyBody": "Splitting helps you organize lengthy reports, separate document sections, extract relevant pages, and prepare smaller files for sharing.",
     "faqs": [
       {
         "q": "Can I extract specific pages?",
@@ -79,8 +79,8 @@ const SEO_DATA = {
     "id": "remove-pages",
     "toolNumber": 3,
     "name": "Remove Pages",
-    "title": "Remove Pages from PDF Online | FileCorner",
-    "metaDescription": "Remove unwanted pages from a PDF and create a cleaner document containing the pages you need.",
+    "title": "Remove Pages from PDF – Free PDF Page Remover | FileCorner",
+    "metaDescription": "Delete unwanted pages from a PDF with this free page remover. Enter the page numbers or ranges to remove and download the cleaned PDF.",
     "canonical": "https://pdfconverterfree.in/tools/remove-pages",
     "h1": "Remove Pages from PDF",
     "h1Html": "Remove Pages <span class=\"text-blue-600 dark:text-blue-500\">from PDF</span>",
@@ -93,11 +93,11 @@ const SEO_DATA = {
       "Process and download the updated PDF."
     ],
     "whyHeading": "Keep your documents organized",
-    "whyBody": "Removing unnecessary pages can make documents easier to read, share, and manage. Always review your page selection before processing to avoid removing information you need.",
+    "whyBody": "Removing unnecessary pages can make documents easier to read, share, and manage. Always review your page selection before processing to avoid removing information you need.\n\nUse it as a PDF page remover to delete blank, duplicate or outdated pages in one step.",
     "faqs": [
       {
         "q": "Can I remove several pages at once?",
-        "a": "Use the selection options supported by the current tool."
+        "a": "Yes. Type the page numbers and ranges separated by commas, for example 2, 5-7, and all of them are removed in one step."
       },
       {
         "q": "Can I recover removed pages afterward?",
@@ -151,8 +151,8 @@ const SEO_DATA = {
     "id": "organize-pdf",
     "toolNumber": 5,
     "name": "Customize PDF",
-    "title": "Organize PDF Pages Online | FileCorner",
-    "metaDescription": "Organize your PDF by arranging pages and using the supported page-management options to create a more structured document.",
+    "title": "Organize PDF Pages Online – Rearrange, Rotate | FileCorner",
+    "metaDescription": "PDF organizer online: drag pages into a new order, rotate sideways pages and delete pages you do not need, then download the organised PDF.",
     "canonical": "https://pdfconverterfree.in/tools/organize-pdf",
     "h1": "Organize PDF Pages Online",
     "h1Html": "Organize <span class=\"text-blue-600 dark:text-blue-500\">PDF Pages</span> Online",
@@ -165,15 +165,19 @@ const SEO_DATA = {
       "Save and download the organized PDF."
     ],
     "whyHeading": "Make your documents easier to follow",
-    "whyBody": "A well-organized PDF helps readers navigate information in the intended sequence. This is useful for reports, study material, project documents, and collections of scanned pages.",
+    "whyBody": "A well-organized PDF helps readers navigate information in the intended sequence. This is useful for reports, study material, project documents, and collections of scanned pages.\n\nThis PDF organizer lets you arrange pages by dragging their thumbnails, rotate pages that were scanned sideways and delete pages you no longer need, then download the organised PDF.",
     "faqs": [
       {
         "q": "Can I rearrange pages?",
-        "a": "Use the reordering functionality if it is available in the current interface."
+        "a": "Yes. Upload your PDF, drag the page thumbnails into the order you want, then save and download the reordered file."
+      },
+      {
+        "q": "Can I rotate pages in a PDF?",
+        "a": "Yes. Each page preview has a 90-degree rotate button, which helps with scans that came out sideways."
       },
       {
         "q": "Can I also remove or extract pages?",
-        "a": "Use the dedicated Remove Pages and Extract Pages tools when those operations are supported separately.\r\n\r\n\r\n\r\n# CATEGORY 2 — OPTIMIZE PDF"
+        "a": "You can delete pages directly while organizing. To delete several pages by number, use Remove Pages; to keep only selected pages as a new PDF, use Extract Pages."
       }
     ],
     "category": "Organize PDF",
@@ -200,8 +204,8 @@ const SEO_DATA = {
       "Start compression.",
       "Download the result and compare its size and readability."
     ],
-    "whyHeading": "Reduce your PDF size in four steps",
-    "whyBody": "1. Upload the PDF you want to compress.\r\n2. Select one of the available compression options.\r\n3. Start compression.\r\n4. Download the result and compare its size and readability.\r\n\r\n### Why compress a PDF?\r\n\r\nSmaller documents are easier to attach to emails, upload to websites, share with colleagues, and store when space is limited.",
+    "whyHeading": "Why compress a PDF?",
+    "whyBody": "Smaller documents are easier to attach to emails, upload to websites, share with colleagues, and store when space is limited.",
     "faqs": [
       {
         "q": "Will compression always reduce file size?",
@@ -263,8 +267,8 @@ const SEO_DATA = {
     "id": "compress-image",
     "toolNumber": 8,
     "name": "Compress Image",
-    "title": "Compress Images Online – Reduce File Size | FileCorner",
-    "metaDescription": "Reduce image file sizes for easier uploads, sharing, and storage while balancing visual quality and file size.",
+    "title": "Image Compressor and Resizer – JPG, PNG, WebP | FileCorner",
+    "metaDescription": "Compress JPG, PNG and WebP images, limit the longest side to 800–3000 px, and save as JPEG, WebP or PNG to change the format.",
     "canonical": "https://pdfconverterfree.in/tools/compress-image",
     "h1": "Compress Images Online",
     "h1Html": "Compress <span class=\"text-blue-600 dark:text-blue-500\">Images Online</span>",
@@ -276,8 +280,8 @@ const SEO_DATA = {
       "Process the image.",
       "Download the compressed file and review its appearance."
     ],
-    "whyHeading": "Compress an image in four steps",
-    "whyBody": "1. Upload your image.\r\n2. Choose the available compression settings.\r\n3. Process the image.\r\n4. Download the compressed file and review its appearance.\r\n\r\n### When should you compress an image?\r\n\r\nImage compression is useful when uploading files to websites, attaching images to messages, preparing documents, or reducing storage requirements.",
+    "whyHeading": "When should you compress an image?",
+    "whyBody": "Image compression is useful when uploading files to websites, attaching images to messages, preparing documents, or reducing storage requirements.",
     "faqs": [
       {
         "q": "Will compression affect image quality?",
@@ -285,7 +289,15 @@ const SEO_DATA = {
       },
       {
         "q": "Will the dimensions change?",
-        "a": "That depends on whether the tool includes resizing. Compression and resizing are different operations.\r\n\r\n\r\n\r\n# CATEGORY 3 — CONVERT TO PDF"
+        "a": "Only if you choose to. The original size is kept by default. Under Longest side you can limit the image to 3000, 2000, 1600, 1200 or 800 px; the other side is scaled to keep the proportions."
+      },
+      {
+        "q": "Can I convert JPG to PNG or PNG to JPG?",
+        "a": "Yes. Choose the output format under Save as: JPEG, WebP or PNG. JPEG does not support transparency, and PNG files are often larger than JPEG for photos."
+      },
+      {
+        "q": "Can I resize an image to an exact width and height?",
+        "a": "Not exactly. The tool limits the longest side to a preset size and keeps the proportions; custom width and height values are not available."
       }
     ],
     "category": "Optimize PDF",
@@ -312,8 +324,8 @@ const SEO_DATA = {
       "Wait for processing to finish.",
       "Download and review the PDF."
     ],
-    "whyHeading": "Convert your Word document",
-    "whyBody": "1. Upload your supported Word file.\r\n2. Start the conversion.\r\n3. Wait for processing to finish.\r\n4. Download and review the PDF.\r\n\r\n### Why convert Word to PDF?\r\n\r\nPDF is widely used for distributing documents that recipients primarily need to read or print. It provides a stable document format without requiring recipients to edit the original Word file.",
+    "whyHeading": "Why convert Word to PDF?",
+    "whyBody": "PDF is widely used for distributing documents that recipients primarily need to read or print. It provides a stable document format without requiring recipients to edit the original Word file.",
     "faqs": [
       {
         "q": "Will formatting be preserved?",
@@ -348,8 +360,8 @@ const SEO_DATA = {
       "Wait for the PDF to be generated.",
       "Download and review the slides."
     ],
-    "whyHeading": "Convert a presentation to PDF",
-    "whyBody": "1. Upload your PowerPoint file.\r\n2. Start the conversion.\r\n3. Wait for the PDF to be generated.\r\n4. Download and review the slides.\r\n\r\n### Why use PDF for presentations?\r\n\r\nPDF is useful for distributing static slide content, creating review copies, and preparing presentations for printing.",
+    "whyHeading": "Why use PDF for presentations?",
+    "whyBody": "PDF is useful for distributing static slide content, creating review copies, and preparing presentations for printing.",
     "faqs": [
       {
         "q": "Will slide animations remain?",
@@ -371,8 +383,8 @@ const SEO_DATA = {
     "id": "excel-to-pdf",
     "toolNumber": 11,
     "name": "Excel to PDF",
-    "title": "Excel to PDF Converter Online | FileCorner",
-    "metaDescription": "Convert Excel spreadsheets into PDFs for sharing reports, tables, schedules, and other spreadsheet information.",
+    "title": "Excel and CSV to PDF Converter Online | FileCorner",
+    "metaDescription": "Convert Excel (.xlsx, .xls) and CSV files into PDFs for sharing reports, tables, schedules, and other spreadsheet information.",
     "canonical": "https://pdfconverterfree.in/tools/excel-to-pdf",
     "h1": "Convert Excel to PDF Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">Excel to PDF</span> Online",
@@ -384,8 +396,8 @@ const SEO_DATA = {
       "Wait for processing to complete.",
       "Download and inspect the PDF."
     ],
-    "whyHeading": "Convert your spreadsheet",
-    "whyBody": "1. Upload the supported spreadsheet.\r\n2. Start the conversion.\r\n3. Wait for processing to complete.\r\n4. Download and inspect the PDF.\r\n\r\n### Prepare spreadsheets for sharing\r\n\r\nA PDF version can make it easier for recipients to view spreadsheet information without modifying the original workbook.",
+    "whyHeading": "Prepare spreadsheets for sharing",
+    "whyBody": "A PDF version can make it easier for recipients to view spreadsheet information without modifying the original workbook.",
     "faqs": [
       {
         "q": "Will all columns fit on one page?",
@@ -394,6 +406,10 @@ const SEO_DATA = {
       {
         "q": "Will formulas remain editable?",
         "a": "The PDF is a viewing format. Editable spreadsheet formulas remain in the original workbook, not as working Excel formulas in the PDF."
+      },
+      {
+        "q": "Can I convert a CSV file to PDF?",
+        "a": "Yes. Upload a .csv file to the same tool and it is converted into a PDF table. CSV files carry no formatting, so the PDF uses a plain table layout."
       }
     ],
     "category": "Convert to PDF",
@@ -420,8 +436,8 @@ const SEO_DATA = {
       "Start the conversion.",
       "Download and check your PDF."
     ],
-    "whyHeading": "Convert JPG to PDF",
-    "whyBody": "1. Upload your JPG image or images if multiple-file support is available.\r\n2. Choose the available conversion options.\r\n3. Start the conversion.\r\n4. Download and check your PDF.\r\n\r\n### Why convert images to PDF?\r\n\r\nA PDF provides a convenient document format for distributing images, preparing printable documents, and grouping image-based information.",
+    "whyHeading": "Why convert images to PDF?",
+    "whyBody": "A PDF provides a convenient document format for distributing images, preparing printable documents, and grouping image-based information.",
     "faqs": [
       {
         "q": "Will converting JPG to PDF improve image quality?",
@@ -429,7 +445,7 @@ const SEO_DATA = {
       },
       {
         "q": "Can I combine several images?",
-        "a": "Only if multiple-image input is supported by the current converter.\r\n\r\n\r\n\r\n# CATEGORY 4 — CONVERT DOCUMENTS"
+        "a": "Only if multiple-image input is supported by the current converter."
       }
     ],
     "category": "Convert to PDF",
@@ -479,8 +495,8 @@ const SEO_DATA = {
     "id": "powerpoint-to-word",
     "toolNumber": 14,
     "name": "PowerPoint to Word",
-    "title": "PowerPoint to Word Converter Online | FileCorner",
-    "metaDescription": "Convert PowerPoint slides into a Word document for reviewing presentation content and preparing notes or reports.",
+    "title": "PowerPoint (PPT) to Word Converter Online | FileCorner",
+    "metaDescription": "Convert a PowerPoint (.pptx) presentation into an editable Word document for reviewing slide content and preparing notes or reports.",
     "canonical": "https://pdfconverterfree.in/tools/powerpoint-to-word",
     "h1": "Convert PowerPoint to Word Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">PowerPoint to Word</span> Online",
@@ -502,6 +518,10 @@ const SEO_DATA = {
       {
         "q": "Will animations work in Word?",
         "a": "No. Word is not an interactive presentation format."
+      },
+      {
+        "q": "Can I convert PPT to Word?",
+        "a": "Yes, for presentations saved as .pptx. The converter takes .pptx files, so an older .ppt file should be re-saved as .pptx in PowerPoint first."
       }
     ],
     "category": "Convert Documents",
@@ -515,8 +535,8 @@ const SEO_DATA = {
     "id": "word-to-powerpoint",
     "toolNumber": 15,
     "name": "Word to PowerPoint",
-    "title": "Word to PowerPoint Converter Online | FileCorner",
-    "metaDescription": "Turn Word document content into PowerPoint slides for presentations, meetings, and educational material.",
+    "title": "Word to PowerPoint (PPT) Converter Online | FileCorner",
+    "metaDescription": "Turn a Word (.docx) document into PowerPoint (PPT) slides, saved as an editable .pptx file, for presentations, meetings and study material.",
     "canonical": "https://pdfconverterfree.in/tools/word-to-powerpoint",
     "h1": "Convert Word to PowerPoint Online",
     "h1Html": "Convert <span class=\"text-blue-600 dark:text-blue-500\">Word to PowerPoint</span> Online",
@@ -538,6 +558,10 @@ const SEO_DATA = {
       {
         "q": "Can I edit the generated slides?",
         "a": "A valid PPTX file can be opened in compatible presentation software. Editability depends on how the content was generated."
+      },
+      {
+        "q": "Can I convert Word to PPT?",
+        "a": "Yes. Upload a .docx file and the result is a PowerPoint presentation in .pptx format, which opens in PowerPoint and compatible apps. Older .doc files should be re-saved as .docx first."
       }
     ],
     "category": "Convert Documents",
@@ -645,7 +669,7 @@ const SEO_DATA = {
       },
       {
         "q": "Will the text remain selectable?",
-        "a": "JPG is an image format, so the page text is not normally available as selectable document text within the image itself.\r\n\r\n\r\n\r\n# CATEGORY 5 — PDF TOOLS"
+        "a": "JPG is an image format, so the page text is not normally available as selectable document text within the image itself."
       }
     ],
     "category": "Convert Documents",
@@ -732,7 +756,7 @@ const SEO_DATA = {
     "toolNumber": 21,
     "name": "Add Watermark",
     "title": "Add Watermark to PDF Online | FileCorner",
-    "metaDescription": "Add a supported text or image watermark to PDF pages for identification, branding, or document-status labeling.",
+    "metaDescription": "Add a text watermark such as CONFIDENTIAL or DRAFT to every page of a PDF document for identification or document-status labeling.",
     "canonical": "https://pdfconverterfree.in/tools/add-watermark",
     "h1": "Add a Watermark to PDF",
     "h1Html": "Add a <span class=\"text-blue-600 dark:text-blue-500\">Watermark</span> to PDF",
@@ -749,15 +773,19 @@ const SEO_DATA = {
     "faqs": [
       {
         "q": "Can I add a text watermark?",
-        "a": "Text watermark support depends on the current implementation. Use only the options exposed by the tool."
+        "a": "Yes. Type the text you want, for example CONFIDENTIAL or DRAFT, and it is stamped across the pages of your PDF."
       },
       {
         "q": "Can I add a logo?",
-        "a": "Image watermarking should only be advertised if the converter actually supports uploading and positioning an image watermark."
+        "a": "Not at the moment. The tool adds text watermarks only."
       },
       {
         "q": "Can a watermark be removed?",
         "a": "Watermark removal depends on how it was applied and how the resulting PDF is structured. A watermark is not a guarantee against copying."
+      },
+      {
+        "q": "Can I watermark a Word document or an image?",
+        "a": "This tool works on PDF files. To watermark a Word document, convert it with Word to PDF first, then add the watermark."
       }
     ],
     "category": "PDF Tools",
@@ -829,7 +857,7 @@ const SEO_DATA = {
       },
       {
         "q": "Can I extract password-protected archives?",
-        "a": "Only if password-protected extraction is explicitly supported.\r\n\r\n\r\n\r\n# CATEGORY 6 — PDF INTELLIGENCE"
+        "a": "Only if password-protected extraction is explicitly supported."
       }
     ],
     "category": "PDF Tools",
