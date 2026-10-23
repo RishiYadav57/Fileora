@@ -7,6 +7,10 @@
     document.documentElement.classList.remove('dark');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- Hero background layers: start downloading at once instead of after the scripts below have run (the page's largest paint) -->
+  <link rel="preload" as="image" href="/assets/mobile-hero-bg.webp" type="image/webp" fetchpriority="high" media="(max-width: 768px)">
+  <link rel="preload" as="image" href="/assets/hero-bg.webp" type="image/webp" fetchpriority="high" media="(min-width: 769px)">
+  <link rel="preload" as="image" href="/assets/hero-bg-extension.webp" type="image/webp">
   <title>FileCorner | Free Online File Conversion</title>
   <meta name="description" content="FileCorner is a free online file converter. Convert PDF to Word, Excel, PowerPoint and JPG, organize and compress PDFs, and summarize documents.">
   <base href="/">
@@ -97,8 +101,8 @@
   <script>window.PDFLib || document.write('<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"><\/script>');</script>
   <script src="/assets/vendor/jszip.min.js"></script>
   <script>window.JSZip || document.write('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"><\/script>');</script>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-  <script src="/converter-engine.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" defer></script>
+  <script src="/converter-engine.js" defer></script>
   <script src="/seo-data.js"></script>
   <link rel="stylesheet" href="/assets/scroll-reveal.css">
   <script src="/assets/scroll-reveal.js"></script>
@@ -144,7 +148,7 @@
     code, pre { font-family: 'JetBrains Mono', monospace; }
     .hero-banner-container {
       background-color: #ffffff;
-      background-image: url('/assets/hero-bg.png'), url('/assets/hero-bg-extension.png');
+      background-image: url('/assets/hero-bg.webp'), url('/assets/hero-bg-extension.webp');
       background-position: center top, center top;
       background-repeat: no-repeat, repeat-y;
       background-size: 1983px 793px, 100% auto;
@@ -156,7 +160,7 @@
     }
     @media (max-width: 768px) {
       .hero-banner-container {
-        background-image: url('/assets/mobile-hero-bg.png'), url('/assets/hero-bg-extension.png');
+        background-image: url('/assets/mobile-hero-bg.webp'), url('/assets/hero-bg-extension.webp');
         background-position: center top, center top;
         background-repeat: no-repeat, repeat-y;
         background-size: 100% auto, 100% auto;
@@ -185,7 +189,7 @@
     }
     .site-footer {
       background-color: #f6faff;
-      background-image: url('/assets/new footer white.png');
+      background-image: url('/assets/new-footer-white.webp');
       background-position: center top;
       background-repeat: no-repeat;
       background-size: 100% auto;
@@ -290,7 +294,7 @@
           </button>
 
           <a href="/" onclick="event.preventDefault(); loadTool('pdf-to-powerpoint', true, true);" class="flex items-center gap-2.5 group">
-            <img src="/assets/filecorner-logo.png" alt="FileCorner" width="1842" height="357" class="h-6 sm:h-7 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
+            <img src="/assets/filecorner-logo-600.webp" alt="FileCorner" width="600" height="116" class="h-6 sm:h-7 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity">
           </a>
         </div>
 
@@ -332,7 +336,7 @@
       <div>
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/filecorner-logo.png" alt="FileCorner" width="1842" height="357" class="h-6 w-auto">
+            <img src="/assets/filecorner-logo-600.webp" alt="FileCorner" width="600" height="116" class="h-6 w-auto">
           </div>
           <button onclick="toggleMobileDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white text-base font-bold">✕</button>
         </div>
@@ -666,7 +670,7 @@
         <!-- Brand & Mission Column (span 2 cols) -->
         <div class="lg:col-span-2 space-y-4">
           <div class="flex items-center gap-2.5">
-            <img src="/assets/filecorner-logo.png" alt="FileCorner" width="1842" height="357" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
+            <img src="/assets/filecorner-logo-600.webp" alt="FileCorner" width="600" height="116" class="h-7 sm:h-8 w-auto flex-shrink-0 group-hover:opacity-90 transition-opacity" loading="lazy" decoding="async">
           </div>
           <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
             High-fidelity document conversion with guaranteed layout and font preservation. Fast, private, and automated document workflow toolkit.
