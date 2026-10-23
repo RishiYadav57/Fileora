@@ -23,29 +23,6 @@
   <meta name="theme-color" content="#2463EB">
 
   <!-- Tailwind CSS & Plus Jakarta Sans -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -78,6 +55,8 @@
   <script src="/assets/i18n.js" defer></script>
   <!-- Analytics consent: Google Analytics (G-PWHNVWWB7Q) loads only after the visitor accepts; never on download.html -->
   <script src="/assets/consent.js" defer></script>
+  <!-- Tailwind CSS, built from scripts/tailwind/content.config.js (rebuild with: node scripts/build-tailwind.js). Kept after the page styles on purpose: same cascade order as the old CDN script. -->
+  <link rel="stylesheet" href="/assets/tailwind-content.css">
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200 overflow-x-clip w-full max-w-full">
 

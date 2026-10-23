@@ -14,29 +14,6 @@
   <meta name="robots" content="noindex, nofollow">
 
   <!-- Tailwind CSS & Google Fonts (Plus Jakarta Sans) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -100,6 +77,8 @@
   <script src="/assets/i18n.js" defer></script>
   <script src="/assets/countries.js" defer></script>
   <script src="/assets/feedback-ui.js" defer></script>
+  <!-- Tailwind CSS, built from scripts/tailwind/content.config.js (rebuild with: node scripts/build-tailwind.js). Kept after the page styles on purpose: same cascade order as the old CDN script. -->
+  <link rel="stylesheet" href="/assets/tailwind-content.css">
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
 
