@@ -51,25 +51,15 @@
     });
   }, observerOptions);
 
-  /**
-   * Scan and register elements for scroll reveal
-   * @param {HTMLElement|Document} root Context to search for reveal targets
-   */
-  function observeElements(root) {
-    const context = root || document;
-    const elements = context.querySelectorAll('.reveal-on-scroll, .reveal-stagger');
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-
-    elements.forEach(function (el) {
-      if (revealedElements.has(el) || el.classList.contains('is-revealed')) {
-        return;
-      }
-
-      // Check if element is already within the visible viewport on mount
-      const rect = el.getBoundingClientRect();
-      const inView = rect.top < (viewportHeight * 0.95) && rect.bottom > 0;
-
-      if (inView) {
+  // Elements that are already on screen when they are registered get their entrance right away (after a short beat); the rest wait for the
+  // scroll observer above. The first look uses an IntersectionObserver too (same 95%-of-the-viewport rule as before) instead of reading
+  // getBoundingClientRect() for every element, because those reads forced a full synchronous layout of the page while it was still loading.
+  const initialObserver = new IntersectionObserver(function (entries, obs) {
+    entries.forEach(function (entry) {
+      const el = entry.target;
+      obs.unobserve(el);
+      if (revealedElements.has(el)) return;
+      if (entry.isIntersecting) {
         // Subtle staggered entrance for elements already in viewport upon initial load
         setTimeout(function () {
           revealTarget(el);
@@ -77,6 +67,22 @@
       } else {
         observer.observe(el);
       }
+    });
+  }, { root: null, rootMargin: '0px 0px -5% 0px', threshold: 0 });
+
+  /**
+   * Scan and register elements for scroll reveal
+   * @param {HTMLElement|Document} root Context to search for reveal targets
+   */
+  function observeElements(root) {
+    const context = root || document;
+    const elements = context.querySelectorAll('.reveal-on-scroll, .reveal-stagger');
+
+    elements.forEach(function (el) {
+      if (revealedElements.has(el) || el.classList.contains('is-revealed')) {
+        return;
+      }
+      initialObserver.observe(el);
     });
   }
 

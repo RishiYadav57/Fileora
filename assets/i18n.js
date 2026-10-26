@@ -186,7 +186,8 @@
   function place() {
     if (document.getElementById('lang-switch')) return;
     var w = buildWidget();
-    detectCountry();
+    // only orders the language list (it re-renders itself when the answer arrives), so it waits for an idle moment instead of running during page start-up
+    if (window.requestIdleCallback) window.requestIdleCallback(detectCountry, { timeout: 3000 }); else setTimeout(detectCountry, 1500);
     var search = document.getElementById('tool-search-input');
     if (search) {                                           // index.html: beside the search field (desktop); far right of the header row (phones)
       var box = document.getElementById('tool-search-box') || search.closest('.relative.hidden');   // the whole search pill, never an element inside it
@@ -263,7 +264,7 @@
     var nav = document.getElementById('nav-categories');
     var h = document.documentElement;
     h.classList.remove('fc-fit1', 'fc-fit2', 'fc-fit3', 'fc-fit4');
-    if (!nav || window.innerWidth < 1024) return;
+    if (!nav || !window.matchMedia('(min-width: 1024px)').matches) return;     // (innerWidth would force a layout on every phone load)
     var row = nav.parentNode;
     var over = function () { var last = row.lastElementChild.getBoundingClientRect(), r = row.getBoundingClientRect(); return last.right > r.right + 0.5 || last.left < r.left - 0.5 || row.scrollWidth > row.clientWidth + 1; };
     var steps = ['fc-fit1', 'fc-fit2', 'fc-fit3', 'fc-fit4'];
