@@ -70,17 +70,63 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- Mozilla PDF.js (reading/rendering), pdf-lib (page tools), JSZip, PptxGenJS, and Core Converter Engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <!-- pdf-lib and JSZip run Merge / Split / Remove / Extract / Organize in the browser. They are served from this site (faster, no third-party outage);
-       the CDN copy is only a fallback. Nothing is uploaded for these tools. -->
-  <script src="/assets/vendor/pdf-lib.min.js"></script>
-  <script>window.PDFLib || document.write('<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"><\/script>');</script>
-  <script src="/assets/vendor/jszip.min.js"></script>
-  <script>window.JSZip || document.write('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"><\/script>');</script>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" defer></script>
-  <script src="/converter-engine.js" defer></script>
-  <script src="/seo-data.js"></script>
+  <!-- Conversion libraries: Mozilla PDF.js (reading/rendering), pdf-lib (page tools), JSZip, PptxGenJS and the Core Converter Engine.
+       None of them is needed to draw the page, so they are not loaded here. ensureConverterLibs() fetches them in this order the first time a
+       tool is about to be used (first click, key press or file drag on the page) and every tool awaits it before it reads a file.
+       pdf-lib and JSZip are served from this site (no third-party outage); the CDN copy is only a fallback. Nothing is uploaded for these tools. -->
+  <script>
+  (function () {
+    var CDN = {
+      pdfjs: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+      pdfjsWorker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+      pptx: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
+    };
+    function add(src) {
+      return new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = src; s.async = false;
+        s.onload = function () { resolve(); };
+        s.onerror = function () { s.remove(); reject(new Error('Could not load ' + src)); };
+        document.head.appendChild(s);
+      });
+    }
+    function load(src, isReady, fallback) {
+      if (isReady()) return Promise.resolve();
+      return add(src).catch(function (e) { if (!fallback) throw e; return add(fallback); });
+    }
+    var base = null, pptx = null;
+    var FAIL = 'The conversion libraries failed to load. Check your internet connection and refresh the page.';
+    window.ensureConverterLibs = function () {
+      if (!base) {
+        base = Promise.all([
+          load(CDN.pdfjs, function () { return !!window.pdfjsLib; }).then(function () {
+            if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN.pdfjsWorker;
+          }),
+          load('/assets/vendor/pdf-lib.min.js', function () { return !!window.PDFLib; }, 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js'),
+          load('/assets/vendor/jszip.min.js', function () { return !!window.JSZip; }, 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')
+        ]).then(function () {
+          // the engine reads JSZip and PDFLib when it is evaluated, so it must come after them
+          return load('/converter-engine.js', function () { return !!window.FileConverterEngine; });
+        }).catch(function () { base = null; throw new Error(FAIL); });
+      }
+      return base;
+    };
+    // PowerPoint output (PptxGenJS, ~150 KB) is only needed by two tools
+    window.ensurePptxGen = function () {
+      if (!pptx) pptx = load(CDN.pptx, function () { return !!window.PptxGenJS; }).catch(function () { pptx = null; throw new Error(FAIL); });
+      return pptx;
+    };
+    // Warm up on the first sign that the visitor is about to use a tool, so the libraries are ready by the time a file has been chosen
+    var warmed = false;
+    function warm() {
+      if (warmed) return; warmed = true;
+      ['click', 'keydown', 'dragenter'].forEach(function (t) { document.removeEventListener(t, warm, true); });
+      window.ensureConverterLibs().catch(function () { });
+    }
+    ['click', 'keydown', 'dragenter'].forEach(function (t) { document.addEventListener(t, warm, true); });
+  })();
+  </script>
+  <script src="/seo-data.js" defer></script>
   <link rel="stylesheet" href="/assets/scroll-reveal.css">
   <script src="/assets/scroll-reveal.js"></script>
   <script>
@@ -3308,6 +3354,7 @@
     // Shared PDF / network helpers
     // ------------------------------------------------------------------
     async function loadPdf(file) {
+      await ensureConverterLibs();
       if (!window.PDFLib) throw new Error("The PDF engine failed to load. Check your internet connection and refresh the page.");
       const bytes = new Uint8Array(await file.arrayBuffer());
       try {
@@ -3320,6 +3367,7 @@
     }
 
     async function openPdfJs(file) {
+      await ensureConverterLibs();
       if (!window.pdfjsLib) throw new Error("The PDF reader failed to load. Check your internet connection and refresh the page.");
       try {
         return await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
@@ -5005,6 +5053,8 @@ Do you want to upload "${file.name}" to our server to try again? The file is del
       setProcessButton(true, serverStarting ? T("state.starting", "Starting the server… this can take up to a minute") : T("state.working", "Working..."));
       let keepButton = false;
       try {
+        await ensureConverterLibs();        // PDF.js, pdf-lib, JSZip and the converter engine are fetched on first use (see the loader in <head>)
+        if (currentToolId === "pdf-to-powerpoint" || currentToolId === "word-to-powerpoint") await ensurePptxGen();
         let notice = null;
         if (FORCED_MODE[currentToolId] === "batch") {
           notice = await runner(fileQueue.slice());
