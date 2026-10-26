@@ -86,7 +86,7 @@
   function updateWidget() {
     if (!widget) return;
     label.textContent = current.toUpperCase();
-    button.setAttribute('aria-label', t('lang.choose', 'Choose language') + ': ' + nameOf(current));
+    button.setAttribute('aria-label', t('lang.choose', 'Choose language') + ': ' + current.toUpperCase() + ' (' + nameOf(current) + ')');
     Array.prototype.forEach.call(opts.children, function (li) { li.setAttribute('aria-selected', li.getAttribute('data-code') === current ? 'true' : 'false'); });
   }
   // Fills the options: the country-aware order when the search is empty, otherwise every supported language that matches the typed text
@@ -233,6 +233,7 @@
     '.fc-lang-list{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:80;margin:0;padding:6px;display:flex;flex-direction:column;width:210px;max-height:min(70vh,420px);overflow:hidden;background:#fff;border:1px solid rgb(226 232 240);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);' +
       'opacity:0;transform:translateY(-6px);visibility:hidden;pointer-events:none;transition:opacity .16s ease,transform .16s ease,visibility 0s linear .16s}' +
     '.fc-lang-list.open{opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}' +
+    '@media (max-width:768px){@supports (-webkit-touch-callout:none){.fc-lang-search{font-size:16px!important}}}' +
     '.fc-lang-find{flex:none;padding:2px 2px 6px}.fc-lang-search{display:block;width:100%;box-sizing:border-box;height:32px;padding:0 10px;border:1px solid rgb(226 232 240);border-radius:9px;background:#f8fafc;color:#1e293b;font-family:inherit;font-size:13px;outline:none}.fc-lang-search:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.2)}.fc-lang-search::placeholder{color:#94a3b8}' +
     '.fc-lang-opts{list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto;min-height:0}.fc-lang-none{padding:12px 10px;font-size:13px;color:#64748b;text-align:center}.fc-lang-none[hidden]{display:none}' +
     '.fc-lang-list li{padding:8px 10px;border-radius:9px;font-size:13px;color:#1e293b;cursor:pointer;outline:none;opacity:0;transform:translateY(-3px);transition:opacity .16s ease,transform .16s ease,background-color .12s ease}' +

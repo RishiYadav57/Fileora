@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Upload & Conversion Troubleshooting Guide | FileCorner</title>
   <meta name="description" content="Resolve document conversion issues: fix corrupted outputs, restore missing tables, correct line spacing, and troubleshoot large file limits.">
   <link rel="canonical" href="https://pdfconverterfree.in/troubleshooting">
@@ -91,10 +91,10 @@
     <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
       <div class="flex items-center justify-between gap-4">
         <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xs font-mono font-bold">1</span>
+          <span class="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center text-xs font-mono font-bold">1</span>
           Conversion Button Shows "Working..." or Appears Stuck
         </h2>
-        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Execution Flow</span>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">Execution Flow</span>
       </div>
       <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
         <p><strong>Likely Cause:</strong> If a document has several hundred pages, client-side memory parsing takes more CPU cycles, or the backend server fallback is waking up from idle sleep.</p>
@@ -111,10 +111,10 @@
     <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
       <div class="flex items-center justify-between gap-4">
         <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-mono font-bold">2</span>
+          <span class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-mono font-bold">2</span>
           Tables Damaged, Columns Shifted, or Borders Missing
         </h2>
-        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Layout Engine</span>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">Layout Engine</span>
       </div>
       <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
         <p><strong>Likely Cause:</strong> The source PDF has borderless tables, irregular nested cell spans, or was generated from an image scan without digital vector cell lines.</p>
@@ -134,7 +134,7 @@
           <span class="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-mono font-bold">3</span>
           Text Overlaps, Abrupt Font Changes, or Double Line Gaps
         </h2>
-        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Typography</span>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">Typography</span>
       </div>
       <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
         <p><strong>Likely Cause:</strong> PDFs define each physical text segment at specific XY coordinates. If lines are not grouped as paragraph continuations, each line receives default Word paragraph spacing.</p>
@@ -153,7 +153,7 @@
           <span class="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-mono font-bold">4</span>
           Error: "File is Password-Protected"
         </h2>
-        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Security Flags</span>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">Security Flags</span>
       </div>
       <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
         <p><strong>Likely Cause:</strong> The document has encrypted permissions or an owner password preventing extraction of text and graphics.</p>
@@ -170,10 +170,10 @@
     <article class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
       <div class="flex items-center justify-between gap-4">
         <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-mono font-bold">5</span>
+          <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs font-mono font-bold">5</span>
           Download Notification Shows But File Does Not Save
         </h2>
-        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Browser Download</span>
+        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">Browser Download</span>
       </div>
       <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
         <p><strong>Likely Cause:</strong> Your browser blocked automatic multi-file downloads or prompt popups.</p>
