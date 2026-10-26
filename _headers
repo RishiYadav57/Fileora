@@ -1,0 +1,5 @@
+# Cloudflare Pages response headers.
+# The font files in /assets/fonts have content-hashed names, so a changed font always gets a new URL and these can be cached for a year.
+# Other assets keep the Pages default (revalidated every 4 hours), because their file names do not change when their content does.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

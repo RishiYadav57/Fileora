@@ -6,6 +6,7 @@
 !/dockerfile.txt
 !/netlify.toml
 !/_redirects
+!/_headers
 !/package.json
 !/package-lock.json
 !/requirements.txt
