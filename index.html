@@ -186,7 +186,9 @@
     @media (max-width: 768px) {
       .hero-banner-container {
         background-image: url('/assets/mobile-hero-bg.webp'), url('/assets/hero-bg-extension.webp');
-        background-position: center top, center top;
+        /* the continuation strip starts exactly where the main artwork ends (576x1024 scaled to the page width), so a taller hero
+           (after files are chosen) joins it without a hard edge instead of showing a tile cut mid-way */
+        background-position: center top, center calc(100vw * 1024 / 576);
         background-repeat: no-repeat, repeat-y;
         background-size: 100% auto, 100% auto;
       }
@@ -207,7 +209,7 @@
       .dark .hero-banner-container {
         background-color: #030712;
         background-image: url('/assets/hero-dark-bg.png'), url('/assets/hero-dark-continuation.png');
-        background-position: center top, center top;
+        background-position: center top, center calc(100vw * 516 / 1024);   /* same join as above (1024x516 artwork) */
         background-repeat: no-repeat, repeat-y;
         background-size: 100% auto, 100% auto;
       }
