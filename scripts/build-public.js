@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
 const PAGES = ['index', '404', 'about', 'contact', 'cookie-policy', 'disclaimer', 'download', 'faq', 'file-retention', 'privacy-policy', 'privacy', 'security', 'terms', 'troubleshooting'].map(n => n + '.html');
-const FILES = [...PAGES, 'converter-engine.js', 'seo-data.js', 'robots.txt', 'sitemap.xml', '_redirects'];
+const FILES = [...PAGES, 'converter-engine.js', 'seo-data.js', 'robots.txt', 'sitemap.xml', 'llms.txt', '_redirects'];
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 for (const f of FILES) { if (fs.existsSync(path.join(root, f))) fs.copyFileSync(path.join(root, f), path.join(out, f)); }

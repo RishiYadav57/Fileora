@@ -11,6 +11,7 @@
 !/requirements.txt
 !/robots.txt
 !/sitemap.xml
+!/llms.txt
 !/*.html
 !/server.js
 !/security.js

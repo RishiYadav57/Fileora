@@ -1,0 +1,66 @@
+# FileCorner
+
+> FileCorner (https://pdfconverterfree.in/) is a free online file converter and PDF toolkit that runs in the web browser. It converts between PDF, Word, PowerPoint, Excel and JPG, organizes, compresses, protects and unlocks PDFs, compresses images, creates and extracts ZIP archives, and offers AI document summarizing, document translation and scanned-PDF text recognition (OCR). Each tool has its own page.
+
+Limits that apply to every tool: up to 3 files per batch, 3 MB per file and 5 MB per batch. Temporary files are deleted automatically; the retention policy is linked below.
+
+## Main
+
+- [FileCorner home](https://pdfconverterfree.in/): All tools in one place, with search by tool name or file type.
+
+## Organize PDF
+
+- [Merge PDF](https://pdfconverterfree.in/tools/merge-pdf): Combine several PDF files into one document in your preferred order.
+- [Split PDF](https://pdfconverterfree.in/tools/split-pdf): Divide a PDF into separate files or pick the pages you need.
+- [Remove Pages from PDF](https://pdfconverterfree.in/tools/remove-pages): Delete unwanted pages by page number or range and keep a cleaner PDF.
+- [Extract Pages from PDF](https://pdfconverterfree.in/tools/extract-pages): Pull selected pages out of a PDF and save them as a new file.
+- [Organize PDF Pages](https://pdfconverterfree.in/tools/organize-pdf): Rearrange pages by dragging them, rotate sideways pages and delete pages you do not need.
+
+## Optimize PDF and images
+
+- [Compress PDF](https://pdfconverterfree.in/tools/compress-pdf): Reduce PDF file size while keeping documents clear and easy to share.
+- [Repair PDF](https://pdfconverterfree.in/tools/repair-pdf): Recover readable content from damaged PDF files where possible.
+- [Compress Image](https://pdfconverterfree.in/tools/compress-image): Make JPG, PNG and WebP images smaller, limit their longest side, and save as JPEG, WebP or PNG.
+- [Enhance Image](https://pdfconverterfree.in/tools/enhance-image): Sharpen photos and improve clarity, brightness and contrast.
+
+## Convert to PDF
+
+- [Word to PDF](https://pdfconverterfree.in/tools/word-to-pdf): Turn Word documents into PDF files that are ready to share.
+- [PowerPoint to PDF](https://pdfconverterfree.in/tools/powerpoint-to-pdf): Convert PowerPoint presentations into PDFs for sharing and printing.
+- [Excel and CSV to PDF](https://pdfconverterfree.in/tools/excel-to-pdf): Convert Excel spreadsheets and CSV files into PDFs.
+- [JPG to PDF](https://pdfconverterfree.in/tools/jpg-to-pdf): Turn JPG, PNG and WebP images into a PDF document.
+
+## Convert from PDF and between Office formats
+
+- [PDF to Word](https://pdfconverterfree.in/tools/pdf-to-word): Convert PDF files into editable Word documents.
+- [PDF to PowerPoint](https://pdfconverterfree.in/tools/pdf-to-powerpoint): Convert PDF pages into PowerPoint slides.
+- [PDF to Excel](https://pdfconverterfree.in/tools/pdf-to-excel): Extract tables from PDF files into Excel spreadsheets.
+- [PDF to JPG](https://pdfconverterfree.in/tools/pdf-to-jpg): Save each page of a PDF as a JPG image.
+- [PowerPoint to Word](https://pdfconverterfree.in/tools/powerpoint-to-word): Turn a PowerPoint (.pptx) presentation into an editable Word document.
+- [Word to PowerPoint](https://pdfconverterfree.in/tools/word-to-powerpoint): Turn a Word (.docx) document into PowerPoint slides.
+
+## PDF security and archives
+
+- [Protect PDF](https://pdfconverterfree.in/tools/protect-pdf): Add a password to a PDF to keep it private.
+- [Unlock PDF](https://pdfconverterfree.in/tools/unlock-pdf): Remove password protection from a PDF when you know the password.
+- [Add Watermark to PDF](https://pdfconverterfree.in/tools/add-watermark): Stamp a text watermark such as CONFIDENTIAL or DRAFT on every page of a PDF.
+- [ZIP Files](https://pdfconverterfree.in/tools/zip-files): Package several files into one ZIP archive.
+- [Unzip Files](https://pdfconverterfree.in/tools/unzip-files): Extract the files inside a ZIP archive.
+
+## AI and document intelligence
+
+- [AI Document Summarizer](https://pdfconverterfree.in/tools/ai-summarizer): Get the key points and a clear summary of a document.
+- [Translate Documents](https://pdfconverterfree.in/tools/translate-pdf): Translate a document into another language and download the result as a PDF.
+- [Scan PDF (OCR)](https://pdfconverterfree.in/tools/scan-pdf): Make scanned PDFs searchable by adding selectable text.
+
+## Help and policies
+
+- [About FileCorner](https://pdfconverterfree.in/about): The site's mission, privacy-first design and how it is operated.
+- [FAQ](https://pdfconverterfree.in/faq): Answers about file limits, file retention, how AI features handle data, security and privacy.
+- [Troubleshooting](https://pdfconverterfree.in/troubleshooting): Fixes for corrupted outputs, missing tables, line spacing and large-file limits.
+- [File retention policy](https://pdfconverterfree.in/file-retention): How long converted files are kept, when originals are removed, and how to delete a file immediately.
+- [Privacy policy](https://pdfconverterfree.in/privacy-policy): File handling, retention, AI data flow and privacy rights.
+- [Terms of service](https://pdfconverterfree.in/terms): User rights, acceptable use, conversion disclaimers and service limits.
+- [Cookie policy](https://pdfconverterfree.in/cookie-policy): Which cookies and local storage are used and how consent works.
+- [Disclaimer](https://pdfconverterfree.in/disclaimer): Conversion fidelity, AI output and backup disclaimers.
+- [Contact](https://pdfconverterfree.in/contact): Technical support, conversion bug reports and privacy inquiries.
