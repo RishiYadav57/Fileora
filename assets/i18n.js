@@ -249,7 +249,7 @@
     'html[lang=hi] body{font-family:"Nirmala UI","Noto Sans Devanagari","Mangal",system-ui,sans-serif}' +
     'html[lang=ar] body{font-family:"Segoe UI","Noto Naskh Arabic","Tahoma",system-ui,sans-serif}' +
     'html[lang=el] body,html[lang=ru] body,html[lang=uk] body,html[lang=bg] body,html[lang=sr] body{font-family:"Segoe UI","Noto Sans",system-ui,sans-serif}' +
-    'html.fc-fit1 #nav-categories *{font-size:11.5px!important}html.fc-fit1 #nav-categories{gap:2px}html.fc-fit1 #tool-search-input{width:6rem!important}' +
+    'html.fc-fit1 #nav-categories *{font-size:11.5px!important}html.fc-fit1 #nav-categories{gap:2px}html.fc-fit1:not(.fc-fit2) #nav-categories>div>button,html.fc-fit1:not(.fc-fit2) #nav-categories>div>button *{font-size:13px!important}html.fc-fit1 #tool-search-input{width:6rem!important}' +
     'html.fc-fit2 #nav-categories *{font-size:11px!important}html.fc-fit2 #nav-categories>*{padding-left:0!important;padding-right:0!important}html.fc-fit2 #tool-search-input{width:3.2rem!important}' +
     'html.fc-fit3 #tool-search-input{width:1.2rem!important}' +
     'html.fc-fit4 #nav-categories *{font-size:10.5px!important}html.fc-fit4 .fc-lang-btn .fc-chev{display:none}html.fc-fit4 #nav-categories{gap:0}' +
