@@ -67,7 +67,7 @@
     if (v === 'granted') load();
     else if (v === 'denied') { /* respected: nothing loads */ }
     else if (navigator.globalPrivacyControl === true) { /* Global Privacy Control: treated as a refusal, no prompt */ }
-    else setTimeout(show, 1000);   // first visit: the notice slides in one second after the page opens
+    else { /* first visit: the notice is switched off for now, so nothing is shown and analytics stays off (re-enable with setTimeout(show, 1000)) */ }
     document.addEventListener('click', function (e) { var el = e.target && e.target.closest ? e.target.closest('[data-fc-consent-open]') : null; if (el) { e.preventDefault(); hide(); show(); } });
     document.addEventListener('fc:lang', function () { if (banner) { hide(); show(); } });
   }
